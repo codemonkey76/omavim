@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Omavim
+GenericName=Text Editor
+Comment=A dead-simple writing app with Vim motions
+Exec=omavim %f
+Icon=omavim
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/markdown;text/plain;
+StartupWMClass=omavim
