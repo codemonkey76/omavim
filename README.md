@@ -4,9 +4,17 @@ A dead-simple writing app with Vim motions, in the spirit of
 [Omawrite](https://github.com/omacom-io/omawrite), written in Rust with
 [iced](https://iced.rs). See [PLAN.md](PLAN.md) for where it's going.
 
-**Milestone 1 (now):** a window in iA Writer Mono that follows the desktop's
-dark/light setting, plain typing, and open/save through the desktop's file
-picker. Vim arrives in milestone 2.
+**Where it's up to (milestone 2):** a window in iA Writer Mono that follows the
+desktop's dark/light setting, soft-wrapped lines, open/save through the
+desktop's file picker, and Vim's core: normal, insert, replace and visual
+(`v`, `V`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
+f F t T ; , { } %`), operators (`d c y > < gu gU g~` and their doubled forms,
+`D C Y x X s S r J gJ ~ p P`), undo/redo and `.`. Text objects, registers,
+search, marks, macros and `:` commands are next.
+
+Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
+runs thousands of generated cases through headless Neovim, and the engine must
+give the same text, cursor, mode and register for each.
 
 ```sh
 cargo run -p omavim -- notes.md     # or no file, for a new one
@@ -14,9 +22,10 @@ cargo run -p omavim -- notes.md     # or no file, for a new one
 
 | Keys (for now) | |
 | --- | --- |
+| Vim's | as in Vim |
 | `Ctrl+S` | save (asks where, the first time) |
 | `Ctrl+Shift+S` | save as |
-| `Ctrl+O` | open |
+| `Ctrl+O` | open (until Vim's jump list claims it) |
 
 ## Install
 

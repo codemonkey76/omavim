@@ -3,12 +3,14 @@
 mod document;
 mod editor;
 mod portal;
+mod wrap;
 
 use document::Document;
-use editor::{Editor, KeyPress};
-use iced::keyboard::{Key, key::Named};
+use editor::{Editor, KeyPress, View};
+use iced::keyboard::{Key as IcedKey, key::Named};
 use iced::widget::{column, container, row, space, text};
 use iced::{Color, Element, Font, Length, Subscription, Task, Theme};
+use omavim_vim::{Key, Mode, Vim};
 use portal::Scheme;
 use std::path::PathBuf;
 
@@ -32,6 +34,7 @@ fn main() -> iced::Result {
 
 struct App {
     doc: Document,
+    vim: Vim,
     scheme: Scheme,
     /// A short message in the footer: an error, or what just happened.
     status: Option<String>,
@@ -65,6 +68,7 @@ impl App {
         };
         Self {
             doc,
+            vim: Vim::new(),
             scheme: Scheme::default(),
             status,
         }
@@ -92,6 +96,7 @@ impl App {
             Message::Scheme(scheme) => self.scheme = scheme,
             Message::Opened(Ok(Some((path, contents)))) => {
                 self.doc = Document::open(path, &contents);
+                self.vim = Vim::new();
                 self.status = None;
             }
             Message::Opened(Ok(None)) | Message::SaveTo(Ok(None)) => {}
@@ -108,40 +113,29 @@ impl App {
         Task::none()
     }
 
-    /// Milestone 1's keys: plain typing, and Ctrl+S / Ctrl+Shift+S / Ctrl+O.
-    /// Vim takes over in milestone 2.
+    /// Keys go to Vim, except the app's own: Ctrl+S, Ctrl+Shift+S, Ctrl+O
+    /// (for now: the leader keys replace them in a later milestone).
     fn key(&mut self, press: KeyPress) -> Task<Message> {
         let m = press.modifiers;
-        if m.control() {
-            return match press.key.as_ref() {
-                Key::Character(c) if c.eq_ignore_ascii_case("s") && m.shift() => self.save_as(),
-                Key::Character(c) if c.eq_ignore_ascii_case("s") => self.save(),
-                Key::Character(c) if c.eq_ignore_ascii_case("o") => self.open(),
-                _ => Task::none(),
-            };
-        }
-        self.status = None;
-        match press.key.as_ref() {
-            Key::Named(Named::Enter) => self.doc.insert("\n"),
-            Key::Named(Named::Tab) => self.doc.insert("\t"),
-            Key::Named(Named::Backspace) => self.doc.backspace(),
-            Key::Named(Named::Delete) => self.doc.delete(),
-            Key::Named(Named::ArrowLeft) => self.doc.left(),
-            Key::Named(Named::ArrowRight) => self.doc.right(),
-            Key::Named(Named::ArrowUp) => self.doc.vertical(-1),
-            Key::Named(Named::ArrowDown) => self.doc.vertical(1),
-            Key::Named(Named::PageUp) => self.doc.vertical(-20),
-            Key::Named(Named::PageDown) => self.doc.vertical(20),
-            Key::Named(Named::Home) => self.doc.home(),
-            Key::Named(Named::End) => self.doc.end(),
-            _ => {
-                if let Some(t) = press
-                    .text
-                    .filter(|t| !m.alt() && !m.logo() && t.chars().all(|c| !c.is_control()))
-                {
-                    self.doc.insert(&t);
-                }
+        if m.control()
+            && let IcedKey::Character(c) = press.key.as_ref()
+        {
+            match c.to_ascii_lowercase().as_str() {
+                "s" if m.shift() => return self.save_as(),
+                "s" => return self.save(),
+                "o" => return self.open(),
+                _ => {}
             }
+        }
+        let before = self.vim.changes();
+        for key in vim_keys(&press) {
+            if self.vim.key(&mut self.doc.text, key).is_err() {
+                // Vim beeps; the keys after it still count, as typed keys do.
+            }
+        }
+        if self.vim.changes() != before {
+            self.doc.dirty = true;
+            self.status = None;
         }
         Task::none()
     }
@@ -169,10 +163,7 @@ impl App {
     }
 
     fn write(&mut self, path: PathBuf) -> Task<Message> {
-        Task::perform(
-            portal::write(path, self.doc.text.to_string()),
-            Message::Saved,
-        )
+        Task::perform(portal::write(path, self.doc.contents()), Message::Saved)
     }
 
     fn open(&mut self) -> Task<Message> {
@@ -185,15 +176,31 @@ impl App {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let dim = {
-            let mut c = theme(self.scheme).palette().text;
-            c.a = 0.45;
-            c
+        let palette = theme(self.scheme).palette();
+        let dim = Color {
+            a: 0.45,
+            ..palette.text
         };
-        let (line, col) = self.doc.line_col();
+        let mode = self.vim.mode();
+        let selection = self
+            .vim
+            .visual_start()
+            .map(|start| (start, self.vim.cursor(), mode == Mode::VisualLine));
+        let (line, col) = omavim_vim::text::line_col(
+            &self.doc.text,
+            self.vim.cursor().min(self.doc.text.len_chars()),
+        );
+        let pending: String = self.vim.pending().iter().map(key_label).collect();
         let footer = row![
+            text(mode_label(mode))
+                .size(13)
+                .color(if mode == Mode::Normal {
+                    dim
+                } else {
+                    palette.primary
+                }),
             text(format!(
-                "{}{}",
+                "  {}{}",
                 self.doc.name(),
                 if self.doc.dirty { " •" } else { "" }
             ))
@@ -204,18 +211,92 @@ impl App {
                 .size(13)
                 .color(dim),
             space::horizontal(),
-            text(format!("{}:{}", line + 1, col + 1))
+            text(pending).size(13).color(dim),
+            text(format!("   {}:{}", line + 1, col + 1))
                 .size(13)
                 .color(dim),
         ]
         .padding([8, 16]);
+        let view = View {
+            text: &self.doc.text,
+            cursor: self.vim.cursor(),
+            mode,
+            selection,
+            tabstop: self.vim.tabstop,
+        };
         column![
-            container(Editor::new(&self.doc, FONT, TEXT_SIZE, Message::Key))
+            container(Editor::new(view, FONT, TEXT_SIZE, Message::Key))
                 .width(Length::Fill)
                 .height(Length::Fill),
             footer,
         ]
         .into()
+    }
+}
+
+/// An iced key press as Vim keys: named keys, Ctrl+letter, or typed text.
+fn vim_keys(press: &KeyPress) -> Vec<Key> {
+    let m = press.modifiers;
+    let named = match press.key.as_ref() {
+        IcedKey::Named(Named::Escape) => Some(Key::Esc),
+        IcedKey::Named(Named::Enter) => Some(Key::Enter),
+        IcedKey::Named(Named::Backspace) => Some(Key::Backspace),
+        IcedKey::Named(Named::Delete) => Some(Key::Delete),
+        IcedKey::Named(Named::Tab) => Some(Key::Tab),
+        IcedKey::Named(Named::ArrowUp) => Some(Key::Up),
+        IcedKey::Named(Named::ArrowDown) => Some(Key::Down),
+        IcedKey::Named(Named::ArrowLeft) => Some(Key::Left),
+        IcedKey::Named(Named::ArrowRight) => Some(Key::Right),
+        IcedKey::Named(Named::Home) => Some(Key::Home),
+        IcedKey::Named(Named::End) => Some(Key::End),
+        IcedKey::Named(Named::PageUp) => Some(Key::PageUp),
+        IcedKey::Named(Named::PageDown) => Some(Key::PageDown),
+        _ => None,
+    };
+    if let Some(k) = named {
+        return vec![k];
+    }
+    if m.control()
+        && let IcedKey::Character(c) = press.key.as_ref()
+        && let Some(ch) = c.chars().next()
+    {
+        // Ctrl-[ is Escape, as in a terminal.
+        return vec![if ch == '[' {
+            Key::Esc
+        } else {
+            Key::Ctrl(ch.to_ascii_lowercase())
+        }];
+    }
+    if m.alt() || m.logo() {
+        return Vec::new();
+    }
+    press
+        .text
+        .iter()
+        .flat_map(|t| t.chars())
+        .filter(|c| !c.is_control())
+        .map(Key::Char)
+        .collect()
+}
+
+fn mode_label(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Normal => "NORMAL",
+        Mode::Insert => "INSERT",
+        Mode::Replace => "REPLACE",
+        Mode::Visual => "VISUAL",
+        Mode::VisualLine => "V-LINE",
+        Mode::VisualBlock => "V-BLOCK",
+        Mode::OperatorPending => "NORMAL",
+        Mode::CommandLine => "COMMAND",
+    }
+}
+
+fn key_label(k: &Key) -> String {
+    match k {
+        Key::Char(c) => c.to_string(),
+        Key::Ctrl(c) => format!("^{}", c.to_ascii_uppercase()),
+        other => format!("<{other:?}>"),
     }
 }
 
@@ -245,5 +326,63 @@ fn theme(scheme: Scheme) -> Theme {
                 danger: rgb(0xef, 0x9a, 0x9a),
             },
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use iced::keyboard::Modifiers;
+
+    fn press(key: IcedKey, modifiers: Modifiers, text: Option<&str>) -> KeyPress {
+        KeyPress {
+            key,
+            modifiers,
+            text: text.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn turns_key_presses_into_vim_keys() {
+        assert_eq!(
+            vim_keys(&press(
+                IcedKey::Named(Named::Escape),
+                Modifiers::empty(),
+                None
+            )),
+            [Key::Esc]
+        );
+        assert_eq!(
+            vim_keys(&press(
+                IcedKey::Character("r".into()),
+                Modifiers::CTRL,
+                None
+            )),
+            [Key::Ctrl('r')]
+        );
+        assert_eq!(
+            vim_keys(&press(
+                IcedKey::Character("[".into()),
+                Modifiers::CTRL,
+                None
+            )),
+            [Key::Esc]
+        );
+        assert_eq!(
+            vim_keys(&press(
+                IcedKey::Character("é".into()),
+                Modifiers::empty(),
+                Some("é")
+            )),
+            [Key::Char('é')]
+        );
+        assert!(
+            vim_keys(&press(
+                IcedKey::Character("x".into()),
+                Modifiers::LOGO,
+                Some("x")
+            ))
+            .is_empty()
+        );
     }
 }

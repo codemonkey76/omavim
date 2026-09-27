@@ -176,6 +176,9 @@ pub struct Vim {
     recording: Option<Vec<Key>>,
     recording_count: Option<usize>,
     replaying: bool,
+    /// Edits made so far (undo and redo included), so the app can tell
+    /// when the text has changed.
+    changes: u64,
     pub shiftwidth: usize,
     pub tabstop: usize,
 }
@@ -204,6 +207,7 @@ impl Vim {
             recording: None,
             recording_count: None,
             replaying: false,
+            changes: 0,
             shiftwidth: 8,
             tabstop: 8,
         }
@@ -229,6 +233,11 @@ impl Vim {
     /// Where a visual selection started, while one is active.
     pub fn visual_start(&self) -> Option<Pos> {
         matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some(self.anchor)
+    }
+
+    /// Changes so far: compare before and after a key to see if it edited.
+    pub fn changes(&self) -> u64 {
+        self.changes
     }
 
     pub fn register(&self) -> &Register {
@@ -1572,6 +1581,7 @@ impl Vim {
             return;
         }
         let line = t.char_to_line(range.start.min(t.len_chars()));
+        self.changes += 1;
         t.replace(range.clone(), with);
         self.begin_group();
         if let Some(g) = self.group.as_mut() {
@@ -1593,6 +1603,7 @@ impl Vim {
             for e in g.edits.iter().rev() {
                 t.replace(e.at..e.at + e.inserted.chars().count(), &e.removed);
             }
+            self.changes += 1;
             let line = g
                 .edits
                 .iter()
@@ -1621,6 +1632,7 @@ impl Vim {
             for e in &g.edits {
                 t.replace(e.at..e.at + e.removed.chars().count(), &e.inserted);
             }
+            self.changes += 1;
             let line = g
                 .edits
                 .iter()
