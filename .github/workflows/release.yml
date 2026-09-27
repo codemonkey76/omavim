@@ -1,0 +1,50 @@
+# Tag a version (git tag v0.1.0 && git push origin v0.1.0) and this builds
+# Omavim for x86_64 Linux and publishes it as a GitHub Release:
+#   omavim-x86_64-linux.tar.gz   bin/, share/applications, share/icons, share/licenses
+# laid out to unpack straight into ~/.local (see README, Install).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # An older Ubuntu, so the binary needs only an older glibc and runs on
+    # older systems as well as Arch.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag matches Cargo.toml
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME but Cargo.toml says $version"
+            exit 1
+          fi
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: cargo test --release --locked
+
+      - run: cargo build --release --locked -p omavim
+
+      - name: Package
+        run: |
+          d=omavim
+          install -Dm755 target/release/omavim $d/bin/omavim
+          install -Dm644 data/omavim.desktop $d/share/applications/omavim.desktop
+          install -Dm644 data/omavim.svg $d/share/icons/hicolor/scalable/apps/omavim.svg
+          install -Dm644 LICENSE $d/share/licenses/omavim/LICENSE
+          install -Dm644 fonts/OFL.txt $d/share/licenses/omavim/OFL.txt
+          tar -czf omavim-x86_64-linux.tar.gz $d
+          sha256sum omavim-x86_64-linux.tar.gz > omavim-x86_64-linux.tar.gz.sha256
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" omavim-x86_64-linux.tar.gz omavim-x86_64-linux.tar.gz.sha256 --generate-notes --title "Omavim $GITHUB_REF_NAME"

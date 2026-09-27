@@ -18,7 +18,23 @@ cargo run -p omavim -- notes.md     # or no file, for a new one
 | `Ctrl+Shift+S` | save as |
 | `Ctrl+O` | open |
 
-To install on Arch/Omarchy: `cd pkgbuild && makepkg -si`.
+## Install
+
+The latest release, into `~/.local` (no Rust needed):
+
+```sh
+curl -fsSL https://github.com/codemonkey76/omavim/releases/latest/download/omavim-x86_64-linux.tar.gz | tar -xz -C ~/.local --strip-components=1
+```
+
+That puts `omavim` in `~/.local/bin` and adds it to your app launcher. It needs
+`xdg-desktop-portal` (for the file pickers and dark/light), which Omarchy and most
+desktops already have. To remove it:
+`rm ~/.local/bin/omavim ~/.local/share/applications/omavim.desktop ~/.local/share/icons/hicolor/scalable/apps/omavim.svg`.
+
+From source on Arch/Omarchy: `cd pkgbuild && makepkg -si`.
+
+To release: bump `version` in Cargo.toml, commit, then
+`git tag vX.Y.Z && git push origin vX.Y.Z`.
 
 iA Writer Mono is © Information Architects Inc., under the SIL Open Font
 License 1.1 (`fonts/OFL.txt`). Omavim itself is MIT.
