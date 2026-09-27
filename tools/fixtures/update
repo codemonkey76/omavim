@@ -1,0 +1,10 @@
+#!/bin/sh
+# Regenerate the Vim fixtures: the cases, then what Neovim does with them.
+set -e
+cd "$(dirname "$0")/../.."
+python3 tools/fixtures/cases.py
+# Neovim's own messages ("-- INSERT --", "3 fewer lines") are noise here.
+nvim --headless --clean -l tools/fixtures/nvim.lua \
+  crates/omavim-vim/tests/fixtures/cases.json crates/omavim-vim/tests/fixtures/expected.json 2>&1 \
+  | tr '\r' '\n' | grep -E "cases run|failed|could not" || true
+echo "Neovim ($(nvim --version | head -1)) → crates/omavim-vim/tests/fixtures/expected.json"

@@ -3,8 +3,14 @@
 //! The engine works on any text through [`TextModel`], so it runs the same on
 //! the app's buffer and on a plain rope in tests, where its behaviour is checked
 //! against real Vim (see PLAN.md, *Testing*).
-//!
-//! Milestone 1 defines the interface; the engine itself is milestone 2.
+
+mod engine;
+pub mod key;
+mod motion;
+pub mod text;
+
+pub use engine::{Beep, Register, Vim};
+pub use key::Key;
 
 use std::ops::Range;
 
