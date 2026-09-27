@@ -50,6 +50,10 @@ enum Message {
     /// Where Save As chose to write (None: cancelled).
     SaveTo(Result<Option<PathBuf>, String>),
     Saved(Result<PathBuf, String>),
+    /// The window came to the front: the clipboard may have changed.
+    Focused,
+    /// The desktop clipboard (`'+'`) or primary selection (`'*'`), read.
+    Clipboard(char, Option<String>),
 }
 
 impl App {
@@ -68,9 +72,11 @@ impl App {
             },
             None => (Document::default(), None),
         };
+        let mut vim = Vim::new();
+        vim.set_file_name(doc.path.as_deref().and_then(|p| p.to_str()));
         Self {
             doc,
-            vim: Vim::new(),
+            vim,
             scheme: Scheme::default(),
             status,
             quit_after_save: false,
@@ -90,7 +96,13 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::run(portal::color_scheme).map(Message::Scheme)
+        Subscription::batch([
+            Subscription::run(portal::color_scheme).map(Message::Scheme),
+            iced::event::listen_with(|event, _, _| match event {
+                iced::Event::Window(iced::window::Event::Focused) => Some(Message::Focused),
+                _ => None,
+            }),
+        ])
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
@@ -99,14 +111,22 @@ impl App {
             Message::Scheme(scheme) => self.scheme = scheme,
             Message::Opened(Ok(Some((path, contents)))) => {
                 self.doc = Document::open(path, &contents);
-                self.vim = Vim::new();
+                self.vim = self.vim.for_other_text();
+                self.vim
+                    .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
                 self.status = None;
+            }
+            Message::Focused => return read_clipboards(),
+            Message::Clipboard(register, text) => {
+                self.vim
+                    .set_clipboard(register, text.as_deref().unwrap_or(""));
             }
             Message::Opened(Ok(None)) => {}
             Message::SaveTo(Ok(None)) => self.quit_after_save = false,
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
             Message::Saved(Ok(path)) => {
                 self.status = Some(format!("Saved {}", path.display()));
+                self.vim.set_file_name(path.to_str());
                 self.doc.path = Some(path);
                 self.doc.dirty = false;
                 if self.quit_after_save {
@@ -144,10 +164,24 @@ impl App {
             self.doc.dirty = true;
             self.status = None;
         }
-        match self.vim.take_command() {
-            Some(cmd) => self.command(&cmd),
-            None => Task::none(),
+        let mut tasks = Vec::new();
+        // `"+y` / `"*y`: onto the clipboard or primary selection.
+        if let Some((register, text)) = self.vim.take_clipboard() {
+            tasks.push(if register == '*' {
+                iced::clipboard::write_primary(text)
+            } else {
+                iced::clipboard::write(text)
+            });
         }
+        // `"` or Ctrl-R typed: bring `"+` and `"*` up to date before the
+        // register's name (typed after) is used.
+        if self.vim.naming_register() {
+            tasks.push(read_clipboards());
+        }
+        if let Some(cmd) = self.vim.take_command() {
+            tasks.push(self.command(&cmd));
+        }
+        Task::batch(tasks)
     }
 
     /// A `:` command the engine handed over: the file and window ones.
@@ -297,6 +331,14 @@ impl App {
 }
 
 /// An iced key press as Vim keys: named keys, Ctrl+letter, or typed text.
+/// Read the clipboard and primary selection into `"+` and `"*`.
+fn read_clipboards() -> Task<Message> {
+    Task::batch([
+        iced::clipboard::read().map(|t| Message::Clipboard('+', t)),
+        iced::clipboard::read_primary().map(|t| Message::Clipboard('*', t)),
+    ])
+}
+
 fn vim_keys(press: &KeyPress) -> Vec<Key> {
     let m = press.modifiers;
     let named = match press.key.as_ref() {

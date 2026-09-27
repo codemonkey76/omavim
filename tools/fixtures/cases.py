@@ -83,6 +83,17 @@ OBJECTS = ["iw", "aw", "iW", "aW", "is", "as", "ip", "ap", "i(", "a)", "ib", "i{
            "i<", "a>", 'i"', 'a"', "i'", "a'", "i`", "a`", "it", "at", "2iw", "3aw", "2i(", "2a(",
            "2it", "2is", "2ap"]
 
+REGISTERS = [
+    '"ayy', '"ayw"Ayy', '"Ayy', '"ayw"Ayw', '"ayy"Ayw', '"ayy"ap', '"ayyj"byy"ap"bP', 'dd"1p',
+    'dddd"2p', 'dw"-p', 'yyjdd"0p', 'dddddd"1p..', 'dddddd"1pu.u.', '"_dd', '"_ddp', 'yw"_dwP',
+    '"add', '"adw', 'x"-p', '"ax"ap', 'd}', 'd%', 'd)', '3"ayy', '"a3yy', '2"a3yy',
+    '"adw.', 'v"ay', 'viw"ay"ap', 'yiwviw"_dP', 'yyvj"ap', 'ciwX<Esc>"-p', 'cwnew<Esc>"1p',
+    'ddu"1p', 'yyp"0p', '"Add', 'i<C-r>"<Esc>', 'yiwA <C-r>0<Esc>', 'yyo<C-r>0<Esc>',
+    'dwi<C-r>-<Esc>', '"ayiwo<C-r>a<Esc>', '"ayiwo<C-r>a<Esc>j.', 'dd"1p"2p', 'dddd"1p"2p',
+    'dd"ap', '"1P', '"xyy"Xyy"xp', 'yiwjviwp"-p', 'yiwjviwpp', 'Vjd"1p', 'vjd"1p', 'vwd"-p',
+    '"a"byy', '""yy', 'yw""p', '"Ayw"Ayy"ap', 'x"Ax"ap', 'cc<Esc>"1p', '"_x"-p',
+]
+
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
 
@@ -94,7 +105,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

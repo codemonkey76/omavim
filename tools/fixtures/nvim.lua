@@ -22,14 +22,21 @@ local function pos(p) -- getpos() result -> {line, col} 0-based chars
   return { p[2] - 1, char_col(line, p[3] - 1) }
 end
 
+-- Registers recorded after each case (when not empty), besides "".
+REGISTERS = "0123456789abcdefghijklmnopqrstuvwxyz-"
+
 vim.o.report = 10000 -- no "3 fewer lines" messages
 vim.o.shortmess = vim.o.shortmess .. "sIWF"
+-- Without this, "-- INSERT --" after an error message waits a second for it
+-- to be read.
+vim.o.showmode = false
 local results = {}
 local function run(case)
   vim.cmd("enew!")
   vim.bo.bufhidden = "wipe"
   vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(case.text, "\n", { plain = true }))
   vim.bo.modified = false
+  for r in REGISTERS:gmatch(".") do vim.fn.setreg(r, {}) end
   vim.fn.setreg('"', "")
   local first = vim.api.nvim_buf_get_lines(0, case.cursor[1], case.cursor[1] + 1, false)[1] or ""
   vim.api.nvim_win_set_cursor(0, { case.cursor[1] + 1, byte_col(first, case.cursor[2]) })
@@ -55,7 +62,12 @@ local function run(case)
       mode = mode,
       register = vim.fn.getreg('"'),
       register_type = vim.fn.getregtype('"'),
+      registers = vim.empty_dict(),
     }
+    for r in REGISTERS:gmatch(".") do
+      local text = vim.fn.getreg(r)
+      if text ~= "" then result.registers[r] = { text, vim.fn.getregtype(r) } end
+    end
     if mode == "v" or mode == "V" then
       result.visual_start = pos(vim.fn.getpos("v"))
     end

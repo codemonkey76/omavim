@@ -5,6 +5,7 @@
 use omavim_vim::{Mode, TextModel, Vim, key, text};
 use ropey::Rope;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 #[derive(Deserialize)]
 struct Case {
@@ -23,6 +24,9 @@ struct Expected {
     register: String,
     register_type: String,
     visual_start: Option<(usize, usize)>,
+    /// The other registers that aren't empty: name → (text, "v" or "V").
+    #[serde(default)]
+    registers: BTreeMap<String, (String, String)>,
     #[serde(default)]
     aborted: bool,
 }
@@ -59,6 +63,16 @@ fn run(case: &Case) -> Expected {
         register: reg.text.clone(),
         register_type: if reg.linewise { "V".into() } else { "v".into() },
         visual_start: vim.visual_start().map(|p| text::line_col(&rope, p)),
+        registers: "0123456789abcdefghijklmnopqrstuvwxyz-"
+            .chars()
+            .filter_map(|r| {
+                let reg = vim.get_register(r);
+                (!reg.text.is_empty()).then(|| {
+                    let kind = if reg.linewise { "V" } else { "v" };
+                    (r.to_string(), (reg.text.clone(), kind.to_string()))
+                })
+            })
+            .collect(),
         aborted,
     }
 }
@@ -105,6 +119,12 @@ fn behaves_like_neovim() {
                 eprintln!(
                     "   reg   want {:?}{} got {:?}{}",
                     want.register, want.register_type, got.register, got.register_type
+                );
+            }
+            if want.registers != got.registers {
+                eprintln!(
+                    "   regs  want {:?}\n         got  {:?}",
+                    want.registers, got.registers
                 );
             }
             if want.visual_start != got.visual_start {

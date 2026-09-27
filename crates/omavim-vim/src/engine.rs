@@ -5,6 +5,8 @@
 //! is either incomplete (wait), invalid (beep), or complete (run it). Every
 //! edit goes through [`Vim::edit`], which records it for undo.
 
+use std::collections::HashMap;
+
 use crate::key::Key;
 use crate::motion::{self, Cur, Find};
 use crate::text::{
@@ -23,6 +25,50 @@ type R<T = ()> = Result<T, Beep>;
 pub struct Register {
     pub text: String,
     pub linewise: bool,
+}
+
+static EMPTY: Register = Register {
+    text: String::new(),
+    linewise: false,
+};
+
+/// A register name that can be given with `"`: the ones that can be read.
+fn readable(r: char) -> bool {
+    r.is_ascii_alphanumeric() || "\"-_.:%+*/".contains(r)
+}
+
+/// ... and the ones that can be written.
+fn writable(r: char) -> bool {
+    r.is_ascii_alphanumeric() || "\"-_+*".contains(r)
+}
+
+/// Joins text appended to a register (`"Ayy`): a line break between them
+/// if either is whole lines, and then it's whole lines.
+fn append(old: &Register, new: &Register) -> Register {
+    if old.linewise || new.linewise {
+        let body = |r: &Register| {
+            if r.linewise {
+                r.text.strip_suffix('\n').unwrap_or(&r.text).to_string()
+            } else {
+                r.text.clone()
+            }
+        };
+        let mut text = body(old);
+        if !old.text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&body(new));
+        text.push('\n');
+        Register {
+            text,
+            linewise: true,
+        }
+    } else {
+        Register {
+            text: format!("{}{}", old.text, new.text),
+            linewise: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,6 +164,8 @@ enum Action {
 struct Command {
     /// Count before the operator and before the motion, multiplied.
     count: Option<usize>,
+    /// The register given with `"`.
+    register: Option<char>,
     action: Action,
 }
 
@@ -162,6 +210,7 @@ struct Session {
 enum LastChange {
     Keys {
         count: Option<usize>,
+        register: Option<char>,
         keys: Vec<Key>,
     },
     /// A visual operator: the same extent from the cursor, then the operator.
@@ -169,6 +218,7 @@ enum LastChange {
         linewise: bool,
         lines: usize,
         last_col_or_chars: usize,
+        register: Option<char>,
         keys: Vec<Key>,
     },
 }
@@ -180,7 +230,18 @@ pub struct Vim {
     want: Option<usize>,
     anchor: Pos,
     pending: Vec<Key>,
-    register: Register,
+    registers: HashMap<char, Register>,
+    /// The register `""` is: the one last written (Vim's y_previous).
+    unnamed: Option<char>,
+    /// The register given with `"` for the command being run.
+    reg_name: Option<char>,
+    /// The command's motion puts even a small delete in `"1` (Vim's
+    /// use_reg_one: `%`, `(`, `)`, `{`, `}`, and later `/ ? n N` and marks).
+    reg_one: bool,
+    /// Text written to `"+` or `"*`, for the app to put on the clipboard.
+    clipboard: Option<(char, String)>,
+    /// A Ctrl-R in insert mode is waiting for the register's name.
+    ctrl_r: bool,
     last_find: Option<(Find, char)>,
     undo: Vec<Group>,
     redo: Vec<Group>,
@@ -190,6 +251,7 @@ pub struct Vim {
     /// Keys of the change being recorded, for `.`, and its count.
     recording: Option<Vec<Key>>,
     recording_count: Option<usize>,
+    recording_register: Option<char>,
     replaying: bool,
     /// Edits made so far (undo and redo included), so the app can tell
     /// when the text has changed.
@@ -216,7 +278,12 @@ impl Vim {
             want: None,
             anchor: 0,
             pending: Vec::new(),
-            register: Register::default(),
+            registers: HashMap::new(),
+            unnamed: None,
+            reg_name: None,
+            reg_one: false,
+            clipboard: None,
+            ctrl_r: false,
             last_find: None,
             undo: Vec::new(),
             redo: Vec::new(),
@@ -225,12 +292,26 @@ impl Vim {
             last_change: None,
             recording: None,
             recording_count: None,
+            recording_register: None,
             replaying: false,
             changes: 0,
             cmdline: String::new(),
             command: None,
             shiftwidth: 8,
             tabstop: 8,
+        }
+    }
+
+    /// A fresh engine for other text (a file opened): no undo history or
+    /// cursor, but the same registers and settings, as Vim keeps them.
+    pub fn for_other_text(&self) -> Self {
+        Self {
+            registers: self.registers.clone(),
+            unnamed: self.unnamed,
+            last_find: self.last_find,
+            shiftwidth: self.shiftwidth,
+            tabstop: self.tabstop,
+            ..Self::new()
         }
     }
 
@@ -272,8 +353,125 @@ impl Vim {
         self.changes
     }
 
+    /// The unnamed register, `""`: what `p` puts.
     pub fn register(&self) -> &Register {
-        &self.register
+        self.unnamed.map_or(&EMPTY, |r| self.get_register(r))
+    }
+
+    /// A register by name (`a`, `A` is the same, `0`, `-`, `+`, ...).
+    pub fn get_register(&self, name: char) -> &Register {
+        match name {
+            '"' => self.register(),
+            _ => self
+                .registers
+                .get(&name.to_ascii_lowercase())
+                .unwrap_or(&EMPTY),
+        }
+    }
+
+    /// What's on the desktop clipboard (`'+'`) or primary selection
+    /// (`'*'`): the app reads them, as the engine can't. Text ending in a
+    /// line break is whole lines.
+    pub fn set_clipboard(&mut self, register: char, text: &str) {
+        let reg = Register {
+            text: text.to_string(),
+            linewise: text.ends_with('\n'),
+        };
+        self.registers.insert(register, reg);
+    }
+
+    /// Text yanked or deleted into `"+` or `"*` since the last call, for the
+    /// app to put on the clipboard or primary selection.
+    pub fn take_clipboard(&mut self) -> Option<(char, String)> {
+        self.clipboard.take()
+    }
+
+    /// A register's name is being typed (after `"`, or Ctrl-R in insert
+    /// mode): the app refreshes `"+` and `"*` from the desktop then.
+    pub fn naming_register(&self) -> bool {
+        self.ctrl_r || self.pending.last() == Some(&Key::Char('"'))
+    }
+
+    /// The file's name, for `"%`.
+    pub fn set_file_name(&mut self, name: Option<&str>) {
+        match name {
+            Some(n) => {
+                self.registers.insert(
+                    '%',
+                    Register {
+                        text: n.to_string(),
+                        linewise: false,
+                    },
+                );
+            }
+            None => {
+                self.registers.remove(&'%');
+            }
+        }
+    }
+
+    /// Yanked (`delete`: deleted) text into the registers, as Vim does: the
+    /// named one if given; a yank into `"0`; a delete of lines (or with a
+    /// `%`-like motion) into `"1`, shifting `"1`–`"8` along; a smaller
+    /// delete into `"-`. `""` is then whichever was written.
+    fn store(&mut self, text: String, linewise: bool, delete: bool) {
+        let reg = Register { text, linewise };
+        let name = self.reg_name;
+        if name == Some('_') {
+            return;
+        }
+        if let Some(n) = name {
+            let lower = n.to_ascii_lowercase();
+            let value = if n.is_ascii_uppercase() {
+                append(self.get_register(lower), &reg)
+            } else {
+                reg.clone()
+            };
+            if lower == '+' || lower == '*' {
+                self.clipboard = Some((lower, value.text.clone()));
+            }
+            self.registers.insert(lower, value);
+            self.unnamed = Some(lower);
+            if !delete {
+                return;
+            }
+        }
+        if !delete {
+            self.registers.insert('0', reg);
+            self.unnamed = Some('0');
+            return;
+        }
+        let small = !linewise && !reg.text.contains('\n');
+        if !small || self.reg_one {
+            for n in (1..9).rev() {
+                let from = char::from_digit(n, 10).unwrap();
+                let to = char::from_digit(n + 1, 10).unwrap();
+                match self.registers.remove(&from) {
+                    Some(r) => self.registers.insert(to, r),
+                    None => self.registers.remove(&to),
+                };
+            }
+            self.registers.insert('1', reg.clone());
+            if !name.is_some_and(|n| n.is_ascii_uppercase()) {
+                self.unnamed = Some('1');
+            }
+        }
+        if small && name.is_none() {
+            self.registers.insert('-', reg);
+            self.unnamed = Some('-');
+        }
+    }
+
+    /// The register a put reads: the one given with `"`, or `""`.
+    fn read_register(&self) -> R<Register> {
+        let reg = match self.reg_name {
+            Some(n) => self.get_register(n),
+            None => self.register(),
+        };
+        if reg.text.is_empty() {
+            return Err(Beep);
+        }
+        Ok(reg.clone())
     }
 
     /// The keys of a command still being typed ("d2", "g"), for showing.
@@ -283,10 +481,12 @@ impl Vim {
 
     fn pending_operator(&self) -> bool {
         let mut i = 0;
-        while i < self.pending.len()
-            && matches!(self.pending[i], Key::Char(c) if c.is_ascii_digit())
-        {
-            i += 1;
+        loop {
+            match self.pending.get(i) {
+                Some(Key::Char(c)) if c.is_ascii_digit() => i += 1,
+                Some(Key::Char('"')) => i += 2,
+                _ => break,
+            }
         }
         matches!(
             self.pending.get(i),
@@ -300,7 +500,12 @@ impl Vim {
     /// Handle one key. On `Err(Beep)` the command failed and Vim would drop
     /// the keys typed after it.
     pub fn key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
+        // Ctrl-R and the register's name aren't recorded for `.`: the text
+        // it inserts is (see insert_key).
+        let inserting = matches!(self.mode, Mode::Insert | Mode::Replace);
+        let ctrl_r = inserting && (self.ctrl_r || key == Key::Ctrl('r'));
         if !self.replaying
+            && !ctrl_r
             && let Some(rec) = self.recording.as_mut()
         {
             rec.push(key);
@@ -357,6 +562,15 @@ impl Vim {
                 self.mode = Mode::Normal;
                 let line = std::mem::take(&mut self.cmdline);
                 let cmd = line.trim();
+                if !cmd.is_empty() {
+                    self.registers.insert(
+                        ':',
+                        Register {
+                            text: cmd.to_string(),
+                            linewise: false,
+                        },
+                    );
+                }
                 if let Ok(n) = cmd.parse::<usize>() {
                     // `:12` goes to line 12 (`:0` to the first).
                     let line = n.saturating_sub(1).min(last_line(t));
@@ -380,22 +594,50 @@ impl Vim {
     fn run(&mut self, t: &mut dyn TextModel, cmd: Command, keys: Vec<Key>) -> R {
         let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
         let changes = is_change(cmd.action, visual);
-        if changes && !self.replaying {
-            // Record for `.` without the leading count, which `.` can replace.
-            let body: Vec<Key> = keys
-                .iter()
-                .copied()
-                .skip_while(|k| matches!(k, Key::Char(c) if c.is_ascii_digit() && *c != '0'))
-                .collect();
-            self.recording = Some(if visual { keys.clone() } else { body });
-            self.recording_count = cmd.count;
+        let register = cmd.register.filter(|&r| r != '"');
+        let writes = match cmd.action {
+            Action::Operate(op, _) => !matches!(
+                op,
+                Op::ShiftRight | Op::ShiftLeft | Op::Lower | Op::Upper | Op::Toggle
+            ),
+            _ => false,
+        };
+        if writes && register.is_some_and(|r| !writable(r)) {
+            return Err(Beep);
         }
+        if changes && !self.replaying {
+            // Record for `.` without the count, which `.` can replace, and
+            // the register, which `.` can move on (`"1p...`).
+            let body = match take_prefix(&keys) {
+                Ok((_, _, rest)) => rest.to_vec(),
+                Err(_) => keys.clone(),
+            };
+            self.recording = Some(body);
+            self.recording_count = cmd.count;
+            self.recording_register = register;
+        }
+        self.reg_name = register;
+        self.reg_one = matches!(
+            cmd.action,
+            Action::Operate(
+                _,
+                Some(
+                    // Not `%`: Neovim's is matchit's, a visual selection.
+                    Motion::SentenceForward
+                        | Motion::SentenceBack
+                        | Motion::ParagraphForward
+                        | Motion::ParagraphBack
+                )
+            )
+        );
         let visual_extent = visual.then(|| self.visual_extent(t));
         let result = if visual {
             self.run_visual(t, cmd)
         } else {
             self.run_normal(t, cmd)
         };
+        self.reg_name = None;
+        self.reg_one = false;
         if result.is_ok() && changes && !self.replaying && self.session.is_none() {
             self.finish_change(cmd.count, visual_extent);
         }
@@ -412,10 +654,12 @@ impl Vim {
                     linewise,
                     lines,
                     last_col_or_chars: last,
+                    register: self.recording_register,
                     keys,
                 },
                 None => LastChange::Keys {
                     count: count.or(self.recording_count),
+                    register: self.recording_register,
                     keys,
                 },
             });
@@ -977,10 +1221,7 @@ impl Vim {
         };
         match op {
             Op::Yank => {
-                self.register = Register {
-                    text: yanked,
-                    linewise: true,
-                };
+                self.store(yanked, true, false);
                 let (line, _) = self.lc(t);
                 if first < line {
                     place(self, t, first);
@@ -988,10 +1229,7 @@ impl Vim {
                 Ok(())
             }
             Op::Delete => {
-                self.register = Register {
-                    text: yanked,
-                    linewise: true,
-                };
+                self.store(yanked, true, true);
                 self.begin_group();
                 if last == last_line(t) && first > 0 {
                     // The last lines go with the line break before them.
@@ -1012,10 +1250,7 @@ impl Vim {
                 Ok(())
             }
             Op::Change => {
-                self.register = Register {
-                    text: yanked,
-                    linewise: true,
-                };
+                self.store(yanked, true, true);
                 self.begin_group();
                 let ind = indent(t, first);
                 let from = t.line_to_char(first);
@@ -1049,10 +1284,7 @@ impl Vim {
         let yanked = t.slice(range.clone());
         match op {
             Op::Yank => {
-                self.register = Register {
-                    text: yanked,
-                    linewise: false,
-                };
+                self.store(yanked, false, false);
                 self.cursor = range.start;
                 self.clamp(t);
                 Ok(())
@@ -1061,10 +1293,7 @@ impl Vim {
                 if range.is_empty() {
                     return Ok(());
                 }
-                self.register = Register {
-                    text: yanked,
-                    linewise: false,
-                };
+                self.store(yanked, false, true);
                 self.begin_group();
                 self.edit(t, range.clone(), "");
                 self.cursor = range.start;
@@ -1074,10 +1303,7 @@ impl Vim {
             }
             Op::Change => {
                 if !range.is_empty() {
-                    self.register = Register {
-                        text: yanked,
-                        linewise: false,
-                    };
+                    self.store(yanked, false, true);
                 }
                 self.begin_group();
                 self.edit(t, range.clone(), "");
@@ -1198,10 +1424,7 @@ impl Vim {
     }
 
     fn put(&mut self, t: &mut dyn TextModel, before: bool, count: usize) -> R {
-        let reg = self.register.clone();
-        if reg.text.is_empty() {
-            return Err(Beep);
-        }
+        let reg = self.read_register()?;
         self.begin_group();
         let (line, col) = self.lc(t);
         if reg.linewise {
@@ -1231,6 +1454,7 @@ impl Vim {
             self.edit(t, at..at, &block);
             if block.contains('\n') {
                 self.cursor = at;
+                self.clamp(t);
             } else {
                 self.cursor = at + block.chars().count() - 1;
             }
@@ -1278,6 +1502,35 @@ impl Vim {
 
     fn insert_key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
         let replace = self.mode == Mode::Replace;
+        if std::mem::take(&mut self.ctrl_r) {
+            // Ctrl-R x: the register's text, as if typed (and recorded as
+            // typed, so `.` repeats the text, not the register).
+            let Key::Char(r) = key else {
+                return Ok(());
+            };
+            if !readable(r) {
+                return Ok(());
+            }
+            let text = self.get_register(r).text.clone();
+            for c in text.chars() {
+                let k = match c {
+                    '\n' => Key::Enter,
+                    '\t' => Key::Tab,
+                    c => Key::Char(c),
+                };
+                if !self.replaying
+                    && let Some(rec) = self.recording.as_mut()
+                {
+                    rec.push(k);
+                }
+                self.insert_key(t, k)?;
+            }
+            return Ok(());
+        }
+        if key == Key::Ctrl('r') {
+            self.ctrl_r = true;
+            return Ok(());
+        }
         if key != Key::Esc
             && let Some(s) = self.session.as_mut()
         {
@@ -1498,6 +1751,30 @@ impl Vim {
 
     fn leave_insert(&mut self, t: &mut dyn TextModel) {
         let session = self.session.take();
+        if let Some(s) = &session {
+            // `".`: what was typed, as Vim keeps it.
+            let text: String = s
+                .typed
+                .iter()
+                .flat_map(|k| match *k {
+                    Key::Char(c) => vec![c],
+                    Key::Enter => vec!['\n'],
+                    Key::Tab => vec!['\t'],
+                    Key::Backspace => vec!['\u{80}', 'k', 'b'],
+                    Key::Ctrl(c) => char::from_u32(c.to_ascii_uppercase() as u32 ^ 0x40)
+                        .into_iter()
+                        .collect(),
+                    _ => vec![],
+                })
+                .collect();
+            self.registers.insert(
+                '.',
+                Register {
+                    text,
+                    linewise: false,
+                },
+            );
+        }
         if let Some(s) = &session
             && s.count > 1
         {
@@ -1706,7 +1983,8 @@ impl Vim {
                 }
             }
             Action::Put(_) => {
-                let reg = self.register.clone();
+                // Even an empty register replaces the selection (with nothing).
+                let reg = self.read_register().unwrap_or_default();
                 exit(self);
                 self.begin_group();
                 let (start, end) = if linewise {
@@ -1726,10 +2004,13 @@ impl Vim {
                         .unwrap_or(reg.text.clone())
                 };
                 self.edit(t, start..end, &put.repeat(count));
-                self.register = Register {
-                    text: if linewise { format!("{old}\n") } else { old },
+                // The replaced text is deleted into the usual registers.
+                self.reg_name = None;
+                self.store(
+                    if linewise { format!("{old}\n") } else { old },
                     linewise,
-                };
+                    true,
+                );
                 if reg.linewise {
                     let (sl, _) = text::line_col(t, start);
                     let line = if linewise { sl } else { sl + 1 };
@@ -1874,17 +2155,35 @@ impl Vim {
     }
 
     fn repeat(&mut self, t: &mut dyn TextModel, count: Option<usize>) -> R {
+        // A numbered register moves on to the next (`"1p...` puts "1, "2, "3).
+        let next = |r: &mut Option<char>| {
+            if let Some(c @ '1'..='8') = *r {
+                *r = char::from_u32(c as u32 + 1);
+            }
+        };
+        match &mut self.last_change {
+            Some(LastChange::Keys { register, .. } | LastChange::Visual { register, .. }) => {
+                next(register)
+            }
+            None => {}
+        }
         let Some(last) = self.last_change.clone() else {
             return Ok(());
         };
         let replaying = std::mem::replace(&mut self.replaying, true);
         let result = (|| -> R {
             match &last {
-                LastChange::Keys { count: orig, keys } => {
+                LastChange::Keys {
+                    count: orig,
+                    register,
+                    keys,
+                } => {
                     let n = count.or(*orig);
-                    let mut all: Vec<Key> = n
-                        .map(|n| n.to_string().chars().map(Key::Char).collect())
-                        .unwrap_or_default();
+                    let mut all = register_keys(*register);
+                    all.extend(
+                        n.map(|n| n.to_string().chars().map(Key::Char).collect::<Vec<_>>())
+                            .unwrap_or_default(),
+                    );
                     all.extend(keys.iter().copied());
                     for k in all {
                         self.key(t, k)?;
@@ -1894,6 +2193,7 @@ impl Vim {
                     linewise,
                     lines,
                     last_col_or_chars,
+                    register,
                     keys,
                 } => {
                     let (line, col) = self.lc(t);
@@ -1921,11 +2221,8 @@ impl Vim {
                         Mode::Visual
                     };
                     // The operator is the keys' last command.
-                    let op: Vec<Key> = keys
-                        .iter()
-                        .copied()
-                        .skip_while(|k| !is_operator_key(*k))
-                        .collect();
+                    let mut op = register_keys(*register);
+                    op.extend(keys.iter().copied().skip_while(|k| !is_operator_key(*k)));
                     for k in op {
                         self.key(t, k)?;
                     }
@@ -1934,11 +2231,8 @@ impl Vim {
             Ok(())
         })();
         self.replaying = replaying;
-        if let (Some(n), LastChange::Keys { keys, .. }) = (count, &last) {
-            self.last_change = Some(LastChange::Keys {
-                count: Some(n),
-                keys: keys.clone(),
-            });
+        if let (Some(n), Some(LastChange::Keys { count: c, .. })) = (count, &mut self.last_change) {
+            *c = Some(n);
         }
         result
     }
@@ -1955,6 +2249,12 @@ impl Session {
             replaced: Vec::new(),
         }
     }
+}
+
+/// `"x` as keys, for replaying a command with its register.
+fn register_keys(r: Option<char>) -> Vec<Key> {
+    r.map(|r| vec![Key::Char('"'), Key::Char(r)])
+        .unwrap_or_default()
 }
 
 fn is_operator_key(k: Key) -> bool {
@@ -2106,12 +2406,42 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
     Ok(Some((m, 1)))
 }
 
+/// The counts and `"x` register names before a command: the count (all of
+/// them multiplied), the last register named, and the keys after.
+/// A command's count, register and the keys after them.
+type Prefix<'a> = (Option<usize>, Option<char>, &'a [Key]);
+
+fn take_prefix(keys: &[Key]) -> Result<Prefix<'_>, Parse> {
+    let (mut count, mut rest) = take_count(keys);
+    let mut register = None;
+    while rest.first() == Some(&Key::Char('"')) {
+        match rest.get(1) {
+            None => return Err(Parse::Incomplete),
+            Some(Key::Char(c)) if readable(*c) => register = Some(*c),
+            Some(_) => return Err(Parse::Invalid),
+        }
+        let (n, after) = take_count(&rest[2..]);
+        count = multiply(count, n);
+        rest = after;
+    }
+    Ok((count, register, rest))
+}
+
 fn parse(keys: &[Key], visual: bool) -> Parse {
-    let (count, rest) = take_count(keys);
+    let (count, register, rest) = match take_prefix(keys) {
+        Ok(p) => p,
+        Err(p) => return p,
+    };
     let Some(&first) = rest.first() else {
         return Parse::Incomplete;
     };
-    let done = |action| Parse::Done(Command { count, action });
+    let done = |action| {
+        Parse::Done(Command {
+            count,
+            register,
+            action,
+        })
+    };
     let op = |k: Key, second: Option<&Key>| -> Option<Option<Op>> {
         // Some(Some(op)): an operator; Some(None): needs another key.
         match k {
@@ -2201,6 +2531,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                 }
                 return Parse::Done(Command {
                     count,
+                    register,
                     action: Action::Operate(o, None),
                 });
             }
@@ -2208,6 +2539,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                 Ok(None) => Parse::Incomplete,
                 Ok(Some((m, _))) => Parse::Done(Command {
                     count,
+                    register,
                     action: Action::Operate(o, Some(m)),
                 }),
                 Err(()) => Parse::Invalid,
@@ -2270,6 +2602,66 @@ mod tests {
         for k in parse(keys) {
             let _ = vim.key(t, k);
         }
+    }
+
+    #[test]
+    fn clipboard_registers_go_out_and_come_in() {
+        let mut t = Rope::from_str("one two\nthree");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, "\"+yiw");
+        assert_eq!(vim.take_clipboard(), Some(('+', "one".into())));
+        assert_eq!(vim.take_clipboard(), None);
+        type_keys(&mut vim, &mut t, "\"*yy");
+        assert_eq!(vim.take_clipboard(), Some(('*', "one two\n".into())));
+        // Pasted from outside: a trailing line break makes it whole lines.
+        vim.set_clipboard('+', "pasted\n");
+        type_keys(&mut vim, &mut t, "\"+p");
+        assert_eq!(t.to_string(), "one two\npasted\nthree");
+        assert!(!vim.naming_register());
+        type_keys(&mut vim, &mut t, "\"");
+        assert!(vim.naming_register());
+    }
+
+    #[test]
+    fn read_only_registers_hold_the_insert_the_command_and_the_file() {
+        let mut t = Rope::from_str("x");
+        let mut vim = Vim::new();
+        vim.set_file_name(Some("notes.md"));
+        type_keys(&mut vim, &mut t, "ione<CR>two<Esc>:3<CR>");
+        assert_eq!(vim.get_register('.').text, "one\ntwo");
+        assert_eq!(vim.get_register(':').text, "3");
+        assert_eq!(vim.get_register('%').text, "notes.md");
+        // They can be put, but not written.
+        assert_eq!(vim.key(&mut t, Key::Char('"')), Ok(()));
+        assert_eq!(vim.key(&mut t, Key::Char('%')), Ok(()));
+        assert_eq!(vim.key(&mut t, Key::Char('y')), Ok(()));
+        assert_eq!(vim.key(&mut t, Key::Char('y')), Err(Beep));
+        type_keys(&mut vim, &mut t, "gg\"%P");
+        assert_eq!(text::line_col(&t, 0), (0, 0));
+        assert!(t.to_string().starts_with("notes.md"));
+    }
+
+    #[test]
+    fn registers_outlive_the_text() {
+        let mut t = Rope::from_str("keep me\nand this");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, "\"ayyjdd");
+        let mut other = Rope::from_str("new file");
+        let mut vim = vim.for_other_text();
+        assert_eq!(vim.cursor(), 0);
+        type_keys(&mut vim, &mut other, "\"ap\"1p");
+        assert_eq!(other.to_string(), "new file\nkeep me\nand this");
+    }
+
+    #[test]
+    fn ctrl_r_inserts_a_register_and_dot_repeats_the_text() {
+        let mut t = Rope::from_str("word\n");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, "yiwA <C-r>0!<Esc>");
+        assert_eq!(t.to_string(), "word word!\n");
+        // `.` types the same text again, even though "0 has changed.
+        type_keys(&mut vim, &mut t, "jyyk.");
+        assert_eq!(t.to_string(), "word word! word!\n");
     }
 
     #[test]

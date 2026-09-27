@@ -1,10 +1,20 @@
 #!/bin/sh
 # Regenerate the Vim fixtures: the cases, then what Neovim does with them.
+# Neovim runs in parallel on slices of the cases: after an error message it
+# pauses a second for it to be read, which adds up over thousands of cases.
 set -e
 cd "$(dirname "$0")/../.."
 python3 tools/fixtures/cases.py
-# Neovim's own messages ("-- INSERT --", "3 fewer lines") are noise here.
-nvim --headless --clean -l tools/fixtures/nvim.lua \
-  crates/omavim-vim/tests/fixtures/cases.json crates/omavim-vim/tests/fixtures/expected.json 2>&1 \
-  | tr '\r' '\n' | grep -E "cases run|failed|could not" || true
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+jobs=$(nproc)
+python3 tools/fixtures/split.py split crates/omavim-vim/tests/fixtures/cases.json "$work" "$jobs"
+for part in "$work"/cases-*.json; do
+  out="${part%.json}.out.json"
+  # Neovim's own messages ("-- INSERT --", "3 fewer lines") are noise here.
+  nvim --headless --clean -l tools/fixtures/nvim.lua "$part" "$out" 2>&1 \
+    | tr '\r' '\n' | grep -E "failed|could not" || true &
+done
+wait
+python3 tools/fixtures/split.py join "$work" crates/omavim-vim/tests/fixtures/expected.json
 echo "Neovim ($(nvim --version | head -1)) → crates/omavim-vim/tests/fixtures/expected.json"
