@@ -8,6 +8,7 @@ mod engine;
 pub mod key;
 mod motion;
 pub mod text;
+mod textobj;
 
 pub use engine::{Beep, Register, Vim};
 pub use key::Key;

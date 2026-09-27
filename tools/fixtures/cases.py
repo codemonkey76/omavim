@@ -27,6 +27,16 @@ TEXTS = {
     ),
     "edge": "a\n\nb c\n  \nend.",
     "unicode": "café crème brûlée\nnaïve résumé — déjà vu\n日本語 text",
+    "markup": (
+        "<div class=\"a\">\n"
+        "  <p>Hello <b>big</b> world. Second sentence!  Third one?</p>\n"
+        "  <span>it's 'single' and `tick` and \"dq \\\" esc\"</span>\n"
+        "</div>\n"
+        "\n"
+        "End (nested (parens) here) [x]. Next (\n"
+        "  multi\n"
+        ") done."
+    ),
 }
 
 CURSORS = {
@@ -34,6 +44,8 @@ CURSORS = {
     "code": [(0, 0), (1, 12), (1, 16), (2, 4), (3, 0), (6, 9)],
     "edge": [(0, 0), (1, 0), (2, 2), (3, 1), (4, 3)],
     "unicode": [(0, 3), (1, 6), (1, 13), (2, 1)],
+    "markup": [(0, 2), (0, 12), (1, 8), (1, 14), (1, 30), (1, 45), (2, 10), (2, 22),
+               (2, 36), (2, 44), (3, 0), (4, 0), (5, 9), (5, 16), (5, 30), (6, 3)],
 }
 
 MOTIONS = ["h", "j", "k", "l", "0", "^", "$", "g_", "5|", "gg", "G", "2G", "+", "-", "_",
@@ -67,6 +79,13 @@ VISUAL = [
 ]
 
 
+OBJECTS = ["iw", "aw", "iW", "aW", "is", "as", "ip", "ap", "i(", "a)", "ib", "i{", "aB", "i[", "a]",
+           "i<", "a>", 'i"', 'a"', "i'", "a'", "i`", "a`", "it", "at", "2iw", "3aw", "2i(", "2a(",
+           "2it", "2is", "2ap"]
+
+SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
+
+
 def cases():
     out = []
     keys = (
@@ -75,7 +94,12 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL
+        + SIMPLE + INSERT + VISUAL + SENTENCES
+        + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
+        + [f"c{o}X<Esc>" for o in OBJECTS]
+        + [f"v{o}" for o in OBJECTS]
+        + ["diw.", "daw..", "ci(X<Esc>j.", "vawd", "vipd", "vi(y", "viwiw", "vawaw", "vi(i(", "va(a(",
+           "vjiw", "vipip", "vitit", "vlaw"]
     )
     for name, text in TEXTS.items():
         for (line, col), k in itertools.product(CURSORS[name], keys):

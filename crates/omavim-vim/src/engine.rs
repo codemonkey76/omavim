@@ -10,6 +10,7 @@ use crate::motion::{self, Cur, Find};
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };
+use crate::textobj::{self, Found, Vis};
 use crate::{Mode, Pos, TextModel};
 
 /// A command couldn't be done. Vim beeps and drops the keys typed after it.
@@ -49,6 +50,20 @@ enum Motion {
     ParagraphForward,
     ParagraphBack,
     Match,
+    SentenceForward,
+    SentenceBack,
+    /// A text object: what, and `a` (true) or `i`.
+    Object(Obj, bool),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Obj {
+    Word(bool),
+    Sentence,
+    Paragraph,
+    Block(char, char),
+    Quote(char),
+    Tag,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -526,7 +541,13 @@ impl Vim {
                 (Cur::new(c.line, c.col.saturating_sub(n)), Kind::Exclusive)
             }
             Motion::Right => {
-                let max = if op { len } else { len.saturating_sub(1) };
+                // Visual mode can go onto the end of the line (Vim's past_line).
+                let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+                let max = if op || visual {
+                    len
+                } else {
+                    len.saturating_sub(1)
+                };
                 if c.col >= max {
                     if op {
                         // `cl` on an empty line changes nothing and inserts.
@@ -706,6 +727,13 @@ impl Vim {
                     },
                 )
             }
+            Motion::SentenceForward | Motion::SentenceBack => {
+                let to =
+                    textobj::find_sentence(t, c, n, m == Motion::SentenceForward).ok_or(Beep)?;
+                self.want = None;
+                (to, Kind::Exclusive)
+            }
+            Motion::Object(..) => return Err(Beep),
             Motion::Match => {
                 // No bracket on the line: Neovim stays put, no error.
                 let to = motion::match_pair(t, c).unwrap_or(c);
@@ -727,6 +755,9 @@ impl Vim {
     ) -> R {
         let start_cur = self.cur(t);
         let n = count.unwrap_or(1);
+        if let Motion::Object(obj, around) = m {
+            return self.operate_object(t, op, obj, around, n);
+        }
         let (mut to, mut kind) = match m {
             // `cw`/`cW` on a word changes to its end (Vim's `cw` = `ce` rule).
             Motion::Word(big)
@@ -807,6 +838,104 @@ impl Vim {
         start = start.min(t.len_chars());
         end = end.min(t.len_chars());
         self.apply_chars(t, op, start..end)
+    }
+
+    /// The text object `obj` at the cursor (`around`: `a`, else `i`), or
+    /// from the visual selection `vis`.
+    fn object(
+        &self,
+        t: &dyn TextModel,
+        obj: Obj,
+        around: bool,
+        n: usize,
+        vis: Option<Vis>,
+    ) -> Found {
+        let c = self.cur(t);
+        match obj {
+            Obj::Word(big) => textobj::word(t, c, vis, n, around, big),
+            Obj::Sentence => textobj::sentence(t, c, vis, n, around),
+            Obj::Paragraph => textobj::paragraph(t, c, vis, n, around),
+            Obj::Block(open, close) => textobj::block(t, c, vis, n, around, open, close),
+            Obj::Quote(q) => textobj::quote(t, c, n, around, q).ok_or(c.into()),
+            Obj::Tag => textobj::tag(t, c, vis, n, around),
+        }
+    }
+
+    fn operate_object(
+        &mut self,
+        t: &mut dyn TextModel,
+        op: Op,
+        obj: Obj,
+        around: bool,
+        n: usize,
+    ) -> R {
+        let o = match self.object(t, obj, around, n, None) {
+            Ok(o) => o,
+            Err(stop) => {
+                self.cursor = Self::at(t, stop.cursor);
+                self.clamp(t);
+                return Err(Beep);
+            }
+        };
+        let (line, col) = self.lc(t);
+        let keep = self
+            .want
+            .filter(|&w| w != usize::MAX)
+            .unwrap_or_else(|| text::vcol(t, line, col, self.tabstop));
+        self.want = None;
+        let (start, mut end) = (o.start, o.end);
+        let mut inclusive = o.inclusive;
+        let mut linewise = o.linewise;
+        let in_indent = start.col <= first_non_blank(t, start.line);
+        // Vim's `:help exclusive` rule, as for motions.
+        let mut adjusted = false;
+        if !linewise && !inclusive && end.col == 0 && end.line > start.line {
+            adjusted = true;
+            end.line -= 1;
+            if in_indent {
+                linewise = true;
+            } else {
+                let len = line_len(t, end.line);
+                end.col = len.saturating_sub(1);
+                inclusive = len > 0;
+            }
+        }
+        // `d` over whole lines, with only blanks around, is linewise.
+        if op == Op::Delete && !linewise && end.line > start.line && in_indent {
+            let after = end.col + usize::from(inclusive);
+            if line_text(t, end.line).chars().skip(after).all(is_blank) {
+                linewise = true;
+            }
+        }
+        if linewise {
+            if op == Op::Delete {
+                self.apply_lines(t, op, start.line, end.line, keep)?;
+                if adjusted {
+                    let (line, _) = self.lc(t);
+                    self.cursor = text::pos(t, line, first_non_blank(t, line));
+                    self.clamp(t);
+                }
+                return Ok(());
+            }
+            // The cursor goes to the object's start.
+            self.cursor = Self::at(t, start);
+            let v = text::vcol(t, start.line, start.col, self.tabstop);
+            return self.apply_lines(t, op, start.line, end.line, v);
+        }
+        let from = Self::at(t, start);
+        let mut to = Self::at(t, end);
+        // Inclusive at a line's end takes nothing, unless it joins lines.
+        if inclusive && (end.col < line_len(t, end.line) || end.line > start.line) {
+            to += 1;
+        }
+        let to = to.max(from).min(t.len_chars());
+        if to == from && op != Op::Change {
+            // Nothing inside (as `di(` on `()`): just go there.
+            self.cursor = from;
+            self.clamp(t);
+            return Ok(());
+        }
+        self.apply_chars(t, op, from..to)
     }
 
     fn operate_lines(&mut self, t: &mut dyn TextModel, op: Op, count: usize) -> R {
@@ -1463,6 +1592,39 @@ impl Vim {
         exit: fn(&mut Self),
     ) -> R {
         match cmd.action {
+            Action::Move(Motion::Object(obj, around)) => {
+                let vis = Vis {
+                    anchor: {
+                        let (l, c) = text::line_col(t, self.anchor);
+                        Cur::new(l, c)
+                    },
+                    linewise,
+                };
+                self.want = None;
+                let o = match self.object(t, obj, around, count, Some(vis)) {
+                    Ok(o) => o,
+                    Err(stop) => {
+                        self.cursor = Self::at(t, stop.cursor);
+                        if let Some(a) = stop.anchor {
+                            self.anchor = Self::at(t, a);
+                        }
+                        return Err(Beep);
+                    }
+                };
+                self.anchor = Self::at(t, o.start);
+                let end = Self::at(t, o.end);
+                self.cursor = match obj {
+                    // Quotes give the operator's range, not a selection.
+                    Obj::Quote(_) if !o.inclusive => end.saturating_sub(1),
+                    _ => end,
+                };
+                self.mode = if o.linewise {
+                    Mode::VisualLine
+                } else {
+                    Mode::Visual
+                };
+                Ok(())
+            }
             Action::Move(m) => {
                 // In visual mode the cursor can rest on a line's end (after
                 // j/k from a longer line), selecting its line break.
@@ -1893,6 +2055,28 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
         Key::Char('}') => Motion::ParagraphForward,
         Key::Char('{') => Motion::ParagraphBack,
         Key::Char('%') => Motion::Match,
+        Key::Char(')') => Motion::SentenceForward,
+        Key::Char('(') => Motion::SentenceBack,
+        Key::Char(c @ ('i' | 'a')) => {
+            let obj = match keys.get(1) {
+                None => return Ok(None),
+                Some(Key::Char(o)) => match o {
+                    'w' => Obj::Word(false),
+                    'W' => Obj::Word(true),
+                    's' => Obj::Sentence,
+                    'p' => Obj::Paragraph,
+                    '(' | ')' | 'b' => Obj::Block('(', ')'),
+                    '{' | '}' | 'B' => Obj::Block('{', '}'),
+                    '[' | ']' => Obj::Block('[', ']'),
+                    '<' | '>' => Obj::Block('<', '>'),
+                    '"' | '\'' | '`' => Obj::Quote(*o),
+                    't' => Obj::Tag,
+                    _ => return Err(()),
+                },
+                Some(_) => return Err(()),
+            };
+            return Ok(Some((Motion::Object(obj, c == 'a'), 2)));
+        }
         Key::Char(c @ ('f' | 'F' | 't' | 'T')) => {
             let kind = match c {
                 'f' => Find::Forward,
