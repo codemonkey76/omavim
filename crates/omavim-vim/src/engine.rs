@@ -179,6 +179,10 @@ pub struct Vim {
     /// Edits made so far (undo and redo included), so the app can tell
     /// when the text has changed.
     changes: u64,
+    /// The `:` command line being typed.
+    cmdline: String,
+    /// A finished `:` command for the app to run (`w`, `q`, ...).
+    command: Option<String>,
     pub shiftwidth: usize,
     pub tabstop: usize,
 }
@@ -208,6 +212,8 @@ impl Vim {
             recording_count: None,
             replaying: false,
             changes: 0,
+            cmdline: String::new(),
+            command: None,
             shiftwidth: 8,
             tabstop: 8,
         }
@@ -233,6 +239,17 @@ impl Vim {
     /// Where a visual selection started, while one is active.
     pub fn visual_start(&self) -> Option<Pos> {
         matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some(self.anchor)
+    }
+
+    /// The `:` command line while it's being typed.
+    pub fn command_line(&self) -> Option<&str> {
+        (self.mode == Mode::CommandLine).then_some(self.cmdline.as_str())
+    }
+
+    /// A `:` command finished with Enter, for the app to run: `w`, `wq`,
+    /// `q!`, ... The engine runs what it can itself (`:12`).
+    pub fn take_command(&mut self) -> Option<String> {
+        self.command.take()
     }
 
     /// Changes so far: compare before and after a key to see if it edited.
@@ -275,6 +292,12 @@ impl Vim {
         }
         let result = match self.mode {
             Mode::Insert | Mode::Replace => self.insert_key(t, key),
+            Mode::CommandLine => self.cmdline_key(t, key),
+            Mode::Normal if self.pending.is_empty() && key == Key::Char(':') => {
+                self.cmdline.clear();
+                self.mode = Mode::CommandLine;
+                Ok(())
+            }
             _ => self.command_key(t, key),
         };
         if result.is_err() {
@@ -300,6 +323,41 @@ impl Vim {
                 self.run(t, cmd, keys)
             }
         }
+    }
+
+    /// A key on the `:` command line.
+    fn cmdline_key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
+        match key {
+            Key::Esc | Key::Ctrl('c') => self.mode = Mode::Normal,
+            Key::Backspace | Key::Ctrl('h') => {
+                // Backspace on an empty command line leaves it, as in Vim.
+                if self.cmdline.pop().is_none() {
+                    self.mode = Mode::Normal;
+                }
+            }
+            Key::Ctrl('u') => self.cmdline.clear(),
+            Key::Char(c) => self.cmdline.push(c),
+            Key::Tab => self.cmdline.push('\t'),
+            Key::Enter => {
+                self.mode = Mode::Normal;
+                let line = std::mem::take(&mut self.cmdline);
+                let cmd = line.trim();
+                if let Ok(n) = cmd.parse::<usize>() {
+                    // `:12` goes to line 12 (`:0` to the first).
+                    let line = n.saturating_sub(1).min(last_line(t));
+                    self.cursor = text::pos(
+                        t,
+                        line,
+                        first_non_blank(t, line).min(line_len(t, line).saturating_sub(1)),
+                    );
+                    self.want = None;
+                } else if !cmd.is_empty() {
+                    self.command = Some(cmd.to_string());
+                }
+            }
+            _ => {}
+        }
+        Ok(())
     }
 
     // ── Running commands ─────────────────────────────────────────────────
@@ -2015,5 +2073,50 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Ok(None) => Parse::Incomplete,
         Ok(Some((m, _))) => done(Action::Move(m)),
         Err(()) => Parse::Invalid,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::key::parse;
+    use ropey::Rope;
+
+    fn type_keys(vim: &mut Vim, t: &mut Rope, keys: &str) {
+        for k in parse(keys) {
+            let _ = vim.key(t, k);
+        }
+    }
+
+    #[test]
+    fn a_colon_command_is_typed_then_handed_over() {
+        let mut t = Rope::from_str("one\ntwo\nthree");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":wqx<BS>");
+        assert_eq!(vim.mode(), Mode::CommandLine);
+        assert_eq!(vim.command_line(), Some("wq"));
+        type_keys(&mut vim, &mut t, "<CR>");
+        assert_eq!(vim.mode(), Mode::Normal);
+        assert_eq!(vim.take_command().as_deref(), Some("wq"));
+        assert_eq!(vim.take_command(), None);
+    }
+
+    #[test]
+    fn a_line_number_is_run_by_the_engine() {
+        let mut t = Rope::from_str("one\n  two\nthree");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":2<CR>");
+        assert_eq!(text::line_col(&t, vim.cursor()), (1, 2));
+        assert_eq!(vim.take_command(), None);
+    }
+
+    #[test]
+    fn escape_or_backspacing_past_the_colon_cancels() {
+        let mut t = Rope::from_str("x");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":q<Esc>");
+        assert_eq!((vim.mode(), vim.take_command()), (Mode::Normal, None));
+        type_keys(&mut vim, &mut t, ":<BS>");
+        assert_eq!(vim.mode(), Mode::Normal);
     }
 }

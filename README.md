@@ -9,8 +9,9 @@ desktop's dark/light setting, soft-wrapped lines, open/save through the
 desktop's file picker, and Vim's core: normal, insert, replace and visual
 (`v`, `V`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
 f F t T ; , { } %`), operators (`d c y > < gu gU g~` and their doubled forms,
-`D C Y x X s S r J gJ ~ p P`), undo/redo and `.`. Text objects, registers,
-search, marks, macros and `:` commands are next.
+`D C Y x X s S r J gJ ~ p P`), undo/redo, `.`, and the basic `:` commands
+(`:w [file]`, `:q`, `:q!`, `:wq`, `:x`, `:N`). Text objects, registers, search,
+marks, macros and the rest of `:` are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 runs thousands of generated cases through headless Neovim, and the engine must

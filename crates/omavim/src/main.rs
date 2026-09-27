@@ -38,6 +38,8 @@ struct App {
     scheme: Scheme,
     /// A short message in the footer: an error, or what just happened.
     status: Option<String>,
+    /// `:wq` / `:x` waiting for its save to finish before quitting.
+    quit_after_save: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -71,6 +73,7 @@ impl App {
             vim: Vim::new(),
             scheme: Scheme::default(),
             status,
+            quit_after_save: false,
         }
     }
 
@@ -99,12 +102,16 @@ impl App {
                 self.vim = Vim::new();
                 self.status = None;
             }
-            Message::Opened(Ok(None)) | Message::SaveTo(Ok(None)) => {}
+            Message::Opened(Ok(None)) => {}
+            Message::SaveTo(Ok(None)) => self.quit_after_save = false,
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
             Message::Saved(Ok(path)) => {
                 self.status = Some(format!("Saved {}", path.display()));
                 self.doc.path = Some(path);
                 self.doc.dirty = false;
+                if self.quit_after_save {
+                    return iced::exit();
+                }
             }
             Message::Opened(Err(e)) | Message::SaveTo(Err(e)) | Message::Saved(Err(e)) => {
                 self.status = Some(e)
@@ -137,7 +144,59 @@ impl App {
             self.doc.dirty = true;
             self.status = None;
         }
-        Task::none()
+        match self.vim.take_command() {
+            Some(cmd) => self.command(&cmd),
+            None => Task::none(),
+        }
+    }
+
+    /// A `:` command the engine handed over: the file and window ones.
+    fn command(&mut self, cmd: &str) -> Task<Message> {
+        let (name, arg) = match cmd.split_once(char::is_whitespace) {
+            Some((n, a)) => (n, Some(a.trim()).filter(|a| !a.is_empty())),
+            None => (cmd, None),
+        };
+        match name {
+            "w" | "w!" | "write" => match arg {
+                Some(file) => self.write(self.resolve(file)),
+                None => self.save(),
+            },
+            "q" | "quit" | "clo" | "close" if self.doc.dirty => {
+                self.status = Some("E37: No write since last change (add ! to override)".into());
+                Task::none()
+            }
+            "q" | "quit" | "q!" | "quit!" | "qa" | "qa!" | "clo" | "close" => iced::exit(),
+            "x" | "xit" | "exi" | "exit" if !self.doc.dirty => iced::exit(),
+            "wq" | "x" | "xit" | "exi" | "exit" => {
+                self.quit_after_save = true;
+                match arg {
+                    Some(file) => self.write(self.resolve(file)),
+                    None => self.save(),
+                }
+            }
+            _ => {
+                self.status = Some(format!("E492: Not an editor command: {cmd}"));
+                Task::none()
+            }
+        }
+    }
+
+    /// A file name typed after `:w`: `~/` is home, a relative name sits
+    /// beside the current file (or in the folder Omavim started in).
+    fn resolve(&self, file: &str) -> PathBuf {
+        if let Some(rest) = file.strip_prefix("~/")
+            && let Some(home) = std::env::var_os("HOME")
+        {
+            return PathBuf::from(home).join(rest);
+        }
+        let path = PathBuf::from(file);
+        if path.is_absolute() {
+            return path;
+        }
+        match self.doc.path.as_ref().and_then(|p| p.parent()) {
+            Some(dir) => dir.join(path),
+            None => path,
+        }
     }
 
     fn save(&mut self) -> Task<Message> {
@@ -191,6 +250,11 @@ impl App {
             self.vim.cursor().min(self.doc.text.len_chars()),
         );
         let pending: String = self.vim.pending().iter().map(key_label).collect();
+        // While a `:` command is typed, it takes the status's place.
+        let status = match self.vim.command_line() {
+            Some(line) => format!(":{line}█"),
+            None => self.status.clone().unwrap_or_default(),
+        };
         let footer = row![
             text(mode_label(mode))
                 .size(13)
@@ -207,9 +271,7 @@ impl App {
             .size(13)
             .color(dim),
             space::horizontal(),
-            text(self.status.clone().unwrap_or_default())
-                .size(13)
-                .color(dim),
+            text(status).size(13).color(dim),
             space::horizontal(),
             text(pending).size(13).color(dim),
             text(format!("   {}:{}", line + 1, col + 1))
@@ -340,6 +402,33 @@ mod tests {
             modifiers,
             text: text.map(str::to_string),
         }
+    }
+
+    fn app(doc: Document) -> App {
+        App {
+            doc,
+            vim: Vim::new(),
+            scheme: Scheme::default(),
+            status: None,
+            quit_after_save: false,
+        }
+    }
+
+    #[test]
+    fn quitting_with_unsaved_changes_is_refused() {
+        let mut a = app(Document::open("/tmp/notes.md".into(), "x\n"));
+        a.doc.dirty = true;
+        let _ = a.command("q");
+        assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E37")));
+        let _ = a.command("nonsense");
+        assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E492")));
+    }
+
+    #[test]
+    fn a_written_name_sits_beside_the_current_file() {
+        let a = app(Document::open("/home/me/notes/a.md".into(), ""));
+        assert_eq!(a.resolve("b.md"), PathBuf::from("/home/me/notes/b.md"));
+        assert_eq!(a.resolve("/tmp/c.md"), PathBuf::from("/tmp/c.md"));
     }
 
     #[test]
