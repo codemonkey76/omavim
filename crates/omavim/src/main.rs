@@ -33,6 +33,8 @@ fn main() -> iced::Result {
         .font(include_bytes!("../../../fonts/iAWriterMonoS-BoldItalic.ttf").as_slice())
         .default_font(FONT)
         .window_size((900.0, 1000.0))
+        // (Closing asks first, if there are unsaved changes.)
+        .exit_on_close_request(false)
         .run()
 }
 
@@ -44,8 +46,10 @@ struct App {
     colors: Colors,
     /// A short message in the footer: an error, or what just happened.
     status: Option<String>,
-    /// `:wq` / `:x` waiting for its save to finish before quitting.
-    quit_after_save: bool,
+    /// What to do once a save finishes (`:wq` quits after it, say).
+    after_save: Option<Then>,
+    /// Asking whether to save unsaved changes before doing this.
+    confirm: Option<Then>,
     /// A parse is running on another thread.
     parsing: bool,
     config: Config,
@@ -88,6 +92,18 @@ enum Message {
     CheckTheme,
     /// The syntax tree, parsed again off the main thread.
     Parsed(Handoff<omavim_syntax::Parsed>),
+    /// The window's close button (or the desktop's close key).
+    CloseRequested,
+}
+
+/// What to do after dealing with unsaved changes.
+#[derive(Debug, Clone, PartialEq)]
+enum Then {
+    Quit,
+    /// The open picker.
+    Open,
+    /// `:confirm e [file]`.
+    Edit(Option<String>),
 }
 
 /// Something made on another thread, handed over in a message (which has
@@ -145,7 +161,8 @@ impl App {
             scheme: Scheme::default(),
             colors: Colors::current(Scheme::default()),
             status,
-            quit_after_save: false,
+            after_save: None,
+            confirm: None,
             parsing: false,
             config,
             leader_pending: false,
@@ -180,6 +197,9 @@ impl App {
             iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::CheckTheme),
             iced::event::listen_with(|event, _, _| match event {
                 iced::Event::Window(iced::window::Event::Focused) => Some(Message::Focused),
+                iced::Event::Window(iced::window::Event::CloseRequested) => {
+                    Some(Message::CloseRequested)
+                }
                 _ => None,
             }),
         ])
@@ -222,7 +242,7 @@ impl App {
             Message::Resized(cells, rows) => self.vim.set_screen(&self.doc.text, cells, rows),
             Message::Scroll(rows) => self.vim.scroll_view(&self.doc.text, rows),
             Message::Opened(Ok(None)) => {}
-            Message::SaveTo(Ok(None)) => self.quit_after_save = false,
+            Message::SaveTo(Ok(None)) => self.after_save = None,
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
             Message::Saved(Ok(path)) => {
                 self.status = Some(format!("Saved {}", path.display()));
@@ -232,13 +252,15 @@ impl App {
                 self.doc.detect_language();
                 self.vim.set_filetype(self.doc.filetype());
                 self.doc.dirty = false;
-                if self.quit_after_save {
-                    return iced::exit();
+                if let Some(then) = self.after_save.take() {
+                    return self.go(then);
                 }
             }
             Message::Opened(Err(e)) | Message::SaveTo(Err(e)) | Message::Saved(Err(e)) => {
+                self.after_save = None;
                 self.status = Some(e)
             }
+            Message::CloseRequested => return self.leave(Then::Quit),
         }
         Task::none()
     }
@@ -255,6 +277,9 @@ impl App {
             return self.save();
         }
         let keys = vim_keys(&press);
+        if self.confirm.is_some() {
+            return self.confirm_key(&keys);
+        }
         if self.help {
             return self.help_key(&keys);
         }
@@ -334,7 +359,7 @@ impl App {
                 self.help = true;
                 Task::none()
             }
-            Action::Close => self.command("q"),
+            Action::Close => self.leave(Then::Quit),
         }
     }
 
@@ -470,7 +495,7 @@ impl App {
         for cmd in line.split('|').map(str::trim).filter(|c| !c.is_empty()) {
             // A quit after a write waits for the write to finish.
             if saving && matches!(cmd, "q" | "quit" | "q!" | "quit!" | "qa" | "qa!") {
-                self.quit_after_save = true;
+                self.after_save = Some(Then::Quit);
                 continue;
             }
             saving |= matches!(cmd.split_whitespace().next(), Some("w" | "w!" | "write"));
@@ -505,6 +530,20 @@ impl App {
                 self.help = true;
                 Task::none()
             }
+            // `:confirm q`, `:confirm e [file]`: ask about unsaved changes
+            // rather than refusing.
+            "conf" | "confirm" => {
+                let rest = arg.unwrap_or("");
+                let (what, file) = match rest.split_once(char::is_whitespace) {
+                    Some((w, f)) => (w, Some(f.trim().to_string())),
+                    None => (rest, None),
+                };
+                match what {
+                    "q" | "quit" | "qa" | "qall" | "clo" | "close" => self.leave(Then::Quit),
+                    "e" | "edit" => self.leave(Then::Edit(file)),
+                    _ => self.command_one(rest),
+                }
+            }
             "q" | "quit" | "clo" | "close" if self.doc.dirty => {
                 self.status = Some("E37: No write since last change (add ! to override)".into());
                 Task::none()
@@ -512,7 +551,7 @@ impl App {
             "q" | "quit" | "q!" | "quit!" | "qa" | "qa!" | "clo" | "close" => iced::exit(),
             "x" | "xit" | "exi" | "exit" if !self.doc.dirty => iced::exit(),
             "wq" | "x" | "xit" | "exi" | "exit" => {
-                self.quit_after_save = true;
+                self.after_save = Some(Then::Quit);
                 match arg {
                     Some(file) => self.write(self.resolve(file)),
                     None => self.save(),
@@ -604,12 +643,52 @@ impl App {
     }
 
     fn open(&mut self) -> Task<Message> {
+        self.leave(Then::Open)
+    }
+
+    /// Leave this document (to quit, or open another): at once, or after
+    /// asking about unsaved changes.
+    fn leave(&mut self, then: Then) -> Task<Message> {
         if self.doc.dirty {
-            // The proper unsaved-changes prompt comes in a later milestone.
-            self.status = Some("Unsaved changes: save first (Ctrl+S)".into());
+            self.confirm = Some(then);
             return Task::none();
         }
-        Task::perform(portal::open(), Message::Opened)
+        self.go(then)
+    }
+
+    fn go(&mut self, then: Then) -> Task<Message> {
+        match then {
+            Then::Quit => iced::exit(),
+            Then::Open => Task::perform(portal::open(), Message::Opened),
+            Then::Edit(file) => {
+                self.edit(file.as_deref(), true);
+                Task::none()
+            }
+        }
+    }
+
+    /// The answer to "Save changes?": yes, no, or cancel (Enter is yes, as
+    /// in Vim).
+    fn confirm_key(&mut self, keys: &[Key]) -> Task<Message> {
+        let Some(then) = self.confirm.clone() else {
+            return Task::none();
+        };
+        match keys {
+            [Key::Char('y' | 'Y') | Key::Enter] => {
+                self.confirm = None;
+                self.after_save = Some(then);
+                self.save()
+            }
+            [Key::Char('n' | 'N')] => {
+                self.confirm = None;
+                self.go(then)
+            }
+            [Key::Char('c' | 'C') | Key::Esc | Key::Ctrl('c')] => {
+                self.confirm = None;
+                Task::none()
+            }
+            _ => Task::none(),
+        }
     }
 
     fn view(&self) -> Element<'_, Message> {
@@ -648,7 +727,14 @@ impl App {
                     format!("{before}▏{after}")
                 }
             }
-            None => self.status.clone().unwrap_or_default(),
+            None => match &self.confirm {
+                // As Vim's `:confirm` asks.
+                Some(_) => format!(
+                    "Save changes to \"{}\"?  [Y]es, (N)o, (C)ancel",
+                    self.doc.name()
+                ),
+                None => self.status.clone().unwrap_or_default(),
+            },
         };
         // Matches near the cursor: the editor follows the cursor, so the
         // lines on screen are among these.
@@ -678,7 +764,11 @@ impl App {
             .size(13)
             .color(dim),
             space::horizontal(),
-            text(status).size(13).color(dim),
+            text(status).size(13).color(if self.confirm.is_some() {
+                palette.primary
+            } else {
+                dim
+            }),
             space::horizontal(),
             text(pending).size(13).color(dim),
             text(format!("   {}:{}", line + 1, col + 1))
@@ -875,7 +965,8 @@ mod tests {
             scheme: Scheme::default(),
             colors: Colors::builtin(Scheme::default()),
             status: None,
-            quit_after_save: false,
+            after_save: None,
+            confirm: None,
             parsing: false,
             config: Config::default(),
             leader_pending: false,
@@ -979,6 +1070,44 @@ mod tests {
         a.config = Config::parse("leader = \",\"\n[keys]\nbold = \"s\"").unwrap();
         typed(&mut a, ",s");
         assert_eq!(a.doc.text.to_string(), "**word**");
+    }
+
+    #[test]
+    fn unsaved_changes_are_asked_about() {
+        let dir = std::env::temp_dir().join(format!("omavim-confirm-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let (a_md, b_md) = (dir.join("a.md"), dir.join("b.md"));
+        std::fs::write(&b_md, "bee\n").unwrap();
+        let mut a = app(Document::open(a_md.clone(), "x"));
+        // Nothing to ask about: `:confirm e` just opens.
+        typed(&mut a, &format!(":confirm e {}<CR>", b_md.display()));
+        assert_eq!(a.doc.text.to_string(), "bee");
+        typed(&mut a, "x");
+        typed(&mut a, " q");
+        assert_eq!(a.confirm, Some(Then::Quit));
+        typed(&mut a, "z");
+        assert_eq!(a.confirm, Some(Then::Quit), "only an answer ends it");
+        typed(&mut a, "c");
+        assert_eq!(a.confirm, None);
+        assert_eq!(a.doc.text.to_string(), "ee", "cancel changes nothing");
+        // No: the other file, dropping the change.
+        typed(&mut a, &format!(":confirm e {}<CR>", a_md.display()));
+        assert_eq!(
+            a.confirm,
+            Some(Then::Edit(Some(a_md.display().to_string())))
+        );
+        typed(&mut a, "n");
+        assert_eq!(a.doc.path.as_deref(), Some(a_md.as_path()));
+        assert!(!a.doc.dirty);
+        // Yes: saves (the file is written in a task), then goes on.
+        typed(&mut a, "iy<Esc> q");
+        typed(&mut a, "y");
+        assert_eq!(a.confirm, None);
+        assert_eq!(a.after_save, Some(Then::Quit));
+        // Vim's own :q still refuses.
+        typed(&mut a, ":q<CR>");
+        assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E37")));
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]
