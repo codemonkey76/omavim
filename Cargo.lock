@@ -2102,7 +2102,7 @@ dependencies = [
 
 [[package]]
 name = "omavim"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ashpd",
  "futures",
@@ -2115,7 +2115,7 @@ dependencies = [
 
 [[package]]
 name = "omavim-syntax"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ropey",
  "tree-sitter",
@@ -2139,7 +2139,7 @@ dependencies = [
 
 [[package]]
 name = "omavim-vim"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "regex",
  "ropey",

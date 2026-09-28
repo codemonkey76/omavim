@@ -244,6 +244,7 @@ omavim/
    (5ms a key at 10,000 lines, 36ms at 50,000), so a key updates the text and
    draws at once with the colours it had, and a background thread re-parses and
    swaps in the new ones, as Helix does. Typing should feel the same at any size.
+   (Done: a key costs under 1ms on the main thread at 50,000 lines.)
 5. **Omawrite's features.** Text size, print, new window, fullscreen, key
    reference, the leader keys, draft recovery, outside-change watching, the
    unsaved-changes prompt.

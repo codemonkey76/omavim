@@ -4,7 +4,7 @@ A dead-simple writing app with Vim motions, in the spirit of
 [Omawrite](https://github.com/omacom-io/omawrite), written in Rust with
 [iced](https://iced.rs). See [PLAN.md](PLAN.md) for where it's going.
 
-**Where it's up to (milestone 3):** a window in iA Writer Mono that follows the
+**Where it's up to (milestone 4):** a window in iA Writer Mono that follows the
 desktop's dark/light setting, soft-wrapped lines, open/save through the
 desktop's file picker, and Vim's core: normal, insert, replace and visual
 (`v`, `V`, and `CTRL-V` blocks: `y d c I A r ~ u U > < p` and `$`, `o`, `O`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
@@ -28,16 +28,23 @@ and the command line: ranges
 `:s` and `:%s` with Vim's replacement syntax and flags (`c` asks about each
 match), `:&`, `:&&`, `&`,
 `g&`, `@:`, `:d :y :j :> :< :m :t :p`, `:g` and `:v` (with any of these,
-`:normal` too), `:normal`, `:set` (`ic scs ws hls ts sw`), `:e`,
+`:normal` too), `:normal`, `:set` (`ic scs ws hls ts sw ft`), `:e`,
 `:w`, `:q`, `:wq`, `:x`, `|` between commands, editing with the cursor keys,
 `CTRL-W`, `CTRL-R`, `CTRL-V`, and history on Up/Down for commands and searches. Lines
 wrap at word breaks and the view scrolls exactly as Neovim's does with
 'linebreak' and 'smoothscroll'. `gq` and `gw` format paragraphs to the window's width
 (at most 79), keeping comment leaders (`//`, `#`, `>`, ` * `) on each line.
-Syntax highlighting with tree-sitter (milestone 4) is under way: Markdown, Rust,
-Python, JavaScript, TypeScript, JSON, TOML, YAML, Bash, HTML, CSS, PHP, Go, C, Lua
-and SQL by the file's name, code blocks in Markdown in their own language, in the
-current Omarchy theme's colours (Omavim's own otherwise).
+Syntax highlighting with tree-sitter: Markdown, Rust, Python, JavaScript,
+TypeScript, JSON, TOML, YAML, Bash, HTML, CSS, PHP, Go, C, Lua and SQL by the
+file's name (or `:set ft=`), code blocks in Markdown in their own language, in
+the current Omarchy theme's colours (Omavim's own otherwise), parsed again off
+the keystroke so typing stays quick in long documents. From the syntax tree
+too: text objects for code (`if af` functions, `ik ak` classes, `ia aa`
+parameters, `i/ a/` comments, in a Markdown code block as well) and for
+Markdown (`i* a*` emphasis, `il al` links, `ih ah` a heading's section, `ic ac`
+code), `]f [f ]k [k ]h [h` to the next or last function, class or heading,
+`%` that skips brackets in strings and comments, and indenting for code (in
+after an open bracket or Python's `:`, back out for a close).
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a
