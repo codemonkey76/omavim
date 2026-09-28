@@ -9,3 +9,11 @@ license = "MIT"
 
 [profile.release]
 lto = "thin"
+
+# The Neovim fixtures run tens of thousands of cases (and parse megabytes
+# of JSON): worth optimising.
+[profile.dev.package.omavim-vim]
+opt-level = 2
+
+[profile.dev.package."*"]
+opt-level = 2

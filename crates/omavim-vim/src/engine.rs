@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 use crate::key::Key;
 use crate::motion::{self, Cur, Find};
+use crate::search::{self, Haystack};
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };
@@ -100,6 +101,15 @@ enum Motion {
     SentenceBack,
     /// A text object: what, and `a` (true) or `i`.
     Object(Obj, bool),
+    /// `/` (true) or `?`, with the pattern typed.
+    Search(bool),
+    /// `n`, or `N` (true: the other way).
+    SearchNext(bool),
+    /// `*` `#` (forward?) and `g*` `g#` (whole: false).
+    Star {
+        forward: bool,
+        whole: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -160,13 +170,77 @@ enum Action {
     SwapEnds,
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Where a search puts the cursor relative to its match (`/foo/e+1`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+enum Offset {
+    #[default]
+    None,
+    /// `/foo/+1`: lines down (linewise).
+    Line(isize),
+    /// `/foo/e-1`: from the match's last char (inclusive).
+    End(isize),
+    /// `/foo/s+2` or `/foo/b+2`: from its first char.
+    Start(isize),
+}
+
+fn parse_offset(s: &str) -> Offset {
+    let num = |r: &str| -> isize {
+        match r {
+            "" => 0,
+            "+" => 1,
+            "-" => -1,
+            r => r.trim_start_matches('+').parse().unwrap_or(0),
+        }
+    };
+    match s.chars().next() {
+        None => Offset::None,
+        Some('e') => Offset::End(num(&s[1..])),
+        Some('s' | 'b') => Offset::Start(num(&s[1..])),
+        Some(_) => Offset::Line(match s {
+            "+" => 1,
+            "-" => -1,
+            s => num(s),
+        }),
+    }
+}
+
+/// A search line split at its closing `/` (or `?`): the pattern and the
+/// offset, if one was given.
+fn split_search(text: &str, delim: char) -> (&str, Option<&str>) {
+    let mut chars = text.char_indices();
+    let mut in_class = false;
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '\\' => {
+                chars.next();
+            }
+            '[' => in_class = true,
+            ']' => in_class = false,
+            c if c == delim && !in_class => return (&text[..i], Some(&text[i + 1..])),
+            _ => {}
+        }
+    }
+    (text, None)
+}
+
+#[derive(Debug, Clone)]
+struct LastSearch {
+    pattern: String,
+    forward: bool,
+    offset: Offset,
+    /// From `*` or `#`: 'smartcase' doesn't apply.
+    no_smartcase: bool,
+}
+
+#[derive(Debug, Clone)]
 struct Command {
     /// Count before the operator and before the motion, multiplied.
     count: Option<usize>,
     /// The register given with `"`.
     register: Option<char>,
     action: Action,
+    /// What was typed after `/` or `?`, for a search motion.
+    pattern: Option<String>,
 }
 
 enum Parse {
@@ -242,6 +316,18 @@ pub struct Vim {
     clipboard: Option<(char, String)>,
     /// A Ctrl-R in insert mode is waiting for the register's name.
     ctrl_r: bool,
+    last_search: Option<LastSearch>,
+    /// The pattern typed for the search command being run.
+    search_input: Option<String>,
+    /// Matches of the last search are shown (until `:noh`).
+    hl: bool,
+    /// Something to tell the user ("search hit BOTTOM", "E486: ...").
+    message: Option<String>,
+    /// Vim's options of the same names.
+    pub ignorecase: bool,
+    pub smartcase: bool,
+    pub wrapscan: bool,
+    pub hlsearch: bool,
     last_find: Option<(Find, char)>,
     undo: Vec<Group>,
     redo: Vec<Group>,
@@ -284,6 +370,14 @@ impl Vim {
             reg_one: false,
             clipboard: None,
             ctrl_r: false,
+            last_search: None,
+            search_input: None,
+            hl: false,
+            message: None,
+            ignorecase: false,
+            smartcase: false,
+            wrapscan: true,
+            hlsearch: true,
             last_find: None,
             undo: Vec::new(),
             redo: Vec::new(),
@@ -308,6 +402,12 @@ impl Vim {
         Self {
             registers: self.registers.clone(),
             unnamed: self.unnamed,
+            last_search: self.last_search.clone(),
+            hl: self.hl,
+            ignorecase: self.ignorecase,
+            smartcase: self.smartcase,
+            wrapscan: self.wrapscan,
+            hlsearch: self.hlsearch,
             last_find: self.last_find,
             shiftwidth: self.shiftwidth,
             tabstop: self.tabstop,
@@ -316,6 +416,9 @@ impl Vim {
     }
 
     pub fn mode(&self) -> Mode {
+        if self.prompt().is_some() {
+            return Mode::CommandLine;
+        }
         if !self.pending.is_empty() && self.mode == Mode::Normal && self.pending_operator() {
             Mode::OperatorPending
         } else {
@@ -337,9 +440,88 @@ impl Vim {
         matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some(self.anchor)
     }
 
-    /// The `:` command line while it's being typed.
-    pub fn command_line(&self) -> Option<&str> {
-        (self.mode == Mode::CommandLine).then_some(self.cmdline.as_str())
+    /// The command line while it's being typed, with its `:`, `/` or `?`.
+    pub fn command_line(&self) -> Option<String> {
+        if self.mode == Mode::CommandLine {
+            return Some(format!(":{}", self.cmdline));
+        }
+        self.prompt()
+            .map(|(forward, text)| format!("{}{text}", if forward { '/' } else { '?' }))
+    }
+
+    /// A search being typed: its direction and text so far.
+    fn prompt(&self) -> Option<(bool, String)> {
+        if !matches!(self.mode, Mode::Normal | Mode::Visual | Mode::VisualLine) {
+            return None;
+        }
+        let i = search_start(&self.pending)?;
+        Some((
+            self.pending[i] == Key::Char('/'),
+            line_text_of(&self.pending[i + 1..]),
+        ))
+    }
+
+    /// A message for the user, once: "search hit BOTTOM, continuing at
+    /// TOP", "E486: Pattern not found: x", ...
+    pub fn take_message(&mut self) -> Option<String> {
+        self.message.take()
+    }
+
+    /// The search pattern to show matches of: the one being typed, or the
+    /// last one (with 'hlsearch', until `:noh`).
+    fn shown_pattern(&self) -> Option<(search::Pattern, Option<bool>)> {
+        let (text, forward, no_scs) = match self.prompt() {
+            Some((forward, text)) => {
+                let delim = if forward { '/' } else { '?' };
+                (
+                    split_search(&text, delim).0.to_string(),
+                    Some(forward),
+                    false,
+                )
+            }
+            None if self.hl && self.hlsearch => {
+                let s = self.last_search.as_ref()?;
+                (s.pattern.clone(), None, s.no_smartcase)
+            }
+            None => return None,
+        };
+        if text.is_empty() {
+            return None;
+        }
+        let pat = search::compile(&text, self.ignorecase, self.smartcase && !no_scs).ok()?;
+        Some((pat, forward))
+    }
+
+    /// Matches to highlight on `lines`: of the search being typed, or of
+    /// the last search.
+    pub fn search_highlights(
+        &self,
+        t: &dyn TextModel,
+        lines: std::ops::Range<usize>,
+    ) -> Vec<std::ops::Range<Pos>> {
+        let Some((pat, _)) = self.shown_pattern() else {
+            return Vec::new();
+        };
+        let last = t.len_lines().saturating_sub(1);
+        let from = t.line_to_char(lines.start.min(last));
+        let to = if lines.end > last {
+            t.len_chars()
+        } else {
+            t.line_to_char(lines.end)
+        };
+        let h = Haystack::new(t);
+        pat.all(&h, from, to)
+            .into_iter()
+            .map(|(s, e)| s..e)
+            .collect()
+    }
+
+    /// While a search is typed: where it would go (Vim's 'incsearch').
+    pub fn search_preview(&self, t: &dyn TextModel) -> Option<std::ops::Range<Pos>> {
+        let (pat, forward) = self.shown_pattern()?;
+        let h = Haystack::new(t);
+        let f = search::find(t, &h, &pat, self.cursor, forward?, 1, false, true)?;
+        Some(f.start..f.end)
     }
 
     /// A `:` command finished with Enter, for the app to run: `w`, `wq`,
@@ -538,8 +720,11 @@ impl Vim {
         match parse(&self.pending, visual) {
             Parse::Incomplete => Ok(()),
             Parse::Invalid => Err(Beep),
-            Parse::Done(cmd) => {
+            Parse::Done(mut cmd) => {
                 let keys = std::mem::take(&mut self.pending);
+                if let Some(i) = search_start(&keys) {
+                    cmd.pattern = Some(line_text_of(&keys[i + 1..keys.len() - 1]));
+                }
                 self.run(t, cmd, keys)
             }
         }
@@ -571,7 +756,9 @@ impl Vim {
                         },
                     );
                 }
-                if let Ok(n) = cmd.parse::<usize>() {
+                if matches!(cmd, "noh" | "nohl" | "nohlsearch") {
+                    self.hl = false;
+                } else if let Ok(n) = cmd.parse::<usize>() {
                     // `:12` goes to line 12 (`:0` to the first).
                     let line = n.saturating_sub(1).min(last_line(t));
                     self.cursor = text::pos(
@@ -623,7 +810,10 @@ impl Vim {
                 _,
                 Some(
                     // Not `%`: Neovim's is matchit's, a visual selection.
-                    Motion::SentenceForward
+                    Motion::Search(_)
+                        | Motion::SearchNext(_)
+                        | Motion::Star { .. }
+                        | Motion::SentenceForward
                         | Motion::SentenceBack
                         | Motion::ParagraphForward
                         | Motion::ParagraphBack
@@ -631,6 +821,8 @@ impl Vim {
             )
         );
         let visual_extent = visual.then(|| self.visual_extent(t));
+        let count = cmd.count;
+        self.search_input = cmd.pattern.clone();
         let result = if visual {
             self.run_visual(t, cmd)
         } else {
@@ -638,8 +830,9 @@ impl Vim {
         };
         self.reg_name = None;
         self.reg_one = false;
+        self.search_input = None;
         if result.is_ok() && changes && !self.replaying && self.session.is_none() {
-            self.finish_change(cmd.count, visual_extent);
+            self.finish_change(count, visual_extent);
         }
         if self.session.is_none() {
             self.close_group();
@@ -978,6 +1171,62 @@ impl Vim {
                 (to, Kind::Exclusive)
             }
             Motion::Object(..) => return Err(Beep),
+            Motion::Search(forward) => {
+                let text = self.search_input.take().unwrap_or_default();
+                let (pat, off) = split_search(&text, if forward { '/' } else { '?' });
+                let last = self.last_search.as_ref();
+                let (pattern, offset, no_smartcase) = if pat.is_empty() {
+                    // `/<CR>` is the last search again; `//e` with a new offset.
+                    let Some(l) = last else {
+                        self.message = Some("E35: No previous regular expression".into());
+                        return Err(Beep);
+                    };
+                    let offset = off.map_or(l.offset, parse_offset);
+                    (l.pattern.clone(), offset, l.no_smartcase)
+                } else {
+                    (
+                        pat.to_string(),
+                        off.map_or(Offset::None, parse_offset),
+                        false,
+                    )
+                };
+                self.set_search(pattern, forward, offset, no_smartcase);
+                return self.do_search(t, forward, n, self.cursor);
+            }
+            Motion::SearchNext(reverse) => {
+                let Some(l) = &self.last_search else {
+                    self.message = Some("E35: No previous regular expression".into());
+                    return Err(Beep);
+                };
+                let forward = l.forward != reverse;
+                self.hl = true;
+                return self.do_search(t, forward, n, self.cursor);
+            }
+            Motion::Star { forward, whole } => {
+                let Some((start, word)) = ident_at(t, c) else {
+                    self.message = Some("E348: No string under cursor".into());
+                    return Err(Beep);
+                };
+                let keyword = |ch: Option<char>| text::class(ch, false) >= 2;
+                let special = if forward { "\\/.*$^~[" } else { "\\?.*$^~[" };
+                let mut pattern = String::new();
+                if whole && keyword(word.chars().next()) {
+                    pattern.push_str("\\<");
+                }
+                for ch in word.chars() {
+                    if special.contains(ch) {
+                        pattern.push('\\');
+                    }
+                    pattern.push(ch);
+                }
+                if whole && keyword(word.chars().last()) {
+                    pattern.push_str("\\>");
+                }
+                self.set_search(pattern, forward, Offset::None, true);
+                // The search goes from the word's start (an operator still
+                // starts at the cursor).
+                return self.do_search(t, forward, n, text::pos(t, c.line, start));
+            }
             Motion::Match => {
                 // No bracket on the line: Neovim stays put, no error.
                 let to = motion::match_pair(t, c).unwrap_or(c);
@@ -986,6 +1235,137 @@ impl Vim {
             }
         };
         Ok((Self::at(t, to), kind))
+    }
+
+    fn set_search(&mut self, pattern: String, forward: bool, offset: Offset, no_smartcase: bool) {
+        self.registers.insert(
+            '/',
+            Register {
+                text: pattern.clone(),
+                linewise: false,
+            },
+        );
+        self.last_search = Some(LastSearch {
+            pattern,
+            forward,
+            offset,
+            no_smartcase,
+        });
+        self.hl = true;
+    }
+
+    /// The last search's `count`th match from the cursor, with its offset
+    /// applied: where the cursor goes and the motion's kind.
+    fn do_search(
+        &mut self,
+        t: &dyn TextModel,
+        forward: bool,
+        count: usize,
+        from: Pos,
+    ) -> R<(Pos, Kind)> {
+        let Some(s) = self.last_search.clone() else {
+            return Err(Beep);
+        };
+        let pat = match search::compile(
+            &s.pattern,
+            self.ignorecase,
+            self.smartcase && !s.no_smartcase,
+        ) {
+            Ok(p) => p,
+            Err(e) => {
+                self.message = Some(e);
+                return Err(Beep);
+            }
+        };
+        let h = Haystack::new(t);
+        // With a char offset, start from where the match would be, so `n`
+        // doesn't find the same one again.
+        let mut from = {
+            let (l, c) = text::line_col(t, from);
+            Cur::new(l, c)
+        };
+        if let Offset::End(off) | Offset::Start(off) = s.offset {
+            for _ in 0..off.unsigned_abs() {
+                let r = if off > 0 {
+                    textobj::decl(t, &mut from)
+                } else {
+                    textobj::incl(t, &mut from)
+                };
+                if r == -1 {
+                    break;
+                }
+            }
+        }
+        let at_end = matches!(s.offset, Offset::End(_));
+        let Some(found) = search::find(
+            t,
+            &h,
+            &pat,
+            Self::at(t, from),
+            forward,
+            count,
+            at_end,
+            self.wrapscan,
+        ) else {
+            self.message = Some(format!("E486: Pattern not found: {}", s.pattern));
+            return Err(Beep);
+        };
+        self.message = found.wrapped.then(|| {
+            if forward {
+                "search hit BOTTOM, continuing at TOP".to_string()
+            } else {
+                "search hit TOP, continuing at BOTTOM".to_string()
+            }
+        });
+        self.want = None;
+        let cur_of = |p: Pos| {
+            let (l, c) = text::line_col(t, p);
+            Cur::new(l, c)
+        };
+        let step = |c: &mut Cur, n: isize| {
+            for _ in 0..n.unsigned_abs() {
+                let r = if n > 0 {
+                    textobj::incl(t, c)
+                } else {
+                    textobj::decl(t, c)
+                };
+                if r == -1 {
+                    break;
+                }
+            }
+        };
+        // A match on a line's end: the cursor goes on its last char (and
+        // the motion stays exclusive, as Vim's does).
+        let back = |p: Pos| {
+            let (l, c) = text::line_col(t, p);
+            if c > 0 && c == line_len(t, l) {
+                p - 1
+            } else {
+                p
+            }
+        };
+        Ok(match s.offset {
+            Offset::None => (back(found.start), Kind::Exclusive),
+            Offset::Start(n) => {
+                let mut c = cur_of(found.start);
+                step(&mut c, n);
+                (Self::at(t, c), Kind::Exclusive)
+            }
+            Offset::End(n) => {
+                let mut c = cur_of(if found.end > found.start {
+                    found.end - 1
+                } else {
+                    found.start
+                });
+                step(&mut c, n);
+                (Self::at(t, c), Kind::Inclusive)
+            }
+            Offset::Line(n) => {
+                let line = t.char_to_line(found.start) as isize + n;
+                let line = line.clamp(0, last_line(t) as isize) as usize;
+                (t.line_to_char(line), Kind::Linewise)
+            }
+        })
     }
 
     // ── Operators ────────────────────────────────────────────────────────
@@ -1034,11 +1414,13 @@ impl Vim {
 
         // An exclusive motion ending in column 0 of a later line ends at the end
         // of the line before, or becomes linewise (Vim's `:help exclusive`).
+        let mut adjusted = false;
         if kind == Kind::Exclusive && ec == 0 && el > sl {
             el -= 1;
             let start_c = text::line_col(t, start).1;
             if start_c <= first_non_blank(t, sl) {
                 kind = Kind::Linewise;
+                adjusted = true;
             } else {
                 let len = line_len(t, el);
                 end = text::pos(t, el, len);
@@ -1061,6 +1443,32 @@ impl Vim {
             if rest.chars().all(is_blank) && start_c <= first_non_blank(t, sl) {
                 kind = Kind::Linewise;
             }
+        }
+        let line_offset = matches!(m, Motion::Search(_) | Motion::SearchNext(_))
+            && self
+                .last_search
+                .as_ref()
+                .is_some_and(|s| matches!(s.offset, Offset::Line(_)));
+        if kind == Kind::Linewise && line_offset {
+            // A line offset (`/foo/+1`) goes to column 0, and a yank leaves
+            // the cursor at the start, as Vim's does.
+            self.cursor = self.cursor.min(to);
+            return self.apply_lines(t, op, sl, el, 0);
+        }
+        if adjusted
+            && op == Op::Delete
+            && matches!(
+                m,
+                Motion::Search(_) | Motion::SearchNext(_) | Motion::Star { .. }
+            )
+        {
+            // Made linewise by the rule above: Vim goes to the first
+            // non-blank, not back to the column.
+            self.apply_lines(t, op, sl, el, 0)?;
+            let (line, _) = self.lc(t);
+            self.cursor = text::pos(t, line, first_non_blank(t, line));
+            self.clamp(t);
+            return Ok(());
         }
         if kind == Kind::Linewise {
             let v = match self.want {
@@ -1293,6 +1701,8 @@ impl Vim {
                 if range.is_empty() {
                     return Ok(());
                 }
+                // Undo comes back to where the deleted text began.
+                self.cursor = range.start;
                 self.store(yanked, false, true);
                 self.begin_group();
                 self.edit(t, range.clone(), "");
@@ -2325,6 +2735,94 @@ fn multiply(a: Option<usize>, b: Option<usize>) -> Option<usize> {
     }
 }
 
+/// The word `*` searches for, on the cursor's line: the keyword under or
+/// after the cursor, else the non-blank word under or after it. Its
+/// column and text.
+fn ident_at(t: &dyn TextModel, c: Cur) -> Option<(usize, String)> {
+    let chars: Vec<char> = line_text(t, c.line).chars().collect();
+    let col = c.col.min(chars.len());
+    let cls = |i: usize| text::class(Some(chars[i]), false);
+    let word = |i: usize, same: &dyn Fn(usize) -> bool| {
+        // From its start if the cursor's on it, else from where it starts.
+        let mut s = i;
+        if i == col {
+            while s > 0 && same(s - 1) {
+                s -= 1;
+            }
+        }
+        let mut e = i;
+        while e < chars.len() && same(e) {
+            e += 1;
+        }
+        (s, chars[s..e].iter().collect::<String>())
+    };
+    if let Some(i) = (col..chars.len()).find(|&j| cls(j) >= 2) {
+        let k = cls(i);
+        return Some(word(i, &|j| cls(j) == k));
+    }
+    let i = (col..chars.len()).find(|&j| !is_blank(chars[j]))?;
+    let k = cls(i);
+    Some(word(i, &|j| cls(j) == k))
+}
+
+/// A line typed after `/` or `?` (or `:`), with its editing keys applied:
+/// the text and the keys used up to Enter, None if Enter hasn't come yet,
+/// or Err if it was cancelled (Esc, or Backspace with nothing left).
+fn read_line(keys: &[Key]) -> Option<Result<usize, ()>> {
+    for (i, k) in keys.iter().enumerate() {
+        match k {
+            Key::Enter | Key::Ctrl('m' | 'j') => return Some(Ok(i + 1)),
+            Key::Esc | Key::Ctrl('c') => return Some(Err(())),
+            Key::Backspace | Key::Ctrl('h') if line_text_of(&keys[..i]).is_empty() => {
+                return Some(Err(()));
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// The text of a line being typed: its keys with the editing ones applied.
+fn line_text_of(keys: &[Key]) -> String {
+    let mut s = String::new();
+    for k in keys {
+        match k {
+            Key::Char(c) => s.push(*c),
+            Key::Tab => s.push('\t'),
+            Key::Backspace | Key::Ctrl('h') => {
+                s.pop();
+            }
+            Key::Ctrl('u') => s.clear(),
+            Key::Ctrl('w') => {
+                let t = s.trim_end_matches(|c: char| !crate::text::is_word_char(c) && c != ' ');
+                let t = t.trim_end_matches(' ');
+                let keep = t.trim_end_matches(crate::text::is_word_char).len();
+                s.truncate(if keep == s.len() {
+                    s.len().saturating_sub(1)
+                } else {
+                    keep
+                });
+            }
+            _ => {}
+        }
+    }
+    s
+}
+
+/// Where a search's `/` or `?` is in a command's keys, if it has one.
+fn search_start(keys: &[Key]) -> Option<usize> {
+    let rest = take_prefix(keys).ok()?.2;
+    let mut i = keys.len() - rest.len();
+    match (keys.get(i), keys.get(i + 1)) {
+        (Some(Key::Char('d' | 'c' | 'y' | '<' | '>')), _) => i += 1,
+        (Some(Key::Char('g')), Some(Key::Char('u' | 'U' | '~'))) => i += 2,
+        _ => {}
+    }
+    let rest = take_count(&keys[i..]).1;
+    let i = keys.len() - rest.len();
+    matches!(keys.get(i), Some(Key::Char('/' | '?'))).then_some(i)
+}
+
 /// A motion at the start of `keys`: the motion and how many keys it took, or
 /// None if more keys are needed, or Err if they aren't a motion.
 fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
@@ -2356,6 +2854,23 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
         Key::Char('{') => Motion::ParagraphBack,
         Key::Char('%') => Motion::Match,
         Key::Char(')') => Motion::SentenceForward,
+        Key::Char(c @ ('/' | '?')) => {
+            return match read_line(&keys[1..]) {
+                None => Ok(None),
+                Some(Ok(n)) => Ok(Some((Motion::Search(c == '/'), 1 + n))),
+                Some(Err(())) => Err(()),
+            };
+        }
+        Key::Char('n') => Motion::SearchNext(false),
+        Key::Char('N') => Motion::SearchNext(true),
+        Key::Char('*') => Motion::Star {
+            forward: true,
+            whole: true,
+        },
+        Key::Char('#') => Motion::Star {
+            forward: false,
+            whole: true,
+        },
         Key::Char('(') => Motion::SentenceBack,
         Key::Char(c @ ('i' | 'a')) => {
             let obj = match keys.get(1) {
@@ -2398,6 +2913,20 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
                 Some(Key::Char('_')) => Ok(Some((Motion::LastNonBlank, 2))),
                 Some(Key::Char('e')) => Ok(Some((Motion::WordEndBack(false), 2))),
                 Some(Key::Char('E')) => Ok(Some((Motion::WordEndBack(true), 2))),
+                Some(Key::Char('*')) => Ok(Some((
+                    Motion::Star {
+                        forward: true,
+                        whole: false,
+                    },
+                    2,
+                ))),
+                Some(Key::Char('#')) => Ok(Some((
+                    Motion::Star {
+                        forward: false,
+                        whole: false,
+                    },
+                    2,
+                ))),
                 Some(_) => Err(()),
             };
         }
@@ -2440,6 +2969,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             count,
             register,
             action,
+            pattern: None,
         })
     };
     let op = |k: Key, second: Option<&Key>| -> Option<Option<Op>> {
@@ -2533,6 +3063,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                     count,
                     register,
                     action: Action::Operate(o, None),
+                    pattern: None,
                 });
             }
             return match parse_motion(motion_keys) {
@@ -2541,6 +3072,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                     count,
                     register,
                     action: Action::Operate(o, Some(m)),
+                    pattern: None,
                 }),
                 Err(()) => Parse::Invalid,
             };
@@ -2665,12 +3197,59 @@ mod tests {
     }
 
     #[test]
+    fn a_search_is_typed_shown_and_highlighted() {
+        let mut t = Rope::from_str("one two\ntwo one\nthree");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, "/tw");
+        assert_eq!(vim.mode(), Mode::CommandLine);
+        assert_eq!(vim.command_line().as_deref(), Some("/tw"));
+        // While typing: where it would go, and every match.
+        assert_eq!(vim.search_preview(&t), Some(4..6));
+        assert_eq!(vim.search_highlights(&t, 0..3), [4..6, 8..10]);
+        type_keys(&mut vim, &mut t, "o<CR>");
+        assert_eq!((vim.mode(), vim.cursor()), (Mode::Normal, 4));
+        assert_eq!(vim.search_preview(&t), None);
+        assert_eq!(vim.search_highlights(&t, 0..3), [4..7, 8..11]);
+        assert_eq!(vim.get_register('/').text, "two");
+        type_keys(&mut vim, &mut t, "n");
+        assert_eq!(vim.take_message(), None);
+        type_keys(&mut vim, &mut t, "n");
+        assert_eq!(vim.cursor(), 4);
+        assert_eq!(
+            vim.take_message().as_deref(),
+            Some("search hit BOTTOM, continuing at TOP")
+        );
+        // :noh hides the matches until the next search.
+        type_keys(&mut vim, &mut t, ":noh<CR>");
+        assert!(vim.search_highlights(&t, 0..3).is_empty());
+        type_keys(&mut vim, &mut t, "n");
+        assert_eq!(vim.search_highlights(&t, 0..3).len(), 2);
+    }
+
+    #[test]
+    fn a_missing_pattern_says_so() {
+        let mut t = Rope::from_str("abc");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, "n");
+        assert_eq!(
+            vim.take_message().as_deref(),
+            Some("E35: No previous regular expression")
+        );
+        type_keys(&mut vim, &mut t, "/zz<CR>");
+        assert_eq!(
+            vim.take_message().as_deref(),
+            Some("E486: Pattern not found: zz")
+        );
+        assert_eq!(vim.cursor(), 0);
+    }
+
+    #[test]
     fn a_colon_command_is_typed_then_handed_over() {
         let mut t = Rope::from_str("one\ntwo\nthree");
         let mut vim = Vim::new();
         type_keys(&mut vim, &mut t, ":wqx<BS>");
         assert_eq!(vim.mode(), Mode::CommandLine);
-        assert_eq!(vim.command_line(), Some("wq"));
+        assert_eq!(vim.command_line().as_deref(), Some(":wq"));
         type_keys(&mut vim, &mut t, "<CR>");
         assert_eq!(vim.mode(), Mode::Normal);
         assert_eq!(vim.take_command().as_deref(), Some("wq"));

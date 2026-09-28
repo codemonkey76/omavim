@@ -63,7 +63,7 @@ fn run(case: &Case) -> Expected {
         register: reg.text.clone(),
         register_type: if reg.linewise { "V".into() } else { "v".into() },
         visual_start: vim.visual_start().map(|p| text::line_col(&rope, p)),
-        registers: "0123456789abcdefghijklmnopqrstuvwxyz-"
+        registers: "0123456789abcdefghijklmnopqrstuvwxyz-/"
             .chars()
             .filter_map(|r| {
                 let reg = vim.get_register(r);

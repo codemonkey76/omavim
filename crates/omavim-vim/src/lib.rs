@@ -7,6 +7,7 @@
 mod engine;
 pub mod key;
 mod motion;
+pub mod search;
 pub mod text;
 mod textobj;
 

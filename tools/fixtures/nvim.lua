@@ -38,6 +38,9 @@ local function run(case)
   vim.bo.modified = false
   for r in REGISTERS:gmatch(".") do vim.fn.setreg(r, {}) end
   vim.fn.setreg('"', "")
+  -- No last search (setting "/ also forgets its offset), forwards.
+  vim.fn.setreg("/", "")
+  vim.v.searchforward = 1
   local first = vim.api.nvim_buf_get_lines(0, case.cursor[1], case.cursor[1] + 1, false)[1] or ""
   vim.api.nvim_win_set_cursor(0, { case.cursor[1] + 1, byte_col(first, case.cursor[2]) })
   -- A fresh undo history per case: the text set above isn't an undoable change.
@@ -64,7 +67,7 @@ local function run(case)
       register_type = vim.fn.getregtype('"'),
       registers = vim.empty_dict(),
     }
-    for r in REGISTERS:gmatch(".") do
+    for r in (REGISTERS .. "/"):gmatch(".") do
       local text = vim.fn.getreg(r)
       if text ~= "" then result.registers[r] = { text, vim.fn.getregtype(r) } end
     end

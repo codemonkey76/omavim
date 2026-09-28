@@ -43,6 +43,10 @@ pub struct View<'a> {
     /// A visual selection: its two ends (in either order), and whether it's
     /// linewise. Inclusive; after `$` it takes the line break.
     pub selection: Option<(Pos, Pos, bool)>,
+    /// Search matches to highlight, and the one a search being typed would
+    /// go to.
+    pub matches: Vec<std::ops::Range<Pos>>,
+    pub current_match: Option<std::ops::Range<Pos>>,
     pub tabstop: usize,
 }
 
@@ -277,6 +281,10 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         });
         let mut selected = palette.primary;
         selected.a = 0.22;
+        let mut matched = palette.warning;
+        matched.a = 0.30;
+        let mut current = palette.warning;
+        current.a = 0.65;
 
         let (mut line, mut row) = state.top.get();
         for screen_row in 0..visible {
@@ -290,6 +298,27 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
             let y = bounds.y + PADDING + screen_row as f32 * row_h;
             let x_of = |col: usize| left + (vc[col.min(chars.len())] - vc[start]) as f32 * cell;
             let line_start = t.line_to_char(line);
+
+            // Search matches on this row.
+            let (rs, re) = (line_start + start, line_start + end);
+            let spans = self
+                .view
+                .matches
+                .iter()
+                .map(|m| (m, matched))
+                .chain(self.view.current_match.iter().map(|m| (m, current)));
+            for (m, color) in spans {
+                let (from, to) = (m.start.max(rs), m.end.min(re));
+                if from < to {
+                    let x0 = x_of(from - line_start);
+                    let x1 = x_of(to - line_start);
+                    fill(
+                        renderer,
+                        Rectangle::new(Point::new(x0, y), Size::new(x1 - x0, row_h)),
+                        color,
+                    );
+                }
+            }
 
             // The selection on this row, and the line break as one cell.
             if let Some((s, e)) = selection {

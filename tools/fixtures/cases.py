@@ -94,6 +94,19 @@ REGISTERS = [
     '"a"byy', '""yy', 'yw""p', '"Ayw"Ayy"ap', 'x"Ax"ap', 'cc<Esc>"1p', '"_x"-p',
 ]
 
+SEARCH = [
+    "/o<CR>", "/o<CR>n", "/o<CR>N", "/o<CR>nn", "?o<CR>", "?o<CR>n", "?o<CR>N", "3/o<CR>", "/o<CR>3n",
+    "/the<CR>", "/\\<the\\><CR>", "/e<CR>", "/^<CR>", "/^<CR>n", "/$<CR>", "/$<CR>n", "?$<CR>",
+    "?^<CR>", "/zzz<CR>", "/<CR>", "n", "/e/e<CR>", "/e/e<CR>n", "/e/e+1<CR>", "/e/e-1<CR>n",
+    "/e/s+1<CR>", "/o/s+1<CR>n", "/e/b-1<CR>", "/e/+1<CR>", "/e/-<CR>", "/e/+1<CR>n", "?e?e<CR>",
+    "/o<CR>/<CR>", "/o<CR>//e<CR>", "/o/e<CR>/<CR>", "/[aeiou]\\{2}<CR>", "/\\(ow\\|he\\)<CR>",
+    "/o\\+<CR>", "/.*<CR>", "/\\cthe<CR>", "/\\s\\+<CR>", "/\\d<CR>", "/[,.;]<CR>",
+    "/\\a\\a\\a\\a\\a<CR>", "*", "#", "g*", "g#", "2*", "*n", "#n", "*N", "**", "##",
+    "d/o<CR>", "d/e/e<CR>", "c/o<CR>X<Esc>", "y/o<CR>", "d?o<CR>", "dn", "/o<CR>dn", "/o<CR>d2n",
+    "/o<CR>dN", "d*", "d#", "y/e/+1<CR>", "d/^<CR>", "d/$<CR>", "v/o<CR>", "v/o<CR>d", "v?o<CR>y",
+    "V/e<CR>d", "vnd", "/o<CR>x.n.", "d/o<CR>u", "/o<BS>e<CR>", "/ox<C-u>e<CR>", "/<BS>x", "/o<Esc>x",
+]
+
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
 
@@ -105,7 +118,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

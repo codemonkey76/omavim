@@ -13,8 +13,10 @@ f F t T ; , { } ( ) %`), operators (`d c y > < gu gU g~` and their doubled forms
 brackets `i( i{ i[ i<` and `a` forms, the quotes `i" i' i`` and `it at`, in
 visual mode too), registers (`"a`–`"z` and `"A` to append, `"0`, `"1`–`"9`,
 `"-`, `"_`, the read-only `". ": "%`, `Ctrl-R` in insert mode, and `"+`/`"*`
-for the desktop clipboard and primary selection), undo/redo, `.`, and the
-basic `:` commands (`:w [file]`, `:q`, `:q!`, `:wq`, `:x`, `:N`). Search,
+for the desktop clipboard and primary selection), search (`/ ? n N * # g*
+g#`, offsets such as `/foo/e+1`, Vim's pattern syntax, matches highlighted
+as you type and after, `:noh`), undo/redo, `.`, and the basic `:` commands
+(`:w [file]`, `:q`, `:q!`, `:wq`, `:x`, `:N`). Wrapped-line movement,
 marks, macros and the rest of `:` are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`

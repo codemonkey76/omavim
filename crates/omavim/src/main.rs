@@ -164,6 +164,10 @@ impl App {
             self.doc.dirty = true;
             self.status = None;
         }
+        // "search hit BOTTOM, continuing at TOP", "E486: Pattern not found".
+        if let Some(message) = self.vim.take_message() {
+            self.status = Some(message);
+        }
         let mut tasks = Vec::new();
         // `"+y` / `"*y`: onto the clipboard or primary selection.
         if let Some((register, text)) = self.vim.take_clipboard() {
@@ -283,12 +287,20 @@ impl App {
             &self.doc.text,
             self.vim.cursor().min(self.doc.text.len_chars()),
         );
-        let pending: String = self.vim.pending().iter().map(key_label).collect();
-        // While a `:` command is typed, it takes the status's place.
-        let status = match self.vim.command_line() {
-            Some(line) => format!(":{line}█"),
+        // While a `:` command or a search is typed, it takes the status's
+        // place (and the keys typed for it aren't shown again as pending).
+        let command_line = self.vim.command_line();
+        let pending: String = match command_line {
+            Some(_) => String::new(),
+            None => self.vim.pending().iter().map(key_label).collect(),
+        };
+        let status = match command_line {
+            Some(line) => format!("{line}█"),
             None => self.status.clone().unwrap_or_default(),
         };
+        // Matches near the cursor: the editor follows the cursor, so the
+        // lines on screen are among these.
+        let near = line.saturating_sub(200)..line + 200;
         let footer = row![
             text(mode_label(mode))
                 .size(13)
@@ -318,6 +330,8 @@ impl App {
             cursor: self.vim.cursor(),
             mode,
             selection,
+            matches: self.vim.search_highlights(&self.doc.text, near),
+            current_match: self.vim.search_preview(&self.doc.text),
             tabstop: self.vim.tabstop,
         };
         column![
