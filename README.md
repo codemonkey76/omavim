@@ -4,8 +4,8 @@ A dead-simple writing app with Vim motions, in the spirit of
 [Omawrite](https://github.com/omacom-io/omawrite), written in Rust with
 [iced](https://iced.rs). See [PLAN.md](PLAN.md) for where it's going.
 
-**Where it's up to (milestone 4):** a window in iA Writer Mono that follows the
-desktop's dark/light setting, soft-wrapped lines, open/save through the
+**Where it's up to (milestone 5):** a window in iA Writer Mono that follows the
+desktop's dark/light setting and text size (`omarchy display text size`), soft-wrapped lines, open/save through the
 desktop's file picker, and Vim's core: normal, insert, replace and visual
 (`v`, `V`, and `CTRL-V` blocks: `y d c I A r ~ u U > < p` and `$`, `o`, `O`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
 f F t T ; , { } ( ) %`), operators (`d c y > < gu gU g~` and their doubled forms,
@@ -45,6 +45,13 @@ Markdown (`i* a*` emphasis, `il al` links, `ih ah` a heading's section, `ic ac`
 code), `]f [f ]k [k ]h [h` to the next or last function, class or heading,
 `%` that skips brackets in strings and comments, and indenting for code (in
 after an open bracket or Python's `:`, back out for a close).
+
+Around the editing, as Omawrite has it: the leader keys below, bold, italic
+and links, printing (12pt, on the paper the print dialog picks), fullscreen,
+a new window, a key reference, a question before unsaved changes are lost
+(Vim's `:confirm` wording), drafts written as you type and offered back after
+a crash, and a file changed by something else loaded again (or, over unsaved
+changes here, asked about, with Vim's W12).
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a
