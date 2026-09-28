@@ -20,6 +20,21 @@ use std::ops::Range;
 /// A position in the text, as a char index.
 pub type Pos = usize;
 
+/// The text objects (and `]f`-style moves) found from the syntax tree: code's
+/// functions, classes, parameters and comments, and Markdown's emphasis,
+/// links, heading sections and code blocks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SyntaxObject {
+    Function,
+    Class,
+    Parameter,
+    Comment,
+    Emphasis,
+    Link,
+    Heading,
+    Code,
+}
+
 /// What the engine needs from a text buffer.
 pub trait TextModel {
     /// Chars in the whole text.
@@ -48,6 +63,15 @@ pub trait TextModel {
     /// where each screen line of `line` starts. A line that fits is `[start]`.
     fn screen_line_starts(&self, line: usize) -> Vec<Pos> {
         vec![self.line_to_char(line)]
+    }
+
+    /// Every `kind` of syntax object in the text (just the inside of each
+    /// when `inner`), as char ranges, from the syntax tree; those in code
+    /// embedded in the text too, where it's embedded around `near`. None
+    /// without a syntax tree.
+    fn syntax_objects(&self, kind: SyntaxObject, inner: bool, near: Pos) -> Vec<Range<Pos>> {
+        let _ = (kind, inner, near);
+        Vec::new()
     }
 }
 

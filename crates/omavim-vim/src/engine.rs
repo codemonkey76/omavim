@@ -24,6 +24,7 @@ mod format;
 mod marks;
 #[path = "scroll.rs"]
 mod scroll;
+use crate::SyntaxObject;
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };
@@ -139,6 +140,8 @@ enum Motion {
     ScreenLine(char),
     /// `'x` (to the line) and `` `x `` (exactly: true).
     Mark(char, bool),
+    /// `]f` `[f` (forward: true) and the like: to a syntax object's start.
+    SyntaxJump(SyntaxObject, bool),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -149,6 +152,7 @@ enum Obj {
     Block(char, char),
     Quote(char),
     Tag,
+    Syntax(SyntaxObject),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1688,6 +1692,12 @@ impl Vim {
                 (to, Kind::Exclusive)
             }
             Motion::Object(..) => return Err(Beep),
+            Motion::SyntaxJump(kind, forward) => {
+                let to = textobj::syntax_jump(t, c, n, forward, kind).ok_or(Beep)?;
+                self.setpcmark(t);
+                self.want = None;
+                (to, Kind::Exclusive)
+            }
             Motion::Mark(name, exact) => {
                 let Some(m) = self.mark(t, name) else {
                     self.message = Some("E20: Mark not set".into());
@@ -2164,6 +2174,7 @@ impl Vim {
             Obj::Block(open, close) => textobj::block(t, c, vis, n, around, open, close),
             Obj::Quote(q) => textobj::quote(t, c, n, around, q).ok_or(c.into()),
             Obj::Tag => textobj::tag(t, c, vis, n, around),
+            Obj::Syntax(kind) => textobj::syntax(t, c, vis, n, around, kind),
         }
     }
 
@@ -4015,6 +4026,16 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
             };
         }
         Key::Char(c @ ('H' | 'M' | 'L')) => Motion::ScreenLine(c),
+        Key::Char(b @ (']' | '[')) => {
+            let kind = match keys.get(1) {
+                None => return Ok(None),
+                Some(Key::Char('f')) => SyntaxObject::Function,
+                Some(Key::Char('k')) => SyntaxObject::Class,
+                Some(Key::Char('h')) => SyntaxObject::Heading,
+                Some(_) => return Err(()),
+            };
+            return Ok(Some((Motion::SyntaxJump(kind, b == ']'), 2)));
+        }
         Key::Char(q @ ('\'' | '`')) => {
             return match keys.get(1) {
                 None => Ok(None),
@@ -4047,6 +4068,14 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
                     '<' | '>' => Obj::Block('<', '>'),
                     '"' | '\'' | '`' => Obj::Quote(*o),
                     't' => Obj::Tag,
+                    'f' => Obj::Syntax(SyntaxObject::Function),
+                    'k' => Obj::Syntax(SyntaxObject::Class),
+                    'a' => Obj::Syntax(SyntaxObject::Parameter),
+                    '/' => Obj::Syntax(SyntaxObject::Comment),
+                    '*' => Obj::Syntax(SyntaxObject::Emphasis),
+                    'l' => Obj::Syntax(SyntaxObject::Link),
+                    'h' => Obj::Syntax(SyntaxObject::Heading),
+                    'c' => Obj::Syntax(SyntaxObject::Code),
                     _ => return Err(()),
                 },
                 Some(_) => return Err(()),

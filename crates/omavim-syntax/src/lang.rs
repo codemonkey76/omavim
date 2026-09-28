@@ -265,7 +265,12 @@ impl Lang {
             .collect();
         let index =
             |q: &Option<Query>, name: &str| q.as_ref().and_then(|q| q.capture_index_for_name(name));
+        let textobjects = self.textobjects_source().map(|source| {
+            query(&language, source)
+                .unwrap_or_else(|e| panic!("{}'s textobjects query: {e}", self.name()))
+        });
         Config {
+            textobjects,
             injection_language: index(&injections, "injection.language"),
             injection_content: index(&injections, "injection.content"),
             language,
@@ -273,6 +278,36 @@ impl Lang {
             injections,
             highlight_names,
         }
+    }
+}
+
+impl Lang {
+    /// Its text objects query (vendored from nvim-treesitter-textobjects by
+    /// tools/syntax/vendor-textobjects.py).
+    fn textobjects_source(self) -> Option<&'static str> {
+        macro_rules! q {
+            ($l:literal) => {
+                include_str!(concat!("../queries/", $l, "/textobjects.scm"))
+            };
+        }
+        Some(match self {
+            Lang::Rust => q!("rust"),
+            Lang::Python => q!("python"),
+            Lang::JavaScript => q!("javascript"),
+            Lang::TypeScript => q!("typescript"),
+            Lang::Tsx => q!("tsx"),
+            Lang::Json => q!("json"),
+            Lang::Toml => q!("toml"),
+            Lang::Yaml => q!("yaml"),
+            Lang::Bash => q!("bash"),
+            Lang::Html => q!("html"),
+            Lang::Css => q!("css"),
+            Lang::Php => q!("php"),
+            Lang::Go => q!("go"),
+            Lang::C => q!("c"),
+            Lang::Lua => q!("lua"),
+            Lang::Markdown | Lang::MarkdownInline | Lang::Sql => return None,
+        })
     }
 }
 

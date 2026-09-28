@@ -2,9 +2,10 @@
 //! `is as`, `ip ap`, the bracket blocks, the quotes and `it at`, and the
 //! sentence search behind `(`/`)`. Positions are (line, col) as in motion.rs.
 
-use crate::TextModel;
 use crate::motion::{Cur, bck_word, bckend_word, dec, end_word, fwd_word, inc};
 use crate::text::{self, char_at, class, is_blank, last_line, line_len, line_text};
+use crate::{Pos, SyntaxObject, TextModel};
+use std::ops::Range;
 
 /// A visual selection a text object starts from, or extends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1001,4 +1002,104 @@ pub fn tag(t: &dyn TextModel, cursor: Cur, vis: Option<Vis>, count: usize, inclu
         inclusive: true,
         linewise: false,
     })
+}
+
+/// A syntax object (`if`, `ah`, ...): the smallest one around the cursor, or
+/// the `count`th one out; with a selection, the smallest bigger than it; with
+/// none around, the next one after. As nvim-treesitter-textobjects picks
+/// them, with its look-ahead on.
+pub fn syntax(
+    t: &dyn TextModel,
+    cursor: Cur,
+    vis: Option<Vis>,
+    count: usize,
+    around: bool,
+    kind: SyntaxObject,
+) -> Found {
+    let at = |c: Cur| text::pos(t, c.line, c.col.min(line_len(t, c.line)));
+    let (lo, hi) = match vis {
+        Some(v) => (at(v.anchor.min(cursor)), at(v.anchor.max(cursor))),
+        None => (at(cursor), at(cursor)),
+    };
+    let selected = vis.is_some() && hi > lo;
+    let mut objects: Vec<Range<Pos>> = t
+        .syntax_objects(kind, !around, lo)
+        .into_iter()
+        .filter(|r| r.end > r.start)
+        .collect();
+    objects.sort_by_key(|r| (r.end - r.start, r.start));
+    objects.dedup();
+    let mut around_it = objects
+        .iter()
+        .filter(|r| r.start <= lo && hi < r.end && !(selected && r.start == lo && r.end == hi + 1));
+    let found = match around_it.nth(count.max(1) - 1) {
+        Some(r) => r.clone(),
+        None => objects
+            .iter()
+            .filter(|r| r.start > lo)
+            .min_by_key(|r| r.start)
+            .cloned()
+            .ok_or(cursor)?,
+    };
+    Ok(syntax_object(t, found))
+}
+
+/// A range as an object: whole lines as lines, else chars, without the line
+/// break it ends in.
+fn syntax_object(t: &dyn TextModel, r: Range<Pos>) -> Object {
+    let (sl, sc) = text::line_col(t, r.start);
+    let (el, ec) = text::line_col(t, r.end);
+    if sc == 0 && (ec == 0 || r.end == t.len_chars()) && el > sl {
+        let last = if ec == 0 { el - 1 } else { el };
+        return Object {
+            start: Cur::new(sl, 0),
+            end: Cur::new(last, line_len(t, last).saturating_sub(1)),
+            inclusive: true,
+            linewise: true,
+        };
+    }
+    let mut end = r.end;
+    while end > r.start + 1 && t.char(end - 1) == '\n' {
+        end -= 1;
+    }
+    let (el, ec) = text::line_col(t, end - 1);
+    Object {
+        start: Cur::new(sl, sc),
+        end: Cur::new(el, ec),
+        inclusive: true,
+        linewise: false,
+    }
+}
+
+/// Where the `count`th syntax object's start is after the cursor (or
+/// before it), for `]f` `[f` and the like.
+pub fn syntax_jump(
+    t: &dyn TextModel,
+    cursor: Cur,
+    count: usize,
+    forward: bool,
+    kind: SyntaxObject,
+) -> Option<Cur> {
+    let here = text::pos(t, cursor.line, cursor.col.min(line_len(t, cursor.line)));
+    let mut starts: Vec<Pos> = t
+        .syntax_objects(kind, false, here)
+        .into_iter()
+        .map(|r| r.start)
+        .collect();
+    starts.sort();
+    starts.dedup();
+    let to = if forward {
+        starts
+            .into_iter()
+            .filter(|&s| s > here)
+            .nth(count.max(1) - 1)?
+    } else {
+        starts
+            .into_iter()
+            .rev()
+            .filter(|&s| s < here)
+            .nth(count.max(1) - 1)?
+    };
+    let (l, c) = text::line_col(t, to);
+    Some(Cur::new(l, c))
 }

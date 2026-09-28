@@ -185,7 +185,9 @@ fn timing_big() {
     let rust = |fns: usize| {
         let mut text = String::new();
         for i in 0..fns {
-            text.push_str(&format!("/// Doc {i}\nfn f{i}(a: u32) -> u32 {{\n    a + {i}\n}}\n"));
+            text.push_str(&format!(
+                "/// Doc {i}\nfn f{i}(a: u32) -> u32 {{\n    a + {i}\n}}\n"
+            ));
         }
         text
     };
@@ -226,6 +228,9 @@ fn timing_big() {
             s.parse(&r);
             key = key.min(t.elapsed());
         }
-        eprintln!("{name} ({} lines): full parse {full:?}, keystroke reparse {key:?}, screen {screen:?}", rope.len_lines());
+        eprintln!(
+            "{name} ({} lines): full parse {full:?}, keystroke reparse {key:?}, screen {screen:?}",
+            rope.len_lines()
+        );
     }
 }

@@ -2,7 +2,9 @@
 //! changes. The cursor and all editing belong to the Vim engine.
 
 use omavim_syntax::{InputEdit, Lang, Point, Syntax};
+use omavim_vim::SyntaxObject;
 use ropey::Rope;
+use std::cell::{Cell, RefCell};
 use std::ops::Range;
 use std::path::PathBuf;
 
@@ -67,18 +69,6 @@ impl Document {
         });
     }
 
-    /// The text was edited: bring the syntax tree up to date.
-    pub fn edited(&mut self, edits: &[InputEdit]) {
-        if let Some(s) = &mut self.syntax
-            && !edits.is_empty()
-        {
-            for e in edits {
-                s.edit(e);
-            }
-            s.parse(&self.text);
-        }
-    }
-
     /// What to write to the file.
     pub fn contents(&self) -> String {
         let mut s = self.text.to_string();
@@ -98,18 +88,37 @@ impl Document {
     }
 }
 
-/// The text, for the Vim engine to edit, noting each edit for tree-sitter.
+/// The text, for the Vim engine to edit: each edit goes to the syntax tree
+/// too, which is parsed again when it's next wanted (for a text object, or
+/// once the keys are done).
 pub struct Recorder<'a> {
-    pub text: &'a mut Rope,
-    pub edits: Vec<InputEdit>,
+    text: &'a mut Rope,
+    syntax: RefCell<Option<&'a mut Syntax>>,
+    stale: Cell<bool>,
 }
 
 impl<'a> Recorder<'a> {
-    pub fn new(text: &'a mut Rope) -> Self {
+    pub fn new(doc: &'a mut Document) -> Self {
         Self {
-            text,
-            edits: Vec::new(),
+            text: &mut doc.text,
+            syntax: RefCell::new(doc.syntax.as_mut()),
+            stale: Cell::new(false),
         }
+    }
+
+    /// Bring the syntax tree up to date with the edits.
+    fn parse(&self) {
+        if self.stale.replace(false)
+            && let Some(s) = self.syntax.borrow_mut().as_mut()
+        {
+            s.parse(self.text);
+        }
+    }
+}
+
+impl Drop for Recorder<'_> {
+    fn drop(&mut self) {
+        self.parse();
     }
 }
 
@@ -145,14 +154,44 @@ impl omavim_vim::TextModel for Recorder<'_> {
         let old_end_position = point(self.text, old_end_byte);
         omavim_vim::TextModel::replace(&mut *self.text, range, with);
         let new_end_byte = start_byte + with.len();
-        self.edits.push(InputEdit {
+        let edit = InputEdit {
             start_byte,
             old_end_byte,
             new_end_byte,
             start_position,
             old_end_position,
             new_end_position: point(self.text, new_end_byte),
-        });
+        };
+        if let Some(s) = self.syntax.get_mut().as_mut() {
+            s.edit(&edit);
+            self.stale.set(true);
+        }
+    }
+
+    fn syntax_objects(&self, kind: SyntaxObject, inner: bool, near: usize) -> Vec<Range<usize>> {
+        self.parse();
+        let syntax = self.syntax.borrow();
+        let Some(s) = syntax.as_ref() else {
+            return Vec::new();
+        };
+        let kind = match kind {
+            SyntaxObject::Function => "function",
+            SyntaxObject::Class => "class",
+            SyntaxObject::Parameter => "parameter",
+            SyntaxObject::Comment => "comment",
+            SyntaxObject::Emphasis => "emphasis",
+            SyntaxObject::Link => "link",
+            SyntaxObject::Heading => "heading",
+            SyntaxObject::Code => "code",
+        };
+        let near = self.text.char_to_byte(near.min(self.text.len_chars()));
+        let len = self.text.len_bytes();
+        s.objects(self.text, kind, inner, near)
+            .into_iter()
+            .map(|r| {
+                self.text.byte_to_char(r.start.min(len))..self.text.byte_to_char(r.end.min(len))
+            })
+            .collect()
     }
 }
 

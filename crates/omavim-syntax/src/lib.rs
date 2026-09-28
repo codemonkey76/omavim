@@ -7,6 +7,7 @@
 //! injection queries they ship (see NOTICE.md).
 
 mod lang;
+mod objects;
 
 pub use lang::Lang;
 pub use tree_sitter::{InputEdit, Point};
@@ -59,6 +60,28 @@ impl Syntax {
         }
     }
 
+    /// Every `kind` of text object (`function`, `class`, `parameter`,
+    /// `comment`; in Markdown `emphasis`, `link`, `heading`, `code`), or
+    /// just the inside of each: byte ranges. Those in code embedded in the
+    /// text too, where it's embedded around `near` (a byte).
+    pub fn objects(&self, text: &Rope, kind: &str, inner: bool, near: usize) -> Vec<Range<usize>> {
+        let Some(tree) = &self.tree else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        objects::collect(
+            self.lang,
+            tree.root_node(),
+            text,
+            kind,
+            inner,
+            near,
+            0,
+            &mut out,
+        );
+        out
+    }
+
     /// Parse the text (again, after edits).
     pub fn parse(&mut self, text: &Rope) {
         self.tree = parse_rope(&mut self.parser, text, self.tree.as_ref());
@@ -94,7 +117,7 @@ fn parse_rope(parser: &mut Parser, text: &Rope, old: Option<&Tree>) -> Option<Tr
 }
 
 /// The text of a node, for queries' `#eq?` and `#match?`.
-struct RopeText<'a>(&'a Rope);
+pub(crate) struct RopeText<'a>(&'a Rope);
 
 impl<'a> TextProvider<&'a [u8]> for RopeText<'a> {
     type I = std::vec::IntoIter<&'a [u8]>;
@@ -112,7 +135,7 @@ impl<'a> TextProvider<&'a [u8]> for RopeText<'a> {
 }
 
 /// How deep injections go (Markdown, its code block, a string in that...).
-const MAX_DEPTH: usize = 3;
+pub(crate) const MAX_DEPTH: usize = 3;
 
 /// Paint `paint` (a name per byte of `range`) with one layer's highlights,
 /// then with its injections' over them.
@@ -152,8 +175,26 @@ fn highlight_layer(
     if depth >= MAX_DEPTH {
         return;
     }
+    for (inner, ranges) in injections(lang, root, text, range) {
+        let Some(tree) = parse_injection(inner, &ranges, text) else {
+            continue;
+        };
+        // The embedded language's own colours go over the outer ones.
+        highlight_layer(inner, tree.root_node(), text, range, paint, depth + 1);
+    }
+}
+
+/// The code a layer embeds over `range`: each embedded language, and where
+/// its text is.
+pub(crate) fn injections(
+    lang: Lang,
+    root: Node,
+    text: &Rope,
+    range: &Range<usize>,
+) -> Vec<(Lang, Vec<tree_sitter::Range>)> {
+    let config = lang.config();
     let Some(injections) = &config.injections else {
-        return;
+        return Vec::new();
     };
     let mut cursor = QueryCursor::new();
     cursor.set_byte_range(range.clone());
@@ -186,22 +227,22 @@ fn highlight_layer(
         };
         layers.push((inner, content_ranges(node, include_children)));
     }
-    for (inner, ranges) in layers {
-        if ranges.is_empty() {
-            continue;
-        }
-        let mut parser = Parser::new();
-        if parser.set_language(&inner.config().language).is_err()
-            || parser.set_included_ranges(&ranges).is_err()
-        {
-            continue;
-        }
-        let Some(tree) = parse_rope(&mut parser, text, None) else {
-            continue;
-        };
-        // The embedded language's own colours go over the outer ones.
-        highlight_layer(inner, tree.root_node(), text, range, paint, depth + 1);
+    layers
+}
+
+/// Parse embedded code: just its parts of the text.
+pub(crate) fn parse_injection(
+    lang: Lang,
+    ranges: &[tree_sitter::Range],
+    text: &Rope,
+) -> Option<Tree> {
+    if ranges.is_empty() {
+        return None;
     }
+    let mut parser = Parser::new();
+    parser.set_language(&lang.config().language).ok()?;
+    parser.set_included_ranges(ranges).ok()?;
+    parse_rope(&mut parser, text, None)
 }
 
 /// The ranges of an injection's content: the node, less its named
@@ -264,4 +305,7 @@ pub(crate) struct Config {
     pub highlight_names: Vec<Option<&'static str>>,
     pub injection_language: Option<u32>,
     pub injection_content: Option<u32>,
+    /// Where functions, classes, parameters and comments are (from
+    /// nvim-treesitter-textobjects).
+    pub textobjects: Option<Query>,
 }

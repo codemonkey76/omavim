@@ -203,14 +203,13 @@ impl App {
             }
         }
         let before = self.vim.changes();
-        let mut text = Recorder::new(&mut self.doc.text);
+        let mut text = Recorder::new(&mut self.doc);
         for key in vim_keys(&press) {
             if self.vim.key(&mut text, key).is_err() {
                 // Vim beeps; the keys after it still count, as typed keys do.
             }
         }
-        let edits = text.edits;
-        self.doc.edited(&edits);
+        drop(text);
         if self.vim.changes() != before {
             self.doc.dirty = true;
             self.status = None;
