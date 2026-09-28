@@ -185,6 +185,16 @@ GLOBAL = [
     ":g/e/norm $<C-a><CR>",
 ]
 
+# :s///c, answering its questions.
+CONFIRM = [
+    ":s/e/E/c<CR>y", ":s/e/E/gc<CR>yny", ":%s/e/E/gc<CR>yyy<Esc>", ":%s/e/E/c<CR>a", ":%s/e/E/gc<CR>nnna",
+    ":%s/e/E/gc<CR>l", ":%s/e/E/gc<CR>nl", ":%s/e/E/gc<CR><Esc>", ":%s/e/E/gc<CR>nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn<Esc>",
+    ":%s/e/E/gc<CR>yyu", ":%s/o/0/gc<CR>yny<Esc>", ":%s/\\n/ /gc<CR>yy<Esc>", ":%s/\\n/ /gc<CR>ny<Esc>", ":%s/x*/-/gc<CR>yyy<Esc>",
+    ":%s/zzz/E/c<CR>", ":%s/e/E/gc<CR>y<C-e>y<Esc>", ":%s/e/&&/gc<CR>yy<Esc>", ":%s/e/E/c<CR>yyy<Esc>", ":%s/e/E/c<CR>ya",
+    ":%s/e/E/gc<CR>yy<Esc><C-o>", ":%s/e/E/gc<CR>y<Esc>u<C-r>", ":2,3s/a/A/gc<CR>yyyy<Esc>", ":%s/e/E/gc<CR>yy<Esc>'[", ":%s/e/E/gc<CR>yy<Esc>`]",
+    ":%s/e/E/gc<CR>yx<Esc>",
+]
+
 # CTRL-A and CTRL-X, on a text of numbers, from several places.
 NUMBERS_TEXT = (
     "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n"
@@ -227,7 +237,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL + CONFIRM
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

@@ -47,13 +47,15 @@ struct Expected {
 
 fn mode_name(m: Mode) -> &'static str {
     match m {
-        Mode::Normal | Mode::OperatorPending => "n",
+        Mode::Normal => "n",
+        Mode::OperatorPending => "no",
         Mode::Insert => "i",
         Mode::Replace => "R",
         Mode::Visual => "v",
         Mode::VisualLine => "V",
         Mode::VisualBlock => "\u{16}",
         Mode::CommandLine => "c",
+        Mode::Confirm => "r?",
     }
 }
 

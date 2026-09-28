@@ -493,6 +493,7 @@ fn mode_label(mode: Mode) -> &'static str {
         Mode::VisualBlock => "V-BLOCK",
         Mode::OperatorPending => "NORMAL",
         Mode::CommandLine => "COMMAND",
+        Mode::Confirm => "CONFIRM",
     }
 }
 

@@ -25,13 +25,14 @@ wheel, `zt zz zb z<CR> z. z-`), marks (`m{a-z}` `m{A-Z}`, `'` and `` ` ``,
 binary numbers; in visual mode too, and `g CTRL-A` for a sequence), undo/redo, `.`,
 and the command line: ranges
 (`N . $ % /pat/ ?pat? 'x '<,'>` with `+`/`-` offsets, `;`, `3:` and visual `:`),
-`:s` and `:%s` with Vim's replacement syntax and flags, `:&`, `:&&`, `&`,
+`:s` and `:%s` with Vim's replacement syntax and flags (`c` asks about each
+match), `:&`, `:&&`, `&`,
 `g&`, `@:`, `:d :y :j :> :< :m :t :p`, `:g` and `:v` (with any of these,
 `:normal` too), `:normal`, `:set` (`ic scs ws hls ts sw`), `:e`,
 `:w`, `:q`, `:wq`, `:x`, `|` between commands, editing with the cursor keys,
 `CTRL-W`, `CTRL-R`, `CTRL-V`, and history on Up/Down for commands and searches. Lines
 wrap at word breaks and the view scrolls exactly as Neovim's does with
-'linebreak' and 'smoothscroll'. `:s///c`, `gq` and block visual mode are next.
+'linebreak' and 'smoothscroll'. `gq` and block visual mode are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a

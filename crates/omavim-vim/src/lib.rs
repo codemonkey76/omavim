@@ -63,4 +63,6 @@ pub enum Mode {
     VisualBlock,
     OperatorPending,
     CommandLine,
+    /// `:s///c` asking whether to substitute a match.
+    Confirm,
 }

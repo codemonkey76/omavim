@@ -6,7 +6,7 @@
 use super::{Beep, Mode, Op, R, Register, Vim};
 use crate::search::{self, Haystack};
 use crate::text::{self, first_non_blank, last_line, line_len, line_text};
-use crate::{Key, TextModel};
+use crate::{Key, Pos, TextModel};
 
 /// A line being typed after `:`, `/` or `?`: its text and cursor, and where
 /// Up/Down have got to in the history.
@@ -232,7 +232,10 @@ impl Vim {
                 }
                 self.begin_group();
                 let result = self.ex(t, cmd);
-                self.close_group();
+                // (`:s///c` keeps its change open while it asks.)
+                if self.confirm.is_none() {
+                    self.close_group();
+                }
                 self.checkpcmark(t);
                 result
             }
@@ -938,6 +941,259 @@ fn bool_option(name: &str) -> bool {
 }
 
 /// A `:d`/`:y` argument: a register name, then a count.
+/// `:s///c` asking about each match: what it's substituting, where it's
+/// got to, and what it's done.
+#[derive(Debug, Clone)]
+pub(super) struct Confirm {
+    pattern: String,
+    string: String,
+    ic: bool,
+    scs: bool,
+    all: bool,
+    /// The pattern can match a line break (it goes on across lines).
+    multiline: bool,
+    /// The range's first line, and its last (as lines come and go).
+    first: usize,
+    last: usize,
+    /// The match being asked about, and where the next search starts.
+    current: (Pos, Pos),
+    groups: Vec<Option<(Pos, Pos)>>,
+    next_from: Pos,
+    subs: usize,
+    /// The last line substituted on, and where that substitution ended (an
+    /// empty match there isn't one).
+    last_hit: Option<usize>,
+    after_sub: Option<Pos>,
+}
+
+impl Confirm {
+    pub(super) fn current(&self) -> std::ops::Range<Pos> {
+        self.current.0..self.current.1
+    }
+}
+
+impl Vim {
+    fn start_confirm(
+        &mut self,
+        t: &mut dyn TextModel,
+        first: usize,
+        last: usize,
+        pattern: &str,
+        string: &str,
+        flags: &str,
+    ) -> R {
+        let ic = if flags.contains('I') {
+            false
+        } else {
+            flags.contains('i') || self.ignorecase
+        };
+        let scs = self.smartcase && !flags.contains('i');
+        if let Err(e) = search::compile(pattern, ic, scs) {
+            return err(self, &e);
+        }
+        let forward = self.last_search.as_ref().is_none_or(|s| s.forward);
+        self.set_search(pattern.to_string(), forward, Default::default(), false);
+        let mut c = Confirm {
+            pattern: pattern.to_string(),
+            string: string.to_string(),
+            ic,
+            scs,
+            all: flags.contains('g'),
+            multiline: pattern.contains("\\n") || pattern.contains("\\_"),
+            first,
+            last,
+            current: (0, 0),
+            groups: Vec::new(),
+            next_from: t.line_to_char(first),
+            subs: 0,
+            last_hit: None,
+            after_sub: None,
+        };
+        if !self.next_confirm(t, &mut c) {
+            return if flags.contains('e') {
+                Ok(())
+            } else {
+                err(self, &format!("E486: Pattern not found: {pattern}"))
+            };
+        }
+        // Finding a match is a jump (from where the cursor was), and the
+        // substitutions are one change.
+        self.setpcmark(t);
+        self.begin_group();
+        self.ask(t, c);
+        Ok(())
+    }
+
+    /// Find the next match to ask about, from `c.next_from`, in the range.
+    fn next_confirm(&self, t: &dyn TextModel, c: &mut Confirm) -> bool {
+        let Ok(pat) = search::compile(&c.pattern, c.ic, c.scs) else {
+            return false;
+        };
+        let h = Haystack::with_final_newline(t);
+        let last = c.last.min(last_line(t));
+        let range_end = text::pos(t, last, line_len(t, last));
+        let mut at = c.next_from;
+        loop {
+            if at > range_end {
+                return false;
+            }
+            let Some(groups) = pat.captures_at(&h, at) else {
+                return false;
+            };
+            let Some((s, e)) = groups[0] else {
+                return false;
+            };
+            if s > range_end {
+                return false;
+            }
+            // An empty match straight after a substitution isn't one.
+            if s == e && Some(s) == c.after_sub {
+                at = s + 1;
+                continue;
+            }
+            c.current = (s, e);
+            c.groups = groups;
+            return true;
+        }
+    }
+
+    /// Show the match and the question; the answer comes to confirm_key.
+    fn ask(&mut self, t: &dyn TextModel, c: Confirm) {
+        self.cursor = c.current.0;
+        self.message = Some(format!(
+            "replace with {}? (y)es/(n)o/(a)ll/(q)uit/(l)ast/scroll up(^E)/down(^Y)",
+            c.string
+        ));
+        self.confirm = Some(c);
+        self.scroll_to_cursor(t);
+    }
+
+    /// A key while `:s///c` asks.
+    pub(super) fn confirm_key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
+        let Some(mut c) = self.confirm.take() else {
+            return Ok(());
+        };
+        match key {
+            Key::Char('y') => {
+                let from = self.confirm_replace(t, &mut c);
+                self.confirm_next(t, c, from);
+            }
+            Key::Char('l') => {
+                // The last: this one, then stop.
+                self.confirm_replace(t, &mut c);
+                self.finish_confirm(t, c, true);
+            }
+            Key::Char('n') => {
+                let (s, e) = c.current;
+                let from = self.confirm_on(t, &c, s, e, s == e);
+                self.confirm_next(t, c, from);
+            }
+            Key::Char('a') => {
+                // This one and the rest, without asking.
+                loop {
+                    c.next_from = self.confirm_replace(t, &mut c);
+                    if !self.next_confirm(t, &mut c) {
+                        break;
+                    }
+                }
+                self.finish_confirm(t, c, false);
+            }
+            Key::Char('q') | Key::Esc | Key::Ctrl('c') => self.finish_confirm(t, c, true),
+            Key::Ctrl('e') | Key::Ctrl('y') => {
+                // Only as far as keeps the match in view (scrollup_clamp).
+                let top = self.top;
+                let _ = self.scroll(t, super::Scroll::Line(key == Key::Ctrl('e')), None);
+                if self.cursor != c.current.0 {
+                    self.top = top;
+                    self.cursor = c.current.0;
+                }
+                self.confirm = Some(c);
+            }
+            // Anything else: it asks again.
+            _ => self.confirm = Some(c),
+        }
+        Ok(())
+    }
+
+    /// Substitute the match asked about; where to look for the next one.
+    fn confirm_replace(&mut self, t: &mut dyn TextModel, c: &mut Confirm) -> Pos {
+        let (s, e) = c.current;
+        let h = Haystack::with_final_newline(t);
+        let with = expand(&c.string, &h, &c.groups);
+        let e = e.min(t.len_chars());
+        let lines_before = t.len_lines();
+        // Undo and redo come back to the first line changed, at its start.
+        self.set_undo_cursor(t.line_to_char(t.char_to_line(s.min(t.len_chars()))));
+        self.edit_hint = Some(super::EditHint::Substitute);
+        self.edit(t, s..e, &with);
+        c.subs += 1;
+        c.last_hit = Some(t.char_to_line(s.min(t.len_chars())));
+        // Lines a matched line break joined go from the range.
+        c.last = (c.last + t.len_lines()).saturating_sub(lines_before);
+        let after = s + with.chars().count();
+        let empty = s == e;
+        c.after_sub = Some(after);
+        // The cursor goes to the start of the line (that the replacement
+        // ends on), as Vim's do_sub.
+        self.cursor = t.line_to_char(t.char_to_line(after.min(t.len_chars())));
+        self.confirm_on(t, c, s, after, empty)
+    }
+
+    /// Where to look after a match at `s`, with `after` the place after it
+    /// (or after what replaced it): with g, on along its line, unless that's
+    /// at the line's end (Vim's "lastone"); else the next line. An empty
+    /// match is found again where it was, and skipped: one past it.
+    fn confirm_on(&self, t: &dyn TextModel, c: &Confirm, s: Pos, after: Pos, empty: bool) -> Pos {
+        let at = after + usize::from(empty);
+        let line = t.char_to_line(after.saturating_sub(1).max(s).min(t.len_chars()));
+        let end = text::pos(t, line, line_len(t, line));
+        if c.all && (at < end || (at == end && c.multiline)) {
+            at
+        } else {
+            next_line_start(t, after.saturating_sub(1).max(s))
+        }
+    }
+
+    fn confirm_next(&mut self, t: &mut dyn TextModel, mut c: Confirm, from: Pos) {
+        c.next_from = from;
+        if self.next_confirm(t, &mut c) {
+            self.ask(t, c);
+        } else {
+            self.finish_confirm(t, c, true);
+        }
+    }
+
+    /// Done asking: the marks and the cursor as Vim's do_sub leaves them
+    /// (on the last match asked about, unless `a` took over).
+    fn finish_confirm(&mut self, t: &mut dyn TextModel, c: Confirm, asking: bool) {
+        self.message = None;
+        if c.subs > 0 {
+            let last = c.last.min(last_line(t));
+            self.marks.op_start = Some((c.first, 0));
+            self.marks.op_end = Some((last, 0));
+            if !asking {
+                let hit = c.last_hit.unwrap_or(last).min(last_line(t));
+                self.go_line(t, hit);
+            }
+        }
+        // (Left on the match asked about even at a line's end, as Vim.)
+        if !asking {
+            self.clamp(t);
+        }
+        self.close_group();
+    }
+}
+
+/// The start of the line after the one `at` is on (past the end if none).
+fn next_line_start(t: &dyn TextModel, at: Pos) -> Pos {
+    let l = t.char_to_line(at.min(t.len_chars()));
+    if l + 1 >= t.len_lines() {
+        t.len_chars() + 1
+    } else {
+        t.line_to_char(l + 1)
+    }
+}
+
 /// Whether a command (after its range) is one that takes the rest of the
 /// line as its argument, `|`s included: `:g`, `:v`, `:normal`.
 fn takes_rest(chars: &[char]) -> bool {
@@ -1409,8 +1665,11 @@ impl Vim {
         count: Option<usize>,
     ) -> R {
         let (first, last) = with_count(t, first, last, count);
-        if flags.contains('c') {
-            return err(self, "E1500: omavim can't ask to confirm yet (the c flag)");
+        if flags.contains('c') && !flags.contains('n') {
+            if self.global_busy {
+                return err(self, "E1500: omavim can't ask to confirm under :g yet");
+            }
+            return self.start_confirm(t, first, last, pattern, string, flags);
         }
         let all = flags.contains('g');
         let count_only = flags.contains('n');

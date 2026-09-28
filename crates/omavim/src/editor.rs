@@ -378,7 +378,11 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                             palette.primary,
                         );
                     }
-                    Mode::Normal | Mode::Visual | Mode::VisualLine | Mode::VisualBlock => {
+                    Mode::Normal
+                    | Mode::Visual
+                    | Mode::VisualLine
+                    | Mode::VisualBlock
+                    | Mode::Confirm => {
                         fill(
                             renderer,
                             Rectangle::new(

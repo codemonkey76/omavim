@@ -126,6 +126,12 @@ local function split_keys(s)
   return keys
 end
 
+-- Insert mode takes chars already typed ahead together, in one insert
+-- (and '. goes to the first of them): a key typed as another is still being
+-- handled, under load, would be. Neovim doesn't do that when there's an
+-- InsertCharPre autocommand, so here's one that does nothing.
+vim.api.nvim_create_autocmd("InsertCharPre", { callback = function() end })
+
 -- Keys Neovim has taken from its input, when it took the last, and how
 -- many it had taken when it was last idle (SafeState: nothing pending, in
 -- normal, insert, visual or command-line mode).
@@ -255,7 +261,8 @@ local function start(case, done)
   -- Having taken it isn't enough: a key typed while the last is still being
   -- handled is typeahead, and insert mode takes typeahead chars together.
   -- Neovim is waiting when it's idle, or when it's "blocking" for the rest
-  -- of a command (after d, f, ", q); failing both for 50ms, type anyway.
+  -- of a command (after f, q); failing both (after d, ", where Neovim says
+  -- neither) for 50ms, type anyway.
   -- (Not "blocking" in insert mode: it's that too while it looks for more
   -- typed chars to insert with the last.)
   timer:start(0, 1, function()

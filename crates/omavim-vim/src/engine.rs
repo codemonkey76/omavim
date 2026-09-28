@@ -377,6 +377,8 @@ pub struct Vim {
     buffer_empty: bool,
     /// `:normal` is typing its keys.
     normal_depth: usize,
+    /// `:s///c` is asking about a match.
+    confirm: Option<ex::Confirm>,
     /// The register `""` is: the one last written (Vim's y_previous).
     unnamed: Option<char>,
     /// The register given with `"` for the command being run.
@@ -470,6 +472,7 @@ impl Vim {
             global_beginline: false,
             buffer_empty: false,
             normal_depth: 0,
+            confirm: None,
             unnamed: None,
             reg_name: None,
             reg_one: false,
@@ -609,6 +612,9 @@ impl Vim {
     }
 
     pub fn mode(&self) -> Mode {
+        if self.confirm.is_some() {
+            return Mode::Confirm;
+        }
         if self.prompt().is_some() {
             return Mode::CommandLine;
         }
@@ -732,8 +738,12 @@ impl Vim {
             .collect()
     }
 
-    /// While a search is typed: where it would go (Vim's 'incsearch').
+    /// While a search is typed: where it would go (Vim's 'incsearch'); and
+    /// while `:s///c` asks, the match it's asking about.
     pub fn search_preview(&self, t: &dyn TextModel) -> Option<std::ops::Range<Pos>> {
+        if let Some(c) = &self.confirm {
+            return Some(c.current());
+        }
         let (pat, forward) = self.shown_pattern()?;
         let h = Haystack::new(t);
         let f = search::find(t, &h, &pat, self.cursor, forward?, 1, false, true)?;
@@ -1012,6 +1022,7 @@ impl Vim {
                 .all(|k| matches!(k, Key::Char(c) if c.is_ascii_digit()));
         let result = match self.mode {
             Mode::Insert | Mode::Replace => self.insert_key(t, key),
+            _ if self.confirm.is_some() => self.confirm_key(t, key),
             Mode::CommandLine => self.cmdline_key(t, key),
             Mode::Normal if key == Key::Char(':') && (self.pending.is_empty() || counted) => {
                 // `3:` is `:.,.+2`.
