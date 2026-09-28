@@ -720,7 +720,7 @@ impl App {
         let Some((_, draft)) = found.into_iter().next() else {
             return;
         };
-        let same = draft.text == self.doc.text.to_string()
+        let same = self.doc.text == draft.text.as_str()
             && draft.final_newline == self.doc.final_newline;
         if same {
             for f in files {
