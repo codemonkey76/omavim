@@ -59,14 +59,14 @@ small window, and the engine must give the same text, cursor, mode,
 registers, view, marks and jump list for each.
 
 ```sh
-cargo run -p omavim -- notes.md     # or no file, for a new one
+cargo run -p omavim -- notes.md     # or no file, for a new one; several open a window each
 ```
 
 | Keys | |
 | --- | --- |
 | Vim's | as in Vim |
 | `Space w` / `Space W` | save (asks where, the first time) / save as; `Ctrl+S` saves in every mode |
-| `Space o` | open |
+| `Space o` | open (pick several: the rest each open in a window of their own; `:new file` too) |
 | `Space n` | new window |
 | `Space p` | print (`:hardcopy`): 12pt on the paper the dialog picks |
 | `Space f` | fullscreen, or back |

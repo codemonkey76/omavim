@@ -93,7 +93,7 @@ enum Message {
     Scheme(Scheme),
     /// The desktop's text size changed.
     TextScale(f32),
-    Opened(Result<Option<(PathBuf, String)>, String>),
+    Opened(Result<Option<portal::Picked>, String>),
     /// Where Save As chose to write (None: cancelled).
     SaveTo(Result<Option<PathBuf>, String>),
     Saved(Result<PathBuf, String>),
@@ -173,8 +173,18 @@ impl<T> std::fmt::Debug for Handoff<T> {
 
 impl App {
     fn boot() -> Self {
-        // `omavim notes.md`: open it, or start it if it doesn't exist yet.
-        let (doc, status) = match std::env::args_os().nth(1).map(PathBuf::from) {
+        // `omavim notes.md`: open it, or start it if it doesn't exist yet;
+        // `omavim a.md b.md`: each in a window of its own.
+        let mut files = std::env::args_os().skip(1).map(PathBuf::from);
+        let first = files.next();
+        let others: Vec<String> = files
+            .filter_map(|f| {
+                open_window(Some(&f))
+                    .err()
+                    .map(|e| format!("{}: {e}", f.display()))
+            })
+            .collect();
+        let (doc, status) = match first {
             Some(path) => match std::fs::read_to_string(&path) {
                 Ok(contents) => (Document::open(path, &contents), None),
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -188,7 +198,7 @@ impl App {
             None => (Document::default(), None),
         };
         let (config, config_error) = Config::load();
-        let status = config_error.or(status);
+        let status = config_error.or(others.into_iter().next()).or(status);
         let mut vim = Vim::new();
         // For writing: j and k go by screen line, as gj and gk.
         vim.display_lines = true;
@@ -284,8 +294,11 @@ impl App {
                 }
                 return self.check_disk();
             }
-            Message::Opened(Ok(Some((path, contents)))) => {
+            Message::Opened(Ok(Some((path, contents, others)))) => {
                 self.switch_to(Document::open(path, &contents), None);
+                for other in others {
+                    let _ = self.new_window(Some(&other));
+                }
             }
             Message::Focused => return Task::batch([read_clipboards(), self.check_disk()]),
             Message::Clipboard(register, text) => {
@@ -419,7 +432,7 @@ impl App {
             Action::Save => self.save(),
             Action::SaveAs => self.save_as(),
             Action::Open => self.open(),
-            Action::NewWindow => self.new_window(),
+            Action::NewWindow => self.new_window(None),
             Action::Print => self.print(),
             Action::Fullscreen => toggle_fullscreen(),
             Action::Bold | Action::Italic | Action::Link => {
@@ -441,13 +454,9 @@ impl App {
     }
 
     /// Another window, as another Omavim.
-    fn new_window(&mut self) -> Task<Message> {
-        match std::env::current_exe().and_then(|exe| std::process::Command::new(exe).spawn()) {
-            Ok(mut child) => {
-                // (Reaped when it closes.)
-                std::thread::spawn(move || child.wait());
-            }
-            Err(e) => self.status = Some(format!("New window: {e}")),
+    fn new_window(&mut self, file: Option<&std::path::Path>) -> Task<Message> {
+        if let Err(e) = open_window(file) {
+            self.status = Some(format!("New window: {e}"));
         }
         Task::none()
     }
@@ -648,7 +657,12 @@ impl App {
                 Some(file) => self.write(self.resolve(file)),
                 None => self.save_as(),
             },
-            "new" | "vne" | "vnew" | "tabnew" | "tabe" | "tabedit" => self.new_window(),
+            // (A file, in a window of its own.)
+            "new" | "vne" | "vnew" | "sp" | "split" | "vs" | "vsplit" | "tabnew" | "tabe"
+            | "tabedit" => {
+                let file = arg.map(|f| self.resolve(f));
+                self.new_window(file.as_deref())
+            }
             "ha" | "hardcopy" => self.print(),
             "fullscreen" => toggle_fullscreen(),
             "h" | "help" => {
@@ -1184,6 +1198,16 @@ impl App {
         .center_x(Length::Fill);
         panel.into()
     }
+}
+
+/// Another Omavim, in a window of its own (with a file, or a new one).
+fn open_window(file: Option<&std::path::Path>) -> std::io::Result<()> {
+    let mut command = std::process::Command::new(std::env::current_exe()?);
+    command.args(file);
+    let mut child = command.spawn()?;
+    // (Reaped when it closes.)
+    std::thread::spawn(move || child.wait());
+    Ok(())
 }
 
 /// How long ago a time was, roughly.

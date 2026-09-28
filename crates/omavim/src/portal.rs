@@ -84,23 +84,39 @@ fn text_files() -> FileFilter {
         .glob("*.txt")
 }
 
-/// Ask for a file to open, and read it. `Ok(None)` if the picker was cancelled.
-pub async fn open() -> Result<Option<(PathBuf, String)>, String> {
+/// A file picked to open, read, and any others picked with it (each for a
+/// window of its own).
+pub type Picked = (PathBuf, String, Vec<PathBuf>);
+
+/// Ask for files to open, and read the first. `Ok(None)` if the picker was
+/// cancelled.
+pub async fn open() -> Result<Option<Picked>, String> {
     let request = SelectedFiles::open_file()
         .title("Open")
         .modal(true)
+        .multiple(true)
         .filter(text_files())
         .filter(FileFilter::new("All files").glob("*"))
         .send()
         .await
         .map_err(|e| e.to_string())?;
-    let Some(path) = chosen(request.response())? else {
-        return Ok(None);
+    let mut paths = match request.response() {
+        Ok(files) => files
+            .uris()
+            .iter()
+            .filter_map(|u| file_path(u.as_str()))
+            .collect::<Vec<_>>(),
+        Err(ashpd::Error::Response(ashpd::desktop::ResponseError::Cancelled)) => return Ok(None),
+        Err(e) => return Err(e.to_string()),
     };
+    if paths.is_empty() {
+        return Ok(None);
+    }
+    let path = paths.remove(0);
     let contents = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("{}: {e}", path.display()))?;
-    Ok(Some((path, contents)))
+    Ok(Some((path, contents, paths)))
 }
 
 /// Ask where to save, suggesting `name`. `Ok(None)` if cancelled.
