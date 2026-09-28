@@ -24,6 +24,16 @@ local function byte_col(line, col)
   return vim.str_byteindex(line, "utf-32", math.min(col, vim.str_utfindex(line, "utf-32")))
 end
 
+-- A mark's byte column as chars, not moved back onto the line (a mark can
+-- be past its line's end, or on a line that's gone).
+local function mark_col(lnum, byte)
+  local line = vim.api.nvim_buf_get_lines(0, lnum - 1, lnum, false)[1] or ""
+  if byte >= #line then return vim.str_utfindex(line, "utf-32") + (byte - #line) end
+  -- Part way into a char: that char (where Vim puts the cursor for it).
+  byte = byte + vim.str_utf_start(line, byte + 1)
+  return vim.str_utfindex(line, "utf-32", byte)
+end
+
 local function pos(p) -- getpos() result -> {line, col} 0-based chars
   local line = vim.api.nvim_buf_get_lines(0, p[2] - 1, p[2], false)[1] or ""
   return { p[2] - 1, char_col(line, p[3] - 1) }
@@ -58,6 +68,9 @@ vim.o.showmode = false
 -- A key that starts one of Neovim's default mappings (visual "in", "an")
 -- waits 'timeoutlen' for the rest before it's taken: don't wait long.
 vim.o.timeoutlen = 1
+-- The live preview of :s runs it on every key typed, making jumps no one
+-- asked for.
+vim.o.inccommand = ""
 
 -- A case's keys, one by one, in the notation nvim_input takes: "<CR>" is one
 -- key, and a "<" that doesn't start a key name is "<lt>".
@@ -91,9 +104,14 @@ local function split_keys(s)
   return keys
 end
 
--- Keys Neovim has taken from its input.
-local taken = 0
-vim.on_key(function() taken = taken + 1 end, vim.api.nvim_create_namespace("fixtures"))
+-- Keys Neovim has taken from its input, when it took the last, and how
+-- many it had taken when it was last idle.
+local taken, taken_at, idle = 0, 0, -1
+vim.on_key(function()
+  taken = taken + 1
+  taken_at = vim.uv.now()
+end, vim.api.nvim_create_namespace("fixtures"))
+vim.api.nvim_create_autocmd("SafeState", { callback = function() idle = taken end })
 
 local results = {}
 
@@ -117,6 +135,8 @@ local function start(case, done)
   vim.fn.setreg("/", "")
   vim.fn.histdel(":")
   vim.fn.histdel("/")
+  -- No marks or jumps from before; '' is where the case starts.
+  vim.cmd("delmarks A-Z")
   local first = vim.api.nvim_buf_get_lines(0, case.cursor[1], case.cursor[1] + 1, false)[1] or ""
   vim.api.nvim_win_set_cursor(0, { case.cursor[1] + 1, byte_col(first, case.cursor[2]) })
   if case.top then
@@ -131,7 +151,13 @@ local function start(case, done)
   -- The view as the keys find it: recorded by a first <Cmd>, once Neovim has
   -- redrawn (which can change what winrestview set).
   local start_top
-  _G.start = function() start_top = top() end
+  _G.start = function()
+    start_top = top()
+    vim.cmd("normal! m'")
+    vim.cmd("clearjumps")
+    -- (Setting up the undo history above counts as a change.)
+    vim.cmd("delmarks .")
+  end
   -- A fresh undo history per case: the text set above isn't an undoable change.
   local undolevels = vim.bo.undolevels
   vim.bo.undolevels = -1
@@ -163,6 +189,21 @@ local function start(case, done)
     if mode == "v" or mode == "V" then
       result.visual_start = pos(vim.fn.getpos("v"))
     end
+    -- Marks that are set, and the jump list.
+    result.marks = vim.empty_dict()
+    for m in ("abAB'[].^<>"):gmatch(".") do
+      local p = vim.fn.getpos("'" .. m)
+      if p[2] > 0 then
+        local col = p[3] >= 2147483647 and 2147483647 or mark_col(p[2], p[3] - 1)
+        result.marks[m] = { p[2] - 1, col }
+      end
+    end
+    local jl = vim.fn.getjumplist()
+    local jumps = {}
+    for _, j in ipairs(jl[1]) do
+      table.insert(jumps, { j.lnum - 1, mark_col(j.lnum, j.col) })
+    end
+    result.jumps = { jumps, jl[2] }
   end
 
   local keys = split_keys(case.keys)
@@ -186,12 +227,17 @@ local function start(case, done)
     vim.schedule(done)
   end
   -- Type the next key once Neovim has taken the last and waits for more.
+  -- Having taken it isn't enough: a key typed while the last is still being
+  -- handled is typeahead, and insert mode takes typeahead chars together.
+  -- SafeState says Neovim is idle; where it doesn't come (an operator
+  -- pending, the command line), give the key a few ms.
   timer:start(0, 1, function()
+    local ready = taken - base >= fed and (idle == taken or vim.uv.now() - taken_at >= 3)
     if result and fed == #keys and taken - base >= fed then
       finish(result)
     elseif vim.uv.now() - began > 10000 then
       finish({ name = case.name, error = "timed out" })
-    elseif fed < #keys and taken - base >= fed then
+    elseif fed < #keys and ready then
       fed = fed + 1
       vim.api.nvim_input(keys[fed])
     end

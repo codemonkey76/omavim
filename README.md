@@ -18,19 +18,22 @@ g#`, offsets such as `/foo/e+1`, Vim's pattern syntax, matches highlighted
 as you type and after, `:noh`), moving by screen line (`gj gk g0 g^ gm g$`,
 and `j`/`k` without a count go by screen line too), `H M L`, scrolling
 (`CTRL-E CTRL-Y CTRL-D CTRL-U CTRL-F CTRL-B`, PageUp/PageDown, the mouse
-wheel, `zt zz zb z<CR> z. z-`), undo/redo, `.`, and the command line: ranges
-(`N . $ % /pat/ ?pat? '<,'>` with `+`/`-` offsets, `3:` and visual `:`),
+wheel, `zt zz zb z<CR> z. z-`), marks (`m{a-z}` `m{A-Z}`, `'` and `` ` ``,
+`'' '. '^ '[ '] '< '>`, kept on their text as it's edited), the jump list
+(`CTRL-O`, `CTRL-I`/Tab), `gv`, `N%`, undo/redo, `.`, and the command line: ranges
+(`N . $ % /pat/ ?pat? 'x '<,'>` with `+`/`-` offsets, `;`, `3:` and visual `:`),
 `:s` and `:%s` with Vim's replacement syntax and flags, `:&`, `:&&`, `&`,
 `g&`, `@:`, `:d :y :j :> :< :m :t`, `:set` (`ic scs ws hls ts sw`), `:e`,
 `:w`, `:q`, `:wq`, `:x`, `|` between commands, editing with the cursor keys,
 `CTRL-W`, `CTRL-R`, and history on Up/Down for commands and searches. Lines
 wrap at word breaks and the view scrolls exactly as Neovim's does with
-'linebreak' and 'smoothscroll'. Marks, macros, `:g` and `:s///c` are next.
+'linebreak' and 'smoothscroll'. Macros, `CTRL-A`/`CTRL-X`, `:g`, `:s///c`, `gq` and
+block visual mode are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a
 small window, and the engine must give the same text, cursor, mode,
-registers and view for each.
+registers, view, marks and jump list for each.
 
 ```sh
 cargo run -p omavim -- notes.md     # or no file, for a new one
@@ -41,7 +44,7 @@ cargo run -p omavim -- notes.md     # or no file, for a new one
 | Vim's | as in Vim |
 | `Ctrl+S` | save (asks where, the first time) |
 | `Ctrl+Shift+S` | save as |
-| `Ctrl+O` | open (until Vim's jump list claims it) |
+| `Ctrl+Shift+O` | open |
 
 ## Install
 

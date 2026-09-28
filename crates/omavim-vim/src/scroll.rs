@@ -973,7 +973,10 @@ impl Vim {
         let last = last_line(t);
         if let Some(n) = count
             && "+\rtz.^-b".contains(c)
+            && n.saturating_sub(1) != self.cline(t)
         {
+            // Going to another line is a jump.
+            self.setpcmark(t);
             let line = n.saturating_sub(1).min(last);
             let col = text::line_col(t, self.cursor).1;
             self.cursor = text::pos(t, line, col.min(line_len(t, line)));

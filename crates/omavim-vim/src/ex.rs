@@ -224,6 +224,7 @@ impl Vim {
                 self.begin_group();
                 let result = self.ex(t, cmd);
                 self.close_group();
+                self.checkpcmark(t);
                 result
             }
         }
@@ -295,6 +296,7 @@ impl Vim {
                 let (reg, count) = reg_count(arg);
                 let (first, last) = with_count(t, first, last, count);
                 // Neovim puts the cursor on the first line before deleting.
+                self.setpcmark(t);
                 self.go_line_keep(t, first);
                 self.adjust_skipcol(t);
                 self.reg_name = reg;
@@ -336,6 +338,7 @@ impl Vim {
                 let extra = arg.chars().take_while(|&c| c.to_string() == name).count();
                 let count = arg[extra..].trim().parse::<usize>().ok();
                 let (first, last) = with_count(t, first, last, count);
+                self.setpcmark(t);
                 // As Neovim's op_shift: from the column aimed for on the first
                 // line, each line whose indent changes leaves the cursor at
                 // the indent's end (an empty line, at 0); it ends on the last.
@@ -409,6 +412,7 @@ impl Vim {
         let chars: Vec<char> = s.trim().chars().collect();
         let mut i = 0;
         match self.one_address(t, &chars, &mut i, text::line_col(t, self.cursor).0) {
+            Ok(Some(Some(a))) if a > last_line(t) => err(self, "E16: Invalid range").map(|_| None),
             Ok(Some(a)) => Ok(a),
             Ok(None) => err(self, "E14: Invalid address").map(|_| None),
             Err(e) => err(self, &e).map(|_| None),
@@ -445,7 +449,12 @@ impl Vim {
                     // The next address counts from this one.
                     if let Some(Some(l)) = addrs.last() {
                         cur = *l;
-                        self.cursor = text::pos(t, cur, 0);
+                        // (The column stays, in bytes, as in Vim.)
+                        let here = text::line_col(t, self.cursor);
+                        let (_, b) = self.mk(t, here);
+                        let (_, col) = self.unmk(t, (cur, b));
+                        self.cursor =
+                            text::pos(t, cur, col.min(line_len(t, cur).saturating_sub(1)));
                     }
                     i += 1;
                 }
@@ -553,11 +562,7 @@ impl Vim {
             Some('\'') => {
                 let m = *chars.get(*i + 1).ok_or("E20: Mark not set")?;
                 *i += 2;
-                let l = match m {
-                    '<' => self.visual_marks.map(|(a, _)| a),
-                    '>' => self.visual_marks.map(|(_, b)| b),
-                    _ => None,
-                };
+                let l = self.mark(t, m).map(|(l, _)| l);
                 line = Some(l.ok_or("E20: Mark not set")? as isize + 1);
             }
             Some(&d @ ('/' | '?')) => {
@@ -703,6 +708,28 @@ impl Vim {
         }
         let block: String = (first..=last).map(|l| line_text(t, l) + "\n").collect();
         let n = last - first + 1;
+        // The marks go with the lines (Vim's do_move): set them by the move,
+        // not by the insert and delete it's made of.
+        let before = self.marks.clone();
+        let d = dest.map_or(-1, |d| d as isize);
+        let map = move |l: usize| -> usize {
+            let li = l as isize;
+            let (f, la) = (first as isize, last as isize);
+            let out = if li >= f && li <= la {
+                if d >= la {
+                    li + (d - la)
+                } else {
+                    li - (f - (d + 1))
+                }
+            } else if d >= la && li > la && li <= d {
+                li - n as isize
+            } else if d < f && li > d && li < f {
+                li + n as isize
+            } else {
+                li
+            };
+            out as usize
+        };
         // Put the copy in first, then delete the original.
         let after = self.insert_lines(t, dest, &block);
         let (first, last) = if dest.is_none_or(|d| d < first) {
@@ -712,6 +739,8 @@ impl Vim {
         };
         self.delete_lines(t, first, last);
         let end = if after > first { after - n } else { after };
+        self.marks = before;
+        self.marks.map_lines(map);
         self.go_line_keep(t, end + n - 1);
         Ok(())
     }
@@ -748,6 +777,7 @@ impl Vim {
     }
 
     fn delete_lines(&mut self, t: &mut dyn TextModel, first: usize, last: usize) {
+        self.edit_hint = Some(super::EditHint::Lines);
         let end = text::pos(t, last, line_len(t, last));
         if last < last_line(t) {
             let (s, e) = (t.line_to_char(first), t.line_to_char(last + 1));
@@ -1189,6 +1219,10 @@ impl Vim {
                 }
                 hit = true;
                 subs += 1;
+                if first_hit.is_none() {
+                    // The first match is a jump (Vim's do_sub).
+                    self.setpcmark(t);
+                }
                 first_hit.get_or_insert(line);
                 if !count_only {
                     out.push_str(&h.text_between(copied, s));
@@ -1249,8 +1283,11 @@ impl Vim {
         let from = first_hit.map_or(start, |l| t.line_to_char(l)).max(start);
         let out: String = out.chars().skip(from - start).collect();
         self.set_undo_cursor(from);
+        self.edit_hint = Some(super::EditHint::Substitute);
         self.edit(t, from..end, &out);
         let hit = last_line_hit.unwrap_or(first).min(last_line(t));
+        self.marks.op_start = Some((first, 0));
+        self.marks.op_end = Some((hit, 0));
         self.go_line(t, hit);
         if lines > 2 {
             self.message = Some(format!(

@@ -144,6 +144,16 @@ EX = [
     "/o<CR>/e<CR>/<Up><Up><CR>", ":s/o/0/<CR>@:", ":1,2d|3d<CR>",
 ]
 
+MARKS = [
+    "ma", "majj'a", "majj`a", "majjd'a", "majjd`a", "jmakdd'a", "jmakk2dd`a", "majdd'a", "jjmakJ`a",
+    "jjmakdd`a", "maxu`a", "maddu'a", "jmakddu'a", "mAjj'A", "majjmbgg:'a,'bd<CR>", "ma`b", "G''",
+    "G``", "Ggg``", "G<C-o>", "G<C-o><C-i>", "Ggg<C-o><C-o>", "3G5G<C-o><C-o>", "/the<CR><C-o>",
+    "n<C-o>", "}<C-o>", "}}<C-o><C-o>", "H<C-o>", "L''", "*<C-o>", "G<C-o><Tab>", "Gm'gg<C-o>",
+    "ywP'[", "ywP`]", "yy`]", "yj`]", "x'.", "x`.", "dd'.", "iabc<Esc>'^", "iabc<Esc>`^", "iabc<Esc>`[",
+    "iabc<Esc>`]", "Aabc<Esc>`[", "vjj<Esc>'<", "vjj<Esc>`>", "Vjj<Esc>`>", "vjj<Esc>gv", "vjj<Esc>ggvgv",
+    "Vj<Esc>jgvd", ">>`[", ">j`]", "gUw`]", ":s/o/0/<CR>`[", "Gdgg''", "maGdgg'a",
+]
+
 # Screen-line motions and scrolling, run on "long" from several views.
 VIEW = [
     "gj", "gk", "3gj", "3gk", "g0", "g^", "gm", "g$", "2g$", "g$gj", "g$gk", "$gj", "$gk", "gjgj",
@@ -171,7 +181,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]
@@ -181,6 +191,11 @@ def cases():
     for name, text in TEXTS.items():
         for (line, col), k in itertools.product(CURSORS[name], keys):
             out.append({"name": f"{name}@{line},{col}: {k}", "text": text, "cursor": [line, col], "keys": k})
+    # The marks that change with every edit ('[ '] '. '^ '< '>) are
+    # compared in the mark cases only.
+    for case in out:
+        if case["keys"] in MARKS:
+            case["all_marks"] = True
     for ((line, col), top), k in itertools.product(VIEW_STARTS, VIEW):
         case = {"name": f"long@{line},{col}^{top}: {k}", "text": TEXTS["long"], "cursor": [line, col], "keys": k}
         if top:

@@ -147,8 +147,9 @@ impl App {
         Task::none()
     }
 
-    /// Keys go to Vim, except the app's own: Ctrl+S, Ctrl+Shift+S, Ctrl+O
-    /// (for now: the leader keys replace them in a later milestone).
+    /// Keys go to Vim, except the app's own: Ctrl+S, Ctrl+Shift+S,
+    /// Ctrl+Shift+O (for now: the leader keys replace them in a later
+    /// milestone). Ctrl+O is Vim's, back through the jump list.
     fn key(&mut self, press: KeyPress) -> Task<Message> {
         let m = press.modifiers;
         if m.control()
@@ -157,7 +158,7 @@ impl App {
             match c.to_ascii_lowercase().as_str() {
                 "s" if m.shift() => return self.save_as(),
                 "s" => return self.save(),
-                "o" => return self.open(),
+                "o" if m.shift() => return self.open(),
                 _ => {}
             }
         }

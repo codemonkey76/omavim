@@ -214,6 +214,26 @@ fn start_ps(t: &dyn TextModel, line: usize) -> bool {
 /// The start of the next (`forward`) or current/previous sentence (Vim's
 /// findsent): what `)` and `(` move to.
 pub fn find_sentence(t: &dyn TextModel, from: Cur, count: usize, forward: bool) -> Option<Cur> {
+    let found = find_sentence_inner(t, from, count, forward);
+    if found.is_some() {
+        // Vim's findsent() sets the jump mark where it starts from.
+        SENTENCE_JUMPS.with(|j| j.borrow_mut().push(from));
+    }
+    found
+}
+
+thread_local! {
+    /// Where the sentence searches since the last take started from: each
+    /// is a jump in Vim (for `''`), even inside `is`/`as`.
+    static SENTENCE_JUMPS: std::cell::RefCell<Vec<Cur>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// The sentence searches' starting points since the last call.
+pub fn take_sentence_jumps() -> Vec<Cur> {
+    SENTENCE_JUMPS.with(|j| std::mem::take(&mut *j.borrow_mut()))
+}
+
+fn find_sentence_inner(t: &dyn TextModel, from: Cur, count: usize, forward: bool) -> Option<Cur> {
     let mut pos = from;
     let step = |t: &dyn TextModel, p: &mut Cur| if forward { incl(t, p) } else { decl(t, p) };
     for n in (0..count).rev() {

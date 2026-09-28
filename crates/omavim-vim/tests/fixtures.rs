@@ -13,9 +13,12 @@ struct Case {
     text: String,
     cursor: (usize, usize),
     keys: String,
+    /// Compare the marks every edit moves too ('[ '] '. '^ '< '>).
+    #[serde(default)]
+    all_marks: bool,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 struct Expected {
     name: String,
     text: String,
@@ -29,6 +32,12 @@ struct Expected {
     /// The view before the keys (Neovim scrolls when the cursor is set).
     #[serde(default)]
     start_top: (usize, usize),
+    /// The marks set: name → (line, column; 2147483647 for "the end").
+    #[serde(default)]
+    marks: BTreeMap<String, (usize, usize)>,
+    /// The jump list and where CTRL-O is in it.
+    #[serde(default)]
+    jumps: (Vec<(usize, usize)>, usize),
     /// The other registers that aren't empty: name → (text, "v" or "V").
     #[serde(default)]
     registers: BTreeMap<String, (String, String)>,
@@ -68,18 +77,32 @@ fn run(case: &Case, start_top: (usize, usize)) -> Expected {
         case.cursor.1.min(len.saturating_sub(1)),
     ));
     vim.set_top(&rope, start_top.0, start_top.1);
+    vim.place_mark(
+        &rope,
+        '\'',
+        (case.cursor.0, case.cursor.1.min(len.saturating_sub(1))),
+    );
     let aborted = false;
     for k in key::parse(&case.keys) {
         let _ = vim.key(&mut rope, k);
     }
     let (line, col) = text::line_col(&rope, vim.cursor());
-    let reg = vim.register();
+    let jumps = vim.jumplist(&rope);
+    let reg = vim.register().clone();
     Expected {
         name: case.name.clone(),
         text: rope.to_string(),
         cursor: (line, col),
         top: vim.top(),
         start_top,
+        marks: "abAB'[].^<>"
+            .chars()
+            .filter_map(|m| {
+                let (l, c) = vim.get_mark(&rope, m)?;
+                Some((m.to_string(), (l, c.min(2147483647))))
+            })
+            .collect(),
+        jumps,
         mode: mode_name(vim.mode()).into(),
         register: reg.text.clone(),
         register_type: if reg.linewise { "V".into() } else { "v".into() },
@@ -133,8 +156,15 @@ fn behaves_like_neovim() {
     assert_eq!(cases.len(), expected.len());
     let mut failures = Vec::new();
     for (case, want) in cases.iter().zip(&expected) {
-        let got = run(case, want.start_top);
-        if got != *want && !KNOWN.iter().any(|(name, _)| *name == case.name) {
+        let mut got = run(case, want.start_top);
+        let mut want = want.clone();
+        if !case.all_marks {
+            for m in "[].^<>".chars() {
+                want.marks.remove(&m.to_string());
+                got.marks.remove(&m.to_string());
+            }
+        }
+        if got != want && !KNOWN.iter().any(|(name, _)| *name == case.name) {
             failures.push((case, want, got));
         }
     }
@@ -176,6 +206,18 @@ fn behaves_like_neovim() {
                 eprintln!(
                     "   regs  want {:?}\n         got  {:?}",
                     want.registers, got.registers
+                );
+            }
+            if want.marks != got.marks {
+                eprintln!(
+                    "   marks want {:?}\n         got  {:?}",
+                    want.marks, got.marks
+                );
+            }
+            if want.jumps != got.jumps {
+                eprintln!(
+                    "   jumps want {:?}\n         got  {:?}",
+                    want.jumps, got.jumps
                 );
             }
             if want.visual_start != got.visual_start {

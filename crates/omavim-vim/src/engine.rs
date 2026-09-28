@@ -14,6 +14,8 @@ use crate::wrap;
 
 #[path = "ex.rs"]
 mod ex;
+#[path = "marks.rs"]
+mod marks;
 #[path = "scroll.rs"]
 mod scroll;
 use crate::text::{
@@ -22,6 +24,7 @@ use crate::text::{
 use crate::textobj::{self, Found, Vis};
 use crate::{Mode, Pos, TextModel};
 use ex::{LastSub, LineEdit};
+use marks::{EditHint, Marks};
 use scroll::{Dir, Scroll};
 
 /// A command couldn't be done. Vim beeps and drops the keys typed after it.
@@ -122,6 +125,8 @@ enum Motion {
     Screen(char),
     /// `H`, `M`, `L`.
     ScreenLine(char),
+    /// `'x` (to the line) and `` `x `` (exactly: true).
+    Mark(char, bool),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -188,6 +193,12 @@ enum Action {
     SubRepeat(bool),
     /// `@:`: the last command line again.
     ExRepeat,
+    /// `m{char}`.
+    SetMark(char),
+    /// CTRL-O (false) and CTRL-I (true).
+    Jump(bool),
+    /// `gv`: the last visual selection again.
+    Reselect,
 }
 
 /// Where a search puts the cursor relative to its match (`/foo/e+1`).
@@ -277,12 +288,18 @@ struct Edit {
     /// The first line it changed, where undo puts the cursor (Vim's undo
     /// works in whole lines and knows this; it can't be recovered after).
     line: usize,
+    /// A join or a delete of chars: undo replaces the lines it spans (as
+    /// Vim saved them), whatever it looks like.
+    spanned: bool,
 }
 
 #[derive(Debug, Clone)]
 struct Group {
     edits: Vec<Edit>,
     cursor_before: Pos,
+    /// The named marks before the change: undo puts back the ones that were
+    /// set then (as Vim's uh_namedm).
+    marks_before: std::collections::HashMap<char, (usize, usize)>,
 }
 
 /// The insert session under way.
@@ -368,8 +385,13 @@ pub struct Vim {
     cmd_history: Vec<String>,
     search_history: Vec<String>,
     last_sub: LastSub,
-    /// The lines of the last visual selection, for `'<` and `'>`.
-    visual_marks: Option<(usize, usize)>,
+    marks: Marks,
+    /// The operator's start as it runs (Vim's oap->start), for `'[`.
+    op_start: Option<(usize, usize)>,
+    /// What the next edit is, for moving marks (see marks.rs).
+    edit_hint: Option<EditHint>,
+    /// '< and '> were set as visual mode ended (not after).
+    visual_marked: bool,
     /// A finished `:` command for the app to run (`w`, `q`, ...).
     command: Option<String>,
     pub shiftwidth: usize,
@@ -432,7 +454,10 @@ impl Vim {
             cmd_history: Vec::new(),
             search_history: Vec::new(),
             last_sub: LastSub::default(),
-            visual_marks: None,
+            marks: Marks::default(),
+            op_start: None,
+            edit_hint: None,
+            visual_marked: false,
             command: None,
             shiftwidth: 8,
             tabstop: 8,
@@ -515,6 +540,18 @@ impl Vim {
         }
         let l = self.layout(t, line);
         l.vcols[col.min(l.vcols.len() - 1)]
+    }
+
+    /// Where a motion to screen column `vcol` puts the cursor (Vim's
+    /// coladvance): on a char, or in visual mode on the line's end too.
+    fn col_on(&self, t: &dyn TextModel, line: usize, vcol: usize) -> usize {
+        let col = self.col_at(t, line, vcol);
+        let len = line_len(t, line);
+        if matches!(self.mode, Mode::Visual | Mode::VisualLine) {
+            col
+        } else {
+            col.min(len.saturating_sub(1))
+        }
     }
 
     /// The char at a screen column (the line's end if it's past it).
@@ -827,8 +864,12 @@ impl Vim {
         {
             rec.push(key);
         }
-        let was_visual = matches!(self.mode, Mode::Visual | Mode::VisualLine)
-            .then(|| (self.anchor.min(self.cursor), self.anchor.max(self.cursor)));
+        let was_visual = matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some((
+            self.mode,
+            self.anchor,
+            self.cursor,
+            self.want,
+        ));
         let counted = !self.pending.is_empty()
             && self
                 .pending
@@ -874,13 +915,16 @@ impl Vim {
             }
             _ => self.command_key(t, key),
         };
-        if let Some((a, b)) = was_visual
+        if let Some((mode, anchor, cursor, want)) = was_visual
             && !matches!(self.mode, Mode::Visual | Mode::VisualLine)
+            && !std::mem::take(&mut self.visual_marked)
         {
-            self.visual_marks = Some((
-                t.char_to_line(a.min(t.len_chars())),
-                t.char_to_line(b.min(t.len_chars())),
-            ));
+            let at = |p: Pos| text::line_col(t, p.min(t.len_chars()));
+            let want = want.unwrap_or_else(|| {
+                let (l, c) = at(cursor);
+                self.vcol(t, l, c)
+            });
+            self.marks.visual = Some((self.mk(t, at(anchor)), self.mk(t, at(cursor)), mode, want));
         }
         if result.is_err() {
             self.pending.clear();
@@ -978,6 +1022,7 @@ impl Vim {
         };
         self.reg_name = None;
         self.reg_one = false;
+        self.checkpcmark(t);
         self.search_input = None;
         if result.is_ok() && changes && !self.replaying && self.session.is_none() {
             self.finish_change(count, visual_extent);
@@ -1077,6 +1122,43 @@ impl Vim {
             Action::SwapEnds => Err(Beep),
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
+            Action::SetMark(c) => {
+                if self.set_mark(t, c) {
+                    Ok(())
+                } else {
+                    Err(Beep)
+                }
+            }
+            Action::Jump(forward) => {
+                let n = count as isize;
+                match self.jump(t, if forward { n } else { -n }) {
+                    Some(m) => {
+                        self.cursor = self.to_mark(t, m);
+                        self.want = None;
+                        Ok(())
+                    }
+                    None => Err(Beep),
+                }
+            }
+            Action::Reselect => {
+                let Some((a, b, mode, want)) = self.marks.visual else {
+                    return Err(Beep);
+                };
+                let (a, b) = (self.unmk(t, a), self.unmk(t, b));
+                let visual = |s: &mut Self| {
+                    s.mode = mode;
+                    let at = |p: (usize, usize)| {
+                        let l = p.0.min(last_line(t));
+                        text::pos(t, l, p.1.min(line_len(t, l)))
+                    };
+                    s.anchor = at(a);
+                    s.cursor = at(b);
+                    // The column aimed for comes back too (vi_curswant).
+                    s.want = Some(want);
+                };
+                visual(self);
+                Ok(())
+            }
             Action::ExRepeat => {
                 let Some(line) = self.cmd_history.last().cloned() else {
                     self.message = Some("E30: No previous command line".into());
@@ -1184,7 +1266,7 @@ impl Vim {
                 };
                 let v = want(self);
                 self.want = Some(v);
-                (Cur::new(target, self.col_at(t, target, v)), Kind::Linewise)
+                (Cur::new(target, self.col_on(t, target, v)), Kind::Linewise)
             }
             Motion::LineStart => {
                 self.want = None;
@@ -1233,6 +1315,7 @@ impl Vim {
                 )
             }
             Motion::GotoFirst | Motion::GotoLast => {
+                self.setpcmark(t);
                 let line = match (m, count) {
                     (_, Some(n)) => (n - 1).min(last_line(t)),
                     (Motion::GotoFirst, None) => 0,
@@ -1240,7 +1323,7 @@ impl Vim {
                 };
                 let v = want(self);
                 self.want = Some(v);
-                (Cur::new(line, self.col_at(t, line, v)), Kind::Linewise)
+                (Cur::new(line, self.col_on(t, line, v)), Kind::Linewise)
             }
             Motion::NextLine | Motion::PrevLine | Motion::CurrentLine => {
                 let line = match m {
@@ -1316,6 +1399,7 @@ impl Vim {
                 )
             }
             Motion::ParagraphForward | Motion::ParagraphBack => {
+                self.setpcmark(t);
                 let (to, inclusive) =
                     motion::paragraph(t, c.line, n, m == Motion::ParagraphForward).ok_or(Beep)?;
                 self.want = None;
@@ -1329,12 +1413,32 @@ impl Vim {
                 )
             }
             Motion::SentenceForward | Motion::SentenceBack => {
+                self.setpcmark(t);
                 let to =
                     textobj::find_sentence(t, c, n, m == Motion::SentenceForward).ok_or(Beep)?;
                 self.want = None;
                 (to, Kind::Exclusive)
             }
             Motion::Object(..) => return Err(Beep),
+            Motion::Mark(name, exact) => {
+                let Some(m) = self.mark(t, name) else {
+                    self.message = Some("E20: Mark not set".into());
+                    return Err(Beep);
+                };
+                self.setpcmark(t);
+                self.want = None;
+                if exact {
+                    return Ok((self.to_mark(t, m), Kind::Exclusive));
+                }
+                let l = m.0;
+                (
+                    Cur::new(
+                        l,
+                        first_non_blank(t, l).min(line_len(t, l).saturating_sub(1)),
+                    ),
+                    Kind::Linewise,
+                )
+            }
             Motion::Screen(which) => {
                 // These move the cursor as they work: put it back after.
                 let here = self.cursor;
@@ -1361,6 +1465,7 @@ impl Vim {
                 return result.map(|to| (to, kind));
             }
             Motion::ScreenLine(which) => {
+                self.setpcmark(t);
                 let here = self.cursor;
                 let to = self.screen_line(t, which, n, op);
                 self.cursor = here;
@@ -1426,9 +1531,29 @@ impl Vim {
                 // starts at the cursor).
                 return self.do_search(t, forward, n, text::pos(t, c.line, start));
             }
+            Motion::Match if count.is_some() => {
+                // {count}%: that far through the text, rounded up.
+                let n = count.unwrap_or(1);
+                if n > 100 {
+                    return Err(Beep);
+                }
+                self.setpcmark(t);
+                let lines = t.len_lines();
+                let line = ((lines * n).div_ceil(100)).clamp(1, lines) - 1;
+                let v = want(self);
+                self.want = Some(v);
+                (Cur::new(line, self.col_on(t, line, v)), Kind::Linewise)
+            }
             Motion::Match => {
-                // No bracket on the line: Neovim stays put, no error.
-                let to = motion::match_pair(t, c).unwrap_or(c);
+                // No bracket on the line: Neovim (its matchit plugin) stays
+                // put, no error.
+                let to = match motion::match_pair(t, c) {
+                    Some(to) => {
+                        self.setpcmark(t);
+                        to
+                    }
+                    None => c,
+                };
                 self.want = None;
                 (to, Kind::Inclusive)
             }
@@ -1528,6 +1653,7 @@ impl Vim {
             self.message = Some(format!("E486: Pattern not found: {}", s.pattern));
             return Err(Beep);
         };
+        self.setpcmark(t);
         self.message = found.wrapped.then(|| {
             if forward {
                 "search hit BOTTOM, continuing at TOP".to_string()
@@ -1596,6 +1722,9 @@ impl Vim {
         count: Option<usize>,
     ) -> R {
         let start_cur = self.cur(t);
+        // The column aimed for before the motion (Vim updates it only at the
+        // start of a command): a linewise delete goes back to it.
+        let want_before = self.want;
         let n = count.unwrap_or(1);
         if let Motion::Object(obj, around) = m {
             return self.operate_object(t, op, obj, around, n);
@@ -1662,6 +1791,7 @@ impl Vim {
                 kind = Kind::Linewise;
             }
         }
+        self.op_start = Some(text::line_col(t, start));
         let line_offset = matches!(m, Motion::Search(_) | Motion::SearchNext(_))
             && self
                 .last_search
@@ -1687,7 +1817,12 @@ impl Vim {
             self.cursor = self.cursor.min(to);
         }
         if kind == Kind::Linewise {
-            let v = match self.want {
+            let want = if op == Op::Delete {
+                want_before
+            } else {
+                self.want
+            };
+            let v = match want {
                 // After `$` a linewise delete keeps the cursor's own column.
                 Some(w) if w != usize::MAX || op != Op::Delete => w,
                 _ => self.vcol(t, start_cur.line, start_cur.col),
@@ -1711,6 +1846,32 @@ impl Vim {
     /// The text object `obj` at the cursor (`around`: `a`, else `i`), or
     /// from the visual selection `vis`.
     fn object(
+        &mut self,
+        t: &dyn TextModel,
+        obj: Obj,
+        around: bool,
+        n: usize,
+        vis: Option<Vis>,
+    ) -> Found {
+        let c = self.cur(t);
+        // Jumps, as Vim's text objects make them: a block or tag from the
+        // cursor, and every sentence search.
+        let fresh = vis.is_none_or(|v| v.anchor == c);
+        if fresh && matches!(obj, Obj::Block(..) | Obj::Tag) {
+            self.setpcmark(t);
+        }
+        textobj::take_sentence_jumps();
+        let found = self.object_inner(t, obj, around, n, vis);
+        let here = self.cursor;
+        for j in textobj::take_sentence_jumps() {
+            self.cursor = Self::at(t, j);
+            self.setpcmark(t);
+        }
+        self.cursor = here;
+        found
+    }
+
+    fn object_inner(
         &self,
         t: &dyn TextModel,
         obj: Obj,
@@ -1812,6 +1973,7 @@ impl Vim {
             return Err(Beep);
         }
         let count = count.min(last_line(t) - line + 1);
+        self.op_start = Some((line, col));
         let v = match op {
             // Vim moves to the first non-blank before these (nv_lineop).
             Op::Change | Op::Lower | Op::Upper | Op::Toggle => {
@@ -1837,8 +1999,34 @@ impl Vim {
     ) -> R {
         // Neovim turns 'linebreak' off while an operator runs.
         let saved = std::mem::replace(&mut self.no_lbr, true);
+        // '[ and '] (a change's are set when its insert ends), as bytes into
+        // the lines as they were.
+        let start = self.op_start.take().unwrap_or((first, 0));
+        let start = self.mk(t, start);
         let result = self.apply_lines_inner(t, op, first, last, vcol);
         self.no_lbr = saved;
+        let last_col =
+            |t: &dyn TextModel, l: usize| line_len(t, l.min(last_line(t))).saturating_sub(1);
+        match op {
+            Op::Yank => {
+                self.marks.op_start = Some((first, 0));
+                self.marks.op_end = Some((last, usize::MAX));
+            }
+            Op::Lower | Op::Upper | Op::Toggle => {
+                self.marks.op_start = Some((first, 0));
+                self.marks.op_end = Some(self.mk(t, (last, last_col(t, last))));
+            }
+            Op::Delete => {
+                self.marks.op_start = Some(start);
+                self.marks.op_end = Some(start);
+            }
+            Op::ShiftRight | Op::ShiftLeft => {
+                self.marks.op_start = Some(start);
+                self.marks.op_end = Some(self.mk(t, (last, last_col(t, last))));
+                self.marks.last_change = Some((first, 0));
+            }
+            Op::Change => {}
+        }
         result
     }
 
@@ -1874,16 +2062,19 @@ impl Vim {
                 if last == last_line(t) && first > 0 {
                     // The last lines go with the line break before them.
                     let from = text::pos(t, first - 1, line_len(t, first - 1));
+                    self.edit_hint = Some(EditHint::Lines);
                     self.edit(t, from..end, "");
                     if let Some(e) = self.group.as_mut().and_then(|g| g.edits.last_mut()) {
                         e.line = first;
                     }
                     place(self, t, first - 1);
                 } else if last == last_line(t) {
+                    self.edit_hint = Some(EditHint::Lines);
                     self.edit(t, 0..end, "");
                     self.cursor = 0;
                 } else {
                     let to = t.line_to_char(last + 1);
+                    self.edit_hint = Some(EditHint::Lines);
                     self.edit(t, start..to, "");
                     place(self, t, first);
                 }
@@ -1894,6 +2085,7 @@ impl Vim {
                 self.begin_group();
                 let ind = indent(t, first);
                 let from = t.line_to_char(first);
+                self.edit_hint = Some(EditHint::Change);
                 self.edit(t, from..end, &ind);
                 self.cursor = from + ind.chars().count();
                 let mut s = Session::new(None, 1, self.cursor);
@@ -1928,8 +2120,27 @@ impl Vim {
     /// An operator over the chars in `range`.
     fn apply_chars(&mut self, t: &mut dyn TextModel, op: Op, range: std::ops::Range<Pos>) -> R {
         let saved = std::mem::replace(&mut self.no_lbr, true);
+        let at = |p: Pos| self.mk(t, text::line_col(t, p.min(t.len_chars())));
+        let (start, end) = (
+            at(range.start),
+            at(range.end.saturating_sub(1).max(range.start)),
+        );
+        // (Deleting nothing sets no marks: Vim's op_delete stops first.)
+        let empty = range.is_empty();
         let result = self.apply_chars_inner(t, op, range);
         self.no_lbr = saved;
+        match op {
+            Op::Delete if empty => {}
+            Op::Yank | Op::Lower | Op::Upper | Op::Toggle => {
+                self.marks.op_start = Some(start);
+                self.marks.op_end = Some(end);
+            }
+            Op::Delete => {
+                self.marks.op_start = Some(start);
+                self.marks.op_end = Some(start);
+            }
+            _ => {}
+        }
         result
     }
 
@@ -1949,12 +2160,26 @@ impl Vim {
             }
             Op::Delete => {
                 if range.is_empty() {
+                    // Vim still saves the line for undo (u_save_cursor): an
+                    // undo step that changes nothing.
+                    self.begin_group();
+                    let line = t.char_to_line(range.start.min(t.len_chars()));
+                    if let Some(g) = self.group.as_mut() {
+                        g.edits.push(Edit {
+                            at: range.start,
+                            removed: String::new(),
+                            inserted: String::new(),
+                            line,
+                            spanned: true,
+                        });
+                    }
                     return Ok(());
                 }
                 // Undo comes back to where the deleted text began.
                 self.cursor = range.start;
                 self.store(yanked, false, true);
                 self.begin_group();
+                self.edit_hint = Some(EditHint::Spanned);
                 self.edit(t, range.clone(), "");
                 self.cursor = range.start;
                 self.clamp(t);
@@ -2057,6 +2282,7 @@ impl Vim {
     /// Join `n` lines from `line` (Vim's do_join).
     fn join(&mut self, t: &mut dyn TextModel, line: usize, n: usize, spaces: bool) {
         let mut join_col = 0;
+        let first_len = line_len(t, line);
         for _ in 1..n {
             let cur_len = line_len(t, line);
             let cur = line_text(t, line);
@@ -2076,9 +2302,15 @@ impl Vim {
                 && last != Some(' ');
             let from = text::pos(t, line, cur_len);
             let to = t.line_to_char(line + 1) + lead;
+            self.edit_hint = Some(EditHint::Spanned);
             self.edit(t, from..to, if space { " " } else { "" });
             join_col = cur_len;
         }
+        // As Vim's do_join: '[ at the first line's end, '] at the joined
+        // line's, '. on the line after (where the lines were deleted).
+        self.marks.op_start = Some(self.mk(t, (line, first_len)));
+        self.marks.op_end = Some(self.mk(t, (line, line_len(t, line))));
+        self.marks.last_change = Some((line + 1, 0));
         self.cursor = text::pos(t, line, join_col);
         self.clamp(t);
         self.want = None;
@@ -2088,11 +2320,14 @@ impl Vim {
         let reg = self.read_register()?;
         self.begin_group();
         let (line, col) = self.lc(t);
+        // '[ where the text starts, '] on the last char of its last line.
+        let (start, block_lines, last_line_len);
         if reg.linewise {
             let body = reg.text.strip_suffix('\n').unwrap_or(&reg.text);
             let block = vec![body; count].join("\n");
             let target = if before {
                 let at = t.line_to_char(line);
+                self.edit_hint = Some(EditHint::Above);
                 self.edit(t, at..at, &format!("{block}\n"));
                 line
             } else {
@@ -2100,6 +2335,9 @@ impl Vim {
                 self.edit(t, at..at, &format!("\n{block}"));
                 line + 1
             };
+            start = t.line_to_char(target);
+            block_lines = block.matches('\n').count();
+            last_line_len = block.rsplit('\n').next().map_or(0, |l| l.chars().count());
             self.cursor = text::pos(
                 t,
                 target,
@@ -2113,6 +2351,9 @@ impl Vim {
                 text::pos(t, line, col + 1)
             };
             self.edit(t, at..at, &block);
+            start = at;
+            block_lines = block.matches('\n').count();
+            last_line_len = block.rsplit('\n').next().map_or(0, |l| l.chars().count());
             if block.contains('\n') {
                 self.cursor = at;
                 self.clamp(t);
@@ -2120,6 +2361,15 @@ impl Vim {
                 self.cursor = at + block.chars().count() - 1;
             }
         }
+        let (l1, c1) = text::line_col(t, start);
+        let l2 = l1 + block_lines;
+        let end = if !reg.linewise && block_lines == 0 {
+            (l1, c1 + last_line_len.saturating_sub(1))
+        } else {
+            (l2, last_line_len.saturating_sub(1))
+        };
+        self.marks.op_start = Some(self.mk(t, (l1, c1)));
+        self.marks.op_end = Some(self.mk(t, end));
         self.want = None;
         Ok(())
     }
@@ -2148,6 +2398,7 @@ impl Vim {
                     self.cursor = text::pos(t, line + 1, ind.chars().count());
                 } else {
                     let at = t.line_to_char(line);
+                    self.edit_hint = Some(EditHint::Above);
                     self.edit(t, at..at, &format!("{ind}\n"));
                     self.cursor = text::pos(t, line, ind.chars().count());
                 }
@@ -2464,6 +2715,13 @@ impl Vim {
             self.session = session;
         }
         self.remove_lone_autoindent(t);
+        // '^ where insert mode was left; '[ and '] the text inserted.
+        let here = self.mk(t, text::line_col(t, self.cursor.min(t.len_chars())));
+        self.marks.last_insert = Some(here);
+        if let Some(s) = &self.session {
+            self.marks.op_start = Some(self.mk(t, text::line_col(t, s.start.min(t.len_chars()))));
+            self.marks.op_end = Some(here);
+        }
         self.session = None;
         self.mode = Mode::Normal;
         let (_, col) = self.lc(t);
@@ -2501,6 +2759,23 @@ impl Vim {
         let (bl, _) = text::line_col(t, b);
         let count = cmd.count.unwrap_or(1);
         let exit = |s: &mut Self| s.mode = Mode::Normal;
+        // A command that ends visual mode records '< and '> first (Vim's
+        // end_visual_mode), so its edit moves them.
+        let ends = !matches!(
+            cmd.action,
+            Action::Move(_)
+                | Action::SwapEnds
+                | Action::Scroll(_)
+                | Action::Z(_)
+                | Action::Reselect
+                | Action::SetMark(_)
+        ) && !matches!(cmd.action, Action::Visual(l) if l != linewise);
+        if ends {
+            let at = |p: Pos| self.mk(t, text::line_col(t, p.min(t.len_chars())));
+            let want = self.want.unwrap_or_else(|| self.virtcol(t));
+            self.marks.visual = Some((at(self.anchor), at(self.cursor), self.mode, want));
+            self.visual_marked = true;
+        }
         let result = self.run_visual_inner(t, cmd, a, b, al, bl, linewise, count, exit);
         if !matches!(
             self.mode,
@@ -2527,7 +2802,38 @@ impl Vim {
         match cmd.action {
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
-            Action::SubRepeat(_) | Action::ExRepeat => Err(Beep),
+            Action::Reselect => {
+                // Swap with the last selection (Vim's nv_gv_cmd).
+                let Some((a, b, mode, want)) = self.marks.visual else {
+                    return Err(Beep);
+                };
+                let at = |p: (usize, usize)| {
+                    let l = p.0.min(last_line(t));
+                    let (l, c) = self.unmk(t, (l, p.1));
+                    text::pos(t, l, c.min(line_len(t, l)))
+                };
+                let now = (
+                    self.mk(t, text::line_col(t, self.anchor)),
+                    self.mk(t, text::line_col(t, self.cursor)),
+                    self.mode,
+                    self.want.unwrap_or_else(|| self.virtcol(t)),
+                );
+                let (a, b) = (at(a), at(b));
+                self.marks.visual = Some(now);
+                self.anchor = a;
+                self.cursor = b;
+                self.mode = mode;
+                self.want = Some(want);
+                Ok(())
+            }
+            Action::SubRepeat(_) | Action::ExRepeat | Action::Jump(_) => Err(Beep),
+            Action::SetMark(c) => {
+                if self.set_mark(t, c) {
+                    Ok(())
+                } else {
+                    Err(Beep)
+                }
+            }
             Action::Move(Motion::Object(obj, around)) => {
                 let vis = Vis {
                     anchor: {
@@ -2704,7 +3010,10 @@ impl Vim {
                 Ok(())
             }
             Action::Cancel => {
+                // Leaving visual mode, the column aimed for is the cursor's
+                // again (Vim's nv_esc).
                 exit(self);
+                self.want = None;
                 Ok(())
             }
             Action::Insert(_) | Action::Replace | Action::Undo | Action::Redo | Action::Repeat => {
@@ -2731,6 +3040,7 @@ impl Vim {
             self.group = Some(Group {
                 edits: Vec::new(),
                 cursor_before: self.cursor,
+                marks_before: self.marks.named.clone(),
             });
         }
     }
@@ -2748,13 +3058,13 @@ impl Vim {
     fn edit(&mut self, t: &mut dyn TextModel, range: std::ops::Range<Pos>, with: &str) {
         let removed = t.slice(range.clone());
         if removed == with {
+            self.edit_hint = None;
             return;
         }
         let line = t.char_to_line(range.start.min(t.len_chars()));
-        let last = t.char_to_line(range.end.min(t.len_chars()));
+        let spanned = self.edit_hint == Some(EditHint::Spanned);
         self.changes += 1;
-        t.replace(range.clone(), with);
-        self.changed_lines(t, line, last, with.matches('\n').count());
+        self.replace_text(t, range.clone(), with);
         self.begin_group();
         if let Some(g) = self.group.as_mut() {
             g.edits.push(Edit {
@@ -2762,21 +3072,123 @@ impl Vim {
                 removed,
                 inserted: with.to_string(),
                 line,
+                spanned,
             });
         }
     }
 
+    /// Undo and redo put back the lowercase marks set before the change,
+    /// keeping the ones now for going the other way (Vim's u_undoredo).
+    fn swap_marks(&mut self, g: &mut Group) {
+        let now: std::collections::HashMap<char, (usize, usize)> = self
+            .marks
+            .named
+            .iter()
+            .filter(|(c, _)| c.is_ascii_lowercase())
+            .map(|(c, p)| (*c, *p))
+            .collect();
+        for (c, p) in &g.marks_before {
+            if c.is_ascii_lowercase() {
+                self.marks.named.insert(*c, *p);
+            }
+        }
+        g.marks_before = now;
+    }
+
+    /// Undo or redo one edit: the text, the view, and the marks as Vim's
+    /// undo moves them (by whole lines; '[ '] and '. to the lines).
+    fn undo_text(
+        &mut self,
+        t: &mut dyn TextModel,
+        range: std::ops::Range<Pos>,
+        with: &str,
+        spanned: bool,
+    ) {
+        let (l1, c1) = text::line_col(t, range.start.min(t.len_chars()));
+        let (l2, _) = text::line_col(t, range.end.min(t.len_chars()));
+        let current = t.slice(range.clone());
+        // Whole lines (at a line's start, ending in a line break) or the
+        // lines the change is in.
+        let whole = !spanned
+            && c1 == 0
+            && (current.is_empty() || current.ends_with('\n'))
+            && (with.is_empty() || with.ends_with('\n'));
+        // Or whole lines after this one (the last lines, with the line break
+        // before them).
+        let after = !whole
+            && !spanned
+            && c1 == line_len(t, l1)
+            && (current.is_empty() || current.starts_with('\n'))
+            && (with.is_empty() || with.starts_with('\n'));
+        let (at, old, new) = if whole {
+            (
+                l1,
+                current.matches('\n').count(),
+                with.matches('\n').count(),
+            )
+        } else if after {
+            (
+                l1 + 1,
+                current.matches('\n').count(),
+                with.matches('\n').count(),
+            )
+        } else {
+            (l1, l2 - l1 + 1, with.matches('\n').count() + 1)
+        };
+        let (was_empty, lines_before) = (t.len_chars() == 0, t.len_lines());
+        t.replace(range, with);
+        self.changed_lines(t, l1, l2, with.matches('\n').count());
+        // To or from an empty buffer (Vim's UH_EMPTYBUF), the whole buffer
+        // is replaced.
+        let (at, old, new, after) = if was_empty || t.len_chars() == 0 {
+            (0, lines_before, t.len_lines(), false)
+        } else {
+            (at, old, new, after)
+        };
+        self.marks_after_undo(at, old, new);
+        // ('[ for lines at the end is the one before them.)
+        let l1 = if after { at - 1 } else { at };
+        let last = last_line(t);
+        let end = if new == 0 { at } else { at + new - 1 };
+        let start = self.marks.op_start.map_or(l1, |(l, _)| l.min(l1));
+        let finish = self.marks.op_end.map_or(end, |(l, _)| l.max(end));
+        self.marks.op_start = Some((start.min(last), 0));
+        self.marks.op_end = Some((finish.min(last), 0));
+        self.marks.last_change = Some((at, 0));
+    }
+
+    /// Change the text, and keep the view and the marks on it.
+    fn replace_text(&mut self, t: &mut dyn TextModel, range: std::ops::Range<Pos>, with: &str) {
+        let (l1, c1) = text::line_col(t, range.start.min(t.len_chars()));
+        let (l2, c2) = text::line_col(t, range.end.min(t.len_chars()));
+        // (In bytes, as the marks are.)
+        let bytes = |l: usize, c: usize| {
+            text::line_text(t, l)
+                .chars()
+                .take(c)
+                .map(char::len_utf8)
+                .sum::<usize>()
+        };
+        let (c1, c2) = (bytes(l1, c1), bytes(l2, c2));
+        let (len1, len2) = (bytes(l1, usize::MAX), bytes(l2, usize::MAX));
+        let removed = t.slice(range.clone());
+        t.replace(range, with);
+        self.changed_lines(t, l1, l2, with.matches('\n').count());
+        self.marks_after_edit(l1, c1, l2, c2, len1, len2, &removed, with, t.len_lines());
+    }
+
     fn undo(&mut self, t: &mut dyn TextModel, count: usize) -> R {
         for i in 0..count {
-            let Some(g) = self.undo.pop() else {
+            let Some(mut g) = self.undo.pop() else {
                 // "Already at oldest change": a beep, unless some were undone.
                 return if i == 0 { Err(Beep) } else { Ok(()) };
             };
+            self.setpcmark(t);
+            self.marks.op_start = None;
+            self.marks.op_end = None;
             for e in g.edits.iter().rev() {
                 let end = e.at + e.inserted.chars().count();
-                let (first, last) = (t.char_to_line(e.at), t.char_to_line(end.min(t.len_chars())));
-                t.replace(e.at..end, &e.removed);
-                self.changed_lines(t, first, last, e.removed.matches('\n').count());
+                self.undo_text(t, e.at..end, &e.removed, e.spanned);
             }
             self.changes += 1;
             let line = g
@@ -2806,6 +3218,7 @@ impl Vim {
             } else {
                 t.line_to_char(line)
             };
+            self.swap_marks(&mut g);
             self.redo.push(g);
         }
         self.clamp(t);
@@ -2815,14 +3228,15 @@ impl Vim {
 
     fn redo(&mut self, t: &mut dyn TextModel, count: usize) -> R {
         for _ in 0..count {
-            let Some(g) = self.redo.pop() else {
+            let Some(mut g) = self.redo.pop() else {
                 return Ok(());
             };
+            self.setpcmark(t);
+            self.marks.op_start = None;
+            self.marks.op_end = None;
             for e in &g.edits {
                 let end = e.at + e.removed.chars().count();
-                let (first, last) = (t.char_to_line(e.at), t.char_to_line(end.min(t.len_chars())));
-                t.replace(e.at..end, &e.inserted);
-                self.changed_lines(t, first, last, e.inserted.matches('\n').count());
+                self.undo_text(t, e.at..end, &e.inserted, e.spanned);
             }
             self.changes += 1;
             let line = g
@@ -2838,6 +3252,7 @@ impl Vim {
             } else {
                 t.line_to_char(line)
             };
+            self.swap_marks(&mut g);
             self.undo.push(g);
         }
         self.clamp(t);
@@ -3111,6 +3526,13 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
             };
         }
         Key::Char(c @ ('H' | 'M' | 'L')) => Motion::ScreenLine(c),
+        Key::Char(q @ ('\'' | '`')) => {
+            return match keys.get(1) {
+                None => Ok(None),
+                Some(Key::Char(c)) => Ok(Some((Motion::Mark(*c, q == '`'), 2))),
+                Some(_) => Err(()),
+            };
+        }
         Key::Char('n') => Motion::SearchNext(false),
         Key::Char('N') => Motion::SearchNext(true),
         Key::Char('*') => Motion::Star {
@@ -3298,6 +3720,9 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         match (first, rest.get(1)) {
             (Key::Char('r'), None) => return Parse::Incomplete,
             (Key::Char('r'), Some(Key::Char(c))) => return done(Action::ReplaceChar(*c)),
+            (Key::Char('m'), None) => return Parse::Incomplete,
+            (Key::Char('m'), Some(Key::Char(c))) => return done(Action::SetMark(*c)),
+            (Key::Char('g'), Some(Key::Char('v'))) => return done(Action::Reselect),
             (Key::Char('g'), Some(Key::Char('J'))) => return done(Action::Join(false)),
             (Key::Char('g'), Some(Key::Char('u'))) => {
                 return done(Action::Operate(Op::Lower, Some(Motion::Right)));
@@ -3375,6 +3800,8 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Key::Char('J') => Some(Action::Join(true)),
         Key::Char('~') => Some(Action::ToggleCase),
         Key::Char('&') => Some(Action::SubRepeat(false)),
+        Key::Ctrl('o') => Some(Action::Jump(false)),
+        Key::Tab | Key::Ctrl('i') => Some(Action::Jump(true)),
         Key::Char('p') => Some(Action::Put(false)),
         Key::Char('P') => Some(Action::Put(true)),
         Key::Char('v') => Some(Action::Visual(false)),
@@ -3394,6 +3821,10 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         (Key::Char('r'), Some(Key::Tab)) => return done(Action::ReplaceChar('\t')),
         (Key::Char('r'), Some(_)) => return Parse::Invalid,
         (Key::Char('g'), Some(Key::Char('&'))) => return done(Action::SubRepeat(true)),
+        (Key::Char('m'), None) => return Parse::Incomplete,
+        (Key::Char('m'), Some(Key::Char(c))) => return done(Action::SetMark(*c)),
+        (Key::Char('m'), Some(_)) => return Parse::Invalid,
+        (Key::Char('g'), Some(Key::Char('v'))) => return done(Action::Reselect),
         (Key::Char('@'), None) => return Parse::Incomplete,
         (Key::Char('@'), Some(Key::Char(':'))) => return done(Action::ExRepeat),
         (Key::Char('g'), Some(Key::Char('J'))) => return done(Action::Join(false)),
