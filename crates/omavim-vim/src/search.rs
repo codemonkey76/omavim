@@ -203,6 +203,8 @@ pub fn compile(pat: &str, ignorecase: bool, smartcase: bool) -> Result<Pattern, 
     let (mut zs, mut ze) = (None, None);
     // `out` is at a point where `^` is start-of-line (and `*` literal).
     let mut at_start = true;
+    // Capturing groups so far.
+    let mut groups = 0;
     let mut i = 0;
     let bad = |what: &str| Err(format!("E867: Unsupported in omavim's search: {what}"));
     while i < p.len() {
@@ -325,7 +327,9 @@ pub fn compile(pat: &str, ignorecase: bool, smartcase: bool) -> Result<Pattern, 
             },
             '~' => out.push('~'),
             '(' => {
-                out.push('(');
+                // Named, so \zs's group can't shift the numbers `\1` uses.
+                groups += 1;
+                out.push_str(&format!("(?P<g{groups}>"));
                 at_start = true;
             }
             ')' => out.push(')'),
@@ -396,6 +400,20 @@ impl Haystack {
         Self { text, bytes }
     }
 
+    /// The text of chars `from..to`.
+    pub fn text_between(&self, from: Pos, to: Pos) -> String {
+        self.text[self.byte(from)..self.byte(to.max(from))].to_string()
+    }
+
+    /// As `new`, with a line break after the last line, as Vim's buffers
+    /// have (so `:s/\n//` sees one there).
+    pub fn with_final_newline(t: &dyn TextModel) -> Self {
+        let mut h = Self::new(t);
+        h.text.push('\n');
+        h.bytes.push(h.text.len());
+        h
+    }
+
     fn byte(&self, c: Pos) -> usize {
         self.bytes[c.min(self.bytes.len() - 1)]
     }
@@ -406,8 +424,39 @@ impl Haystack {
 }
 
 impl Pattern {
+    /// The first match starting at or after char `from`, with its groups:
+    /// `[0]` the match, `[1..=9]` what `\(...\)` caught (for `\1`).
+    pub fn captures_at(&self, h: &Haystack, from: Pos) -> Option<Vec<Option<(Pos, Pos)>>> {
+        let at = h.byte(from);
+        if at > h.text.len() {
+            return None;
+        }
+        let mut b = at;
+        let caps = loop {
+            let caps = self.re.captures_at(&h.text, b)?;
+            if !self.group || caps.name("m").is_some() {
+                break caps;
+            }
+            b = caps.get(0)?.start() + 1;
+            while !h.text.is_char_boundary(b) {
+                b += 1;
+            }
+        };
+        let span = |m: Option<regex::Match>| m.map(|m| (h.char(m.start()), h.char(m.end())));
+        let whole = if self.group {
+            caps.name("m")
+        } else {
+            caps.get(0)
+        };
+        let mut out = vec![span(whole)];
+        for i in 1..=9 {
+            out.push(span(caps.name(&format!("g{i}"))));
+        }
+        Some(out)
+    }
+
     /// The first match found starting at or after char `from`: its chars.
-    fn find_at(&self, h: &Haystack, from: Pos) -> Option<(Pos, Pos)> {
+    pub fn find_at(&self, h: &Haystack, from: Pos) -> Option<(Pos, Pos)> {
         let at = h.byte(from);
         if at > h.text.len() {
             return None;

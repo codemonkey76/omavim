@@ -270,7 +270,7 @@ impl Vim {
 
     /// After the cursor moved in the top line: make sure it isn't in the
     /// rows scrolled off, or under the marker (adjust_skipcol).
-    fn adjust_skipcol(&mut self, t: &dyn TextModel) {
+    pub(super) fn adjust_skipcol(&mut self, t: &dyn TextModel) {
         if !self.scrolling() || self.cline(t) != self.top.0 {
             return;
         }

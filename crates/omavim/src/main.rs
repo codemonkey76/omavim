@@ -195,13 +195,33 @@ impl App {
         Task::batch(tasks)
     }
 
-    /// A `:` command the engine handed over: the file and window ones.
-    fn command(&mut self, cmd: &str) -> Task<Message> {
+    /// Commands the engine handed over, separated by `|` (`:w|q`).
+    fn command(&mut self, line: &str) -> Task<Message> {
+        let mut tasks = Vec::new();
+        let mut saving = false;
+        for cmd in line.split('|').map(str::trim).filter(|c| !c.is_empty()) {
+            // A quit after a write waits for the write to finish.
+            if saving && matches!(cmd, "q" | "quit" | "q!" | "quit!" | "qa" | "qa!") {
+                self.quit_after_save = true;
+                continue;
+            }
+            saving |= matches!(cmd.split_whitespace().next(), Some("w" | "w!" | "write"));
+            tasks.push(self.command_one(cmd));
+        }
+        Task::batch(tasks)
+    }
+
+    /// One command the engine handed over: the file and window ones.
+    fn command_one(&mut self, cmd: &str) -> Task<Message> {
         let (name, arg) = match cmd.split_once(char::is_whitespace) {
             Some((n, a)) => (n, Some(a.trim()).filter(|a| !a.is_empty())),
             None => (cmd, None),
         };
         match name {
+            "e" | "edit" | "e!" | "edit!" => {
+                self.edit(arg, name.ends_with('!'));
+                Task::none()
+            }
             "w" | "w!" | "write" => match arg {
                 Some(file) => self.write(self.resolve(file)),
                 None => self.save(),
@@ -224,6 +244,38 @@ impl App {
                 Task::none()
             }
         }
+    }
+
+    /// `:e [file]`: open a file (or the current one again); `!` drops
+    /// unsaved changes.
+    fn edit(&mut self, file: Option<&str>, force: bool) {
+        if self.doc.dirty && !force {
+            self.status = Some("E37: No write since last change (add ! to override)".into());
+            return;
+        }
+        let path = match (file, &self.doc.path) {
+            (Some(f), _) => self.resolve(f),
+            (None, Some(p)) => p.clone(),
+            (None, None) => {
+                self.status = Some("E32: No file name".into());
+                return;
+            }
+        };
+        let (doc, status) = match std::fs::read_to_string(&path) {
+            Ok(contents) => (Document::open(path, &contents), None),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                (Document::open(path, ""), Some("New file".to_string()))
+            }
+            Err(e) => {
+                self.status = Some(format!("{}: {e}", path.display()));
+                return;
+            }
+        };
+        self.doc = doc;
+        self.status = status;
+        self.vim = self.vim.for_other_text();
+        self.vim
+            .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
     }
 
     /// A file name typed after `:w`: `~/` is home, a relative name sits
@@ -296,13 +348,22 @@ impl App {
         );
         // While a `:` command or a search is typed, it takes the status's
         // place (and the keys typed for it aren't shown again as pending).
-        let command_line = self.vim.command_line();
+        let command_line = self.vim.command_line_cursor();
         let pending: String = match command_line {
             Some(_) => String::new(),
             None => self.vim.pending().iter().map(key_label).collect(),
         };
         let status = match command_line {
-            Some(line) => format!("{line}█"),
+            // The cursor: a block at the end, a bar between chars.
+            Some((line, at)) => {
+                let before: String = line.chars().take(at).collect();
+                let after: String = line.chars().skip(at).collect();
+                if after.is_empty() {
+                    format!("{before}█")
+                } else {
+                    format!("{before}▏{after}")
+                }
+            }
             None => self.status.clone().unwrap_or_default(),
         };
         // Matches near the cursor: the editor follows the cursor, so the

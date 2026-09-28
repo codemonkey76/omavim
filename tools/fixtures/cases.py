@@ -124,6 +124,26 @@ SEARCH = [
     "V/e<CR>d", "vnd", "/o<CR>x.n.", "d/o<CR>u", "/o<BS>e<CR>", "/ox<C-u>e<CR>", "/<BS>x", "/o<Esc>x",
 ]
 
+EX = [
+    ":s/o/0/<CR>", ":s/o/0/g<CR>", ":%s/o/0/g<CR>", ":%s/the/THE/gi<CR>", ":%s/The/X/I<CR>",
+    ":s/\\(\\w\\+\\) \\(\\w\\+\\)/\\2 \\1/<CR>", ":s/ /\\r/g<CR>", ":%s/$/;/<CR>",
+    ":%s/^/# /<CR>", ":s/x*/-/g<CR>", ":%s/e/&&/g<CR>", ":s/o/\\U&/g<CR>", ":%s/\\<\\w/\\u&/g<CR>",
+    ":%s/\\w\\+/\\L\\u&/g<CR>", ":s/\\w\\+/\\U&\\E!/<CR>", ":2,3s/a/A/g<CR>", ":.,$s/e/E/<CR>",
+    ":.,.+1s/e/E/g<CR>", ":s/e/E/g 3<CR>", ":%s/zzz/y/<CR>", ":%s/zzz/y/e<CR>", ":s/o/0/<CR>j:s<CR>",
+    ":s/o/0/<CR>j&", ":s/o/0/g<CR>j:&&<CR>", ":s/o/0/<CR>g&", "/the<CR>:s//X/<CR>", "*:s//X/g<CR>",
+    ":s/o/X/<CR>:s/e/~Y/<CR>", ":%s/\\n/ /g<CR>", ":%s#e#/#g<CR>", ":%s/o/0/n<CR>",
+    ":s/o/0/<CR>u", ":%s/o/0/g<CR>u", ":%s/o/0/g<CR>u<C-r>", ":s/o/0/<CR>n", ":%s/[aeiou]/\\t/g<CR>",
+    ":3<CR>", ":$<CR>", ":.+2<CR>", ":-<CR>", ":/the/<CR>", ":?the?<CR>", ":/e/+1<CR>", ":2;+1s/e/E/<CR>",
+    ":%d<CR>", ":2,3d<CR>", ":d<CR>", ":d 2<CR>", ":d a<CR>", ":2,3y<CR>", ":y a<CR>", ":.,$y<CR>",
+    ":2,3j<CR>", ":j<CR>", ":j!<CR>", ":j 3<CR>", ":2,3><CR>", ":><CR>", ":>><CR>", ":<<CR>", ":> 2<CR>",
+    ":2,3m0<CR>", ":m$<CR>", ":m+1<CR>", ":m-2<CR>", ":1t.<CR>", ":2,3co$<CR>", ":t0<CR>", ":m0<CR>u",
+    "Vj:s/e/E/g<CR>", "Vj:d<CR>", "Vj:><CR>", "vj:s/o/0/<CR>", "Vj<Esc>G:'<,'>d<CR>", "3:d<CR>",
+    "2:s/e/E/<CR>", ":set ic<CR>/THE<CR>", ":set ts=4<CR>j", ":set sw=2<CR>>>", ":set nows<CR>G/the<CR>",
+    ":s/o/0/<CR>:<Up><CR>", ":%s/e/E/<CR>u:<Up><CR>", "yiw:s/<C-r>\"/X/g<CR>", ":s/xo<Left><BS><End>/0/<CR>",
+    ":s/o/0/<Esc>", ":s/o/0<BS><BS><BS><BS><BS><BS>", ":s/abc<C-w>o/0/<CR>", ":s/abc<C-u>s/o/0/<CR>",
+    "/o<CR>/e<CR>/<Up><Up><CR>", ":s/o/0/<CR>@:", ":1,2d|3d<CR>",
+]
+
 # Screen-line motions and scrolling, run on "long" from several views.
 VIEW = [
     "gj", "gk", "3gj", "3gk", "g0", "g^", "gm", "g$", "2g$", "g$gj", "g$gk", "$gj", "$gk", "gjgj",
@@ -151,7 +171,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

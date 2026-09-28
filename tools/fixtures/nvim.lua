@@ -109,6 +109,14 @@ local function start(case, done)
   vim.v.searchforward = 1
   -- CTRL-D and CTRL-U with a count set 'scroll': back to half the window.
   vim.wo.scroll = 0
+  -- Options :set can change, command and search history, and the last
+  -- substitute (set to one that never matches: Neovim can't forget it).
+  vim.o.ignorecase, vim.o.smartcase, vim.o.wrapscan, vim.o.hlsearch = false, false, true, true
+  vim.o.tabstop, vim.o.shiftwidth = 8, 8
+  vim.cmd([[silent! s/\%^\%$//e]])
+  vim.fn.setreg("/", "")
+  vim.fn.histdel(":")
+  vim.fn.histdel("/")
   local first = vim.api.nvim_buf_get_lines(0, case.cursor[1], case.cursor[1] + 1, false)[1] or ""
   vim.api.nvim_win_set_cursor(0, { case.cursor[1] + 1, byte_col(first, case.cursor[2]) })
   if case.top then

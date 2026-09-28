@@ -12,6 +12,8 @@ use crate::motion::{self, Cur, Find};
 use crate::search::{self, Haystack};
 use crate::wrap;
 
+#[path = "ex.rs"]
+mod ex;
 #[path = "scroll.rs"]
 mod scroll;
 use crate::text::{
@@ -19,6 +21,7 @@ use crate::text::{
 };
 use crate::textobj::{self, Found, Vis};
 use crate::{Mode, Pos, TextModel};
+use ex::{LastSub, LineEdit};
 use scroll::{Dir, Scroll};
 
 /// A command couldn't be done. Vim beeps and drops the keys typed after it.
@@ -181,6 +184,10 @@ enum Action {
     Scroll(Scroll),
     /// `zt`, `zz`, `zb` and the others: the char after z.
     Z(char),
+    /// `&` (the last `:s` on this line) and `g&` (on every line).
+    SubRepeat(bool),
+    /// `@:`: the last command line again.
+    ExRepeat,
 }
 
 /// Where a search puts the cursor relative to its match (`/foo/e+1`).
@@ -356,7 +363,13 @@ pub struct Vim {
     /// when the text has changed.
     changes: u64,
     /// The `:` command line being typed.
-    cmdline: String,
+    cmdline: LineEdit,
+    /// Lines run from `:`, and searches: oldest first.
+    cmd_history: Vec<String>,
+    search_history: Vec<String>,
+    last_sub: LastSub,
+    /// The lines of the last visual selection, for `'<` and `'>`.
+    visual_marks: Option<(usize, usize)>,
     /// A finished `:` command for the app to run (`w`, `q`, ...).
     command: Option<String>,
     pub shiftwidth: usize,
@@ -415,7 +428,11 @@ impl Vim {
             recording_register: None,
             replaying: false,
             changes: 0,
-            cmdline: String::new(),
+            cmdline: LineEdit::default(),
+            cmd_history: Vec::new(),
+            search_history: Vec::new(),
+            last_sub: LastSub::default(),
+            visual_marks: None,
             command: None,
             shiftwidth: 8,
             tabstop: 8,
@@ -435,6 +452,9 @@ impl Vim {
             registers: self.registers.clone(),
             unnamed: self.unnamed,
             last_search: self.last_search.clone(),
+            cmd_history: self.cmd_history.clone(),
+            search_history: self.search_history.clone(),
+            last_sub: self.last_sub.clone(),
             hl: self.hl,
             ignorecase: self.ignorecase,
             smartcase: self.smartcase,
@@ -534,23 +554,46 @@ impl Vim {
 
     /// The command line while it's being typed, with its `:`, `/` or `?`.
     pub fn command_line(&self) -> Option<String> {
+        self.command_line_cursor().map(|(line, _)| line)
+    }
+
+    /// The command line and where its cursor is (a char index in it).
+    pub fn command_line_cursor(&self) -> Option<(String, usize)> {
         if self.mode == Mode::CommandLine {
-            return Some(format!(":{}", self.cmdline));
+            return Some((format!(":{}", self.cmdline.string()), self.cmdline.pos + 1));
         }
-        self.prompt()
-            .map(|(forward, text)| format!("{}{text}", if forward { '/' } else { '?' }))
+        let (forward, edit) = self.prompt_edit()?;
+        let c = if forward { '/' } else { '?' };
+        Some((format!("{c}{}", edit.string()), edit.pos + 1))
     }
 
     /// A search being typed: its direction and text so far.
     fn prompt(&self) -> Option<(bool, String)> {
+        self.prompt_edit().map(|(f, e)| (f, e.string()))
+    }
+
+    fn prompt_edit(&self) -> Option<(bool, LineEdit)> {
         if !matches!(self.mode, Mode::Normal | Mode::Visual | Mode::VisualLine) {
             return None;
         }
         let i = search_start(&self.pending)?;
         Some((
             self.pending[i] == Key::Char('/'),
-            line_text_of(&self.pending[i + 1..]),
+            self.replay_line(&self.pending[i + 1..]),
         ))
+    }
+
+    /// A search line's keys, played into a line with the search history
+    /// and registers to hand.
+    fn replay_line(&self, keys: &[Key]) -> LineEdit {
+        let mut edit = LineEdit::default();
+        let regs = |r: char| self.get_register(r).text.clone();
+        for &k in keys {
+            if edit.key(k, &self.search_history, &regs) != ex::Edited::Typing {
+                break;
+            }
+        }
+        edit
     }
 
     /// A message for the user, once: "search hit BOTTOM, continuing at
@@ -784,16 +827,61 @@ impl Vim {
         {
             rec.push(key);
         }
+        let was_visual = matches!(self.mode, Mode::Visual | Mode::VisualLine)
+            .then(|| (self.anchor.min(self.cursor), self.anchor.max(self.cursor)));
+        let counted = !self.pending.is_empty()
+            && self
+                .pending
+                .iter()
+                .all(|k| matches!(k, Key::Char(c) if c.is_ascii_digit()));
         let result = match self.mode {
             Mode::Insert | Mode::Replace => self.insert_key(t, key),
             Mode::CommandLine => self.cmdline_key(t, key),
-            Mode::Normal if self.pending.is_empty() && key == Key::Char(':') => {
-                self.cmdline.clear();
-                self.mode = Mode::CommandLine;
+            Mode::Normal if key == Key::Char(':') && (self.pending.is_empty() || counted) => {
+                // `3:` is `:.,.+2`.
+                let count: usize = self
+                    .pending
+                    .iter()
+                    .filter_map(|k| match k {
+                        Key::Char(c) => Some(*c),
+                        _ => None,
+                    })
+                    .collect::<String>()
+                    .parse()
+                    .unwrap_or(0);
+                self.pending.clear();
+                let prefill = match count {
+                    0 => String::new(),
+                    1 => ".".to_string(),
+                    n => format!(".,.+{}", n - 1),
+                };
+                self.start_cmdline(&prefill);
+                Ok(())
+            }
+            Mode::Visual | Mode::VisualLine if key == Key::Char(':') && self.pending.is_empty() => {
+                // An operator on the selection: the cursor goes to its start
+                // (a line selection's first column).
+                let lines = self.mode == Mode::VisualLine;
+                self.mode = Mode::Normal;
+                self.cursor = self.cursor.min(self.anchor);
+                if lines {
+                    let (l, _) = self.lc(t);
+                    self.cursor = t.line_to_char(l);
+                }
+                self.clamp(t);
+                self.start_cmdline("'<,'>");
                 Ok(())
             }
             _ => self.command_key(t, key),
         };
+        if let Some((a, b)) = was_visual
+            && !matches!(self.mode, Mode::Visual | Mode::VisualLine)
+        {
+            self.visual_marks = Some((
+                t.char_to_line(a.min(t.len_chars())),
+                t.char_to_line(b.min(t.len_chars())),
+            ));
+        }
         if result.is_err() {
             self.pending.clear();
             if self.session.is_none() {
@@ -818,7 +906,9 @@ impl Vim {
             Parse::Done(mut cmd) => {
                 let keys = std::mem::take(&mut self.pending);
                 if let Some(i) = search_start(&keys) {
-                    cmd.pattern = Some(line_text_of(&keys[i + 1..keys.len() - 1]));
+                    let line = self.replay_line(&keys[i + 1..keys.len() - 1]).string();
+                    ex::remember(&mut self.search_history, &line);
+                    cmd.pattern = Some(line);
                 }
                 if self.display_lines && cmd.count.is_none() && self.width > 0 {
                     match cmd.action {
@@ -832,52 +922,6 @@ impl Vim {
                 self.run(t, cmd, keys)
             }
         }
-    }
-
-    /// A key on the `:` command line.
-    fn cmdline_key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
-        match key {
-            Key::Esc | Key::Ctrl('c') => self.mode = Mode::Normal,
-            Key::Backspace | Key::Ctrl('h') => {
-                // Backspace on an empty command line leaves it, as in Vim.
-                if self.cmdline.pop().is_none() {
-                    self.mode = Mode::Normal;
-                }
-            }
-            Key::Ctrl('u') => self.cmdline.clear(),
-            Key::Char(c) => self.cmdline.push(c),
-            Key::Tab => self.cmdline.push('\t'),
-            Key::Enter => {
-                self.mode = Mode::Normal;
-                let line = std::mem::take(&mut self.cmdline);
-                let cmd = line.trim();
-                if !cmd.is_empty() {
-                    self.registers.insert(
-                        ':',
-                        Register {
-                            text: cmd.to_string(),
-                            linewise: false,
-                        },
-                    );
-                }
-                if matches!(cmd, "noh" | "nohl" | "nohlsearch") {
-                    self.hl = false;
-                } else if let Ok(n) = cmd.parse::<usize>() {
-                    // `:12` goes to line 12 (`:0` to the first).
-                    let line = n.saturating_sub(1).min(last_line(t));
-                    self.cursor = text::pos(
-                        t,
-                        line,
-                        first_non_blank(t, line).min(line_len(t, line).saturating_sub(1)),
-                    );
-                    self.want = None;
-                } else if !cmd.is_empty() {
-                    self.command = Some(cmd.to_string());
-                }
-            }
-            _ => {}
-        }
-        Ok(())
     }
 
     // ── Running commands ─────────────────────────────────────────────────
@@ -1033,6 +1077,27 @@ impl Vim {
             Action::SwapEnds => Err(Beep),
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
+            Action::ExRepeat => {
+                let Some(line) = self.cmd_history.last().cloned() else {
+                    self.message = Some("E30: No previous command line".into());
+                    return Err(Beep);
+                };
+                for _ in 0..count {
+                    self.ex(t, &line)?;
+                }
+                Ok(())
+            }
+            Action::SubRepeat(everywhere) => {
+                if everywhere {
+                    // `g&` is `:%s//~/&`: the last search pattern.
+                    let pattern = self.last_search.as_ref().map(|s| s.pattern.clone());
+                    let last = last_line(t);
+                    self.repeat_sub(t, 0, last, "&", pattern)
+                } else {
+                    let (line, _) = self.lc(t);
+                    self.repeat_sub(t, line, line, "", None)
+                }
+            }
         }
     }
 
@@ -1304,6 +1369,9 @@ impl Vim {
             Motion::Search(forward) => {
                 let text = self.search_input.take().unwrap_or_default();
                 let (pat, off) = split_search(&text, if forward { '/' } else { '?' });
+                if pat.is_empty() {
+                    self.search_from_sub();
+                }
                 let last = self.last_search.as_ref();
                 let (pattern, offset, no_smartcase) = if pat.is_empty() {
                     // `/<CR>` is the last search again; `//e` with a new offset.
@@ -1324,6 +1392,7 @@ impl Vim {
                 return self.do_search(t, forward, n, self.cursor);
             }
             Motion::SearchNext(reverse) => {
+                self.search_from_sub();
                 let Some(l) = &self.last_search else {
                     self.message = Some("E35: No previous regular expression".into());
                     return Err(Beep);
@@ -1365,6 +1434,25 @@ impl Vim {
             }
         };
         Ok((Self::at(t, to), kind))
+    }
+
+    /// With no search pattern yet, Vim searches with the last `:s` one.
+    fn search_from_sub(&mut self) {
+        if self.last_search.is_none()
+            && let Some(p) = self.last_sub.pattern.clone()
+        {
+            self.set_search(p, true, Offset::None, false);
+        }
+    }
+
+    /// What the last `:s` was: its pattern, replacement and flags (for
+    /// `:&`, `&`, `~`, and searching when there's no search pattern yet).
+    pub fn set_last_substitute(&mut self, pattern: &str, string: &str, flags: &str) {
+        self.last_sub = LastSub {
+            pattern: Some(pattern.to_string()),
+            string: Some(string.to_string()),
+            flags: flags.to_string(),
+        };
     }
 
     fn set_search(&mut self, pattern: String, forward: bool, offset: Offset, no_smartcase: bool) {
@@ -2439,6 +2527,7 @@ impl Vim {
         match cmd.action {
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
+            Action::SubRepeat(_) | Action::ExRepeat => Err(Beep),
             Action::Move(Motion::Object(obj, around)) => {
                 let vis = Vis {
                     anchor: {
@@ -2627,6 +2716,16 @@ impl Vim {
 
     // ── Undo and repeat ──────────────────────────────────────────────────
 
+    /// Where undoing the change under way puts the cursor, if not where
+    /// it was before it.
+    fn set_undo_cursor(&mut self, pos: Pos) {
+        if let Some(g) = self.group.as_mut()
+            && g.edits.is_empty()
+        {
+            g.cursor_before = pos;
+        }
+    }
+
     fn begin_group(&mut self) {
         if self.group.is_none() {
             self.group = Some(Group {
@@ -2687,9 +2786,23 @@ impl Vim {
                 .min()
                 .unwrap_or(0)
                 .min(last_line(t));
+            // Back where the cursor was, if that's in the lines undone (as
+            // Vim's u_undoredo); else the first line changed.
+            let bottom = g
+                .edits
+                .iter()
+                .map(|e| {
+                    e.line
+                        + e.removed
+                            .matches('\n')
+                            .count()
+                            .max(e.inserted.matches('\n').count())
+                })
+                .max()
+                .unwrap_or(line);
             let (bl, bc) = text::line_col(t, g.cursor_before.min(t.len_chars()));
-            self.cursor = if bl == line {
-                text::pos(t, line, bc)
+            self.cursor = if bl == line || (bl > line && bl <= bottom) {
+                text::pos(t, bl, bc.min(line_len(t, bl)))
             } else {
                 t.line_to_char(line)
             };
@@ -2930,48 +3043,19 @@ fn ident_at(t: &dyn TextModel, c: Cur) -> Option<(usize, String)> {
     Some(word(i, &|j| cls(j) == k))
 }
 
-/// A line typed after `/` or `?` (or `:`), with its editing keys applied:
-/// the text and the keys used up to Enter, None if Enter hasn't come yet,
-/// or Err if it was cancelled (Esc, or Backspace with nothing left).
+/// A line typed after `/` or `?`: the keys it took up to Enter, None if
+/// Enter hasn't come yet, or Err if it was cancelled (Esc, or Backspace
+/// with nothing left).
 fn read_line(keys: &[Key]) -> Option<Result<usize, ()>> {
-    for (i, k) in keys.iter().enumerate() {
-        match k {
-            Key::Enter | Key::Ctrl('m' | 'j') => return Some(Ok(i + 1)),
-            Key::Esc | Key::Ctrl('c') => return Some(Err(())),
-            Key::Backspace | Key::Ctrl('h') if line_text_of(&keys[..i]).is_empty() => {
-                return Some(Err(()));
-            }
-            _ => {}
+    let mut edit = LineEdit::default();
+    for (i, &k) in keys.iter().enumerate() {
+        match edit.key(k, &[], &|_| String::new()) {
+            ex::Edited::Typing => {}
+            ex::Edited::Done => return Some(Ok(i + 1)),
+            ex::Edited::Cancelled => return Some(Err(())),
         }
     }
     None
-}
-
-/// The text of a line being typed: its keys with the editing ones applied.
-fn line_text_of(keys: &[Key]) -> String {
-    let mut s = String::new();
-    for k in keys {
-        match k {
-            Key::Char(c) => s.push(*c),
-            Key::Tab => s.push('\t'),
-            Key::Backspace | Key::Ctrl('h') => {
-                s.pop();
-            }
-            Key::Ctrl('u') => s.clear(),
-            Key::Ctrl('w') => {
-                let t = s.trim_end_matches(|c: char| !crate::text::is_word_char(c) && c != ' ');
-                let t = t.trim_end_matches(' ');
-                let keep = t.trim_end_matches(crate::text::is_word_char).len();
-                s.truncate(if keep == s.len() {
-                    s.len().saturating_sub(1)
-                } else {
-                    keep
-                });
-            }
-            _ => {}
-        }
-    }
-    s
 }
 
 /// Where a search's `/` or `?` is in a command's keys, if it has one.
@@ -3290,6 +3374,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Key::Char('R') => Some(Action::Replace),
         Key::Char('J') => Some(Action::Join(true)),
         Key::Char('~') => Some(Action::ToggleCase),
+        Key::Char('&') => Some(Action::SubRepeat(false)),
         Key::Char('p') => Some(Action::Put(false)),
         Key::Char('P') => Some(Action::Put(true)),
         Key::Char('v') => Some(Action::Visual(false)),
@@ -3308,6 +3393,9 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         (Key::Char('r'), Some(Key::Char(c))) => return done(Action::ReplaceChar(*c)),
         (Key::Char('r'), Some(Key::Tab)) => return done(Action::ReplaceChar('\t')),
         (Key::Char('r'), Some(_)) => return Parse::Invalid,
+        (Key::Char('g'), Some(Key::Char('&'))) => return done(Action::SubRepeat(true)),
+        (Key::Char('@'), None) => return Parse::Incomplete,
+        (Key::Char('@'), Some(Key::Char(':'))) => return done(Action::ExRepeat),
         (Key::Char('g'), Some(Key::Char('J'))) => return done(Action::Join(false)),
         _ => {}
     }
@@ -3362,9 +3450,9 @@ mod tests {
         assert_eq!(vim.key(&mut t, Key::Char('%')), Ok(()));
         assert_eq!(vim.key(&mut t, Key::Char('y')), Ok(()));
         assert_eq!(vim.key(&mut t, Key::Char('y')), Err(Beep));
-        type_keys(&mut vim, &mut t, "gg\"%P");
+        type_keys(&mut vim, &mut t, "gg0\"%P");
         assert_eq!(text::line_col(&t, 0), (0, 0));
-        assert!(t.to_string().starts_with("notes.md"));
+        assert!(t.to_string().starts_with("notes.md"), "{:?}", t.to_string());
     }
 
     #[test]
@@ -3438,6 +3526,49 @@ mod tests {
     }
 
     #[test]
+    fn set_changes_and_reports_options() {
+        let mut t = Rope::from_str("x");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":set ic ts=4<CR>");
+        assert!(vim.ignorecase);
+        assert_eq!(vim.tabstop, 4);
+        type_keys(&mut vim, &mut t, ":set ic? noic ic? ts?<CR>");
+        assert_eq!(
+            vim.take_message().as_deref(),
+            Some("  ignorecase noignorecase   tabstop=4")
+        );
+        type_keys(&mut vim, &mut t, ":set bogus<CR>");
+        assert_eq!(
+            vim.take_message().as_deref(),
+            Some("E518: Unknown option: bogus")
+        );
+    }
+
+    #[test]
+    fn the_apps_commands_are_handed_over_with_what_follows() {
+        let mut t = Rope::from_str("one\ntwo");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":e notes.md<CR>");
+        assert_eq!(vim.take_command().as_deref(), Some("e notes.md"));
+        // The engine runs its part, then hands over the rest.
+        type_keys(&mut vim, &mut t, ":s/one/1/|w|q<CR>");
+        assert_eq!(t.to_string(), "1\ntwo");
+        assert_eq!(vim.take_command().as_deref(), Some("w|q"));
+    }
+
+    #[test]
+    fn the_command_line_has_a_cursor() {
+        let mut t = Rope::from_str("x");
+        let mut vim = Vim::new();
+        type_keys(&mut vim, &mut t, ":abc<Left><Left>");
+        assert_eq!(vim.command_line_cursor(), Some((":abc".into(), 2)));
+        type_keys(&mut vim, &mut t, "X<End>");
+        assert_eq!(vim.command_line_cursor(), Some((":aXbc".into(), 5)));
+        type_keys(&mut vim, &mut t, "<Esc>/fo<Left>");
+        assert_eq!(vim.command_line_cursor(), Some(("/fo".into(), 2)));
+    }
+
+    #[test]
     fn a_colon_command_is_typed_then_handed_over() {
         let mut t = Rope::from_str("one\ntwo\nthree");
         let mut vim = Vim::new();
@@ -3454,8 +3585,9 @@ mod tests {
     fn a_line_number_is_run_by_the_engine() {
         let mut t = Rope::from_str("one\n  two\nthree");
         let mut vim = Vim::new();
+        // It keeps the cursor's column, as Neovim does ('nostartofline').
         type_keys(&mut vim, &mut t, ":2<CR>");
-        assert_eq!(text::line_col(&t, vim.cursor()), (1, 2));
+        assert_eq!(text::line_col(&t, vim.cursor()), (1, 0));
         assert_eq!(vim.take_command(), None);
     }
 

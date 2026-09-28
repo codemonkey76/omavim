@@ -58,6 +58,8 @@ fn run(case: &Case, start_top: (usize, usize)) -> Expected {
     let mut rope = Rope::from_str(&case.text);
     let mut vim = Vim::new();
     vim.set_screen(&rope, WIDTH, HEIGHT);
+    // What tools/fixtures/nvim.lua leaves Neovim's last :s as.
+    vim.set_last_substitute(r"\%^\%$", "", "e");
     // As Neovim does, a column past the line's end is its last char.
     let len = text::line_len(&rope, case.cursor.0);
     vim.set_cursor(text::pos(
