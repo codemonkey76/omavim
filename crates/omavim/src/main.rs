@@ -3,7 +3,6 @@
 mod document;
 mod editor;
 mod portal;
-mod wrap;
 
 use document::Document;
 use editor::{Editor, KeyPress, View};
@@ -54,6 +53,10 @@ enum Message {
     Focused,
     /// The desktop clipboard (`'+'`) or primary selection (`'*'`), read.
     Clipboard(char, Option<String>),
+    /// The text area's size: cells in a row, and rows.
+    Resized(usize, usize),
+    /// The mouse wheel: rows to scroll, down if positive.
+    Scroll(isize),
 }
 
 impl App {
@@ -73,6 +76,8 @@ impl App {
             None => (Document::default(), None),
         };
         let mut vim = Vim::new();
+        // For writing: j and k go by screen line, as gj and gk.
+        vim.display_lines = true;
         vim.set_file_name(doc.path.as_deref().and_then(|p| p.to_str()));
         Self {
             doc,
@@ -121,6 +126,8 @@ impl App {
                 self.vim
                     .set_clipboard(register, text.as_deref().unwrap_or(""));
             }
+            Message::Resized(cells, rows) => self.vim.set_screen(&self.doc.text, cells, rows),
+            Message::Scroll(rows) => self.vim.scroll_view(&self.doc.text, rows),
             Message::Opened(Ok(None)) => {}
             Message::SaveTo(Ok(None)) => self.quit_after_save = false,
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
@@ -333,11 +340,19 @@ impl App {
             matches: self.vim.search_highlights(&self.doc.text, near),
             current_match: self.vim.search_preview(&self.doc.text),
             tabstop: self.vim.tabstop,
+            top: self.vim.top(),
         };
         column![
-            container(Editor::new(view, FONT, TEXT_SIZE, Message::Key))
-                .width(Length::Fill)
-                .height(Length::Fill),
+            container(Editor::new(
+                view,
+                FONT,
+                TEXT_SIZE,
+                Message::Key,
+                Message::Resized,
+                Message::Scroll
+            ))
+            .width(Length::Fill)
+            .height(Length::Fill),
             footer,
         ]
         .into()

@@ -15,13 +15,18 @@ visual mode too), registers (`"a`–`"z` and `"A` to append, `"0`, `"1`–`"9`,
 `"-`, `"_`, the read-only `". ": "%`, `Ctrl-R` in insert mode, and `"+`/`"*`
 for the desktop clipboard and primary selection), search (`/ ? n N * # g*
 g#`, offsets such as `/foo/e+1`, Vim's pattern syntax, matches highlighted
-as you type and after, `:noh`), undo/redo, `.`, and the basic `:` commands
-(`:w [file]`, `:q`, `:q!`, `:wq`, `:x`, `:N`). Wrapped-line movement,
-marks, macros and the rest of `:` are next.
+as you type and after, `:noh`), moving by screen line (`gj gk g0 g^ gm g$`,
+and `j`/`k` without a count go by screen line too), `H M L`, scrolling
+(`CTRL-E CTRL-Y CTRL-D CTRL-U CTRL-F CTRL-B`, PageUp/PageDown, the mouse
+wheel, `zt zz zb z<CR> z. z-`), undo/redo, `.`, and the basic `:` commands
+(`:w [file]`, `:q`, `:q!`, `:wq`, `:x`, `:N`). Lines wrap at word breaks and
+the view scrolls exactly as Neovim's does with 'linebreak' and
+'smoothscroll'. Marks, macros and the rest of `:` are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
-runs thousands of generated cases through headless Neovim, and the engine must
-give the same text, cursor, mode and register for each.
+types thousands of generated cases, key by key, into headless Neovim in a
+small window, and the engine must give the same text, cursor, mode,
+registers and view for each.
 
 ```sh
 cargo run -p omavim -- notes.md     # or no file, for a new one

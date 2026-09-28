@@ -3,10 +3,11 @@
 //!
 //! It draws a centred column of soft-wrapped lines, the cursor (a block in
 //! normal and visual mode, a bar in insert, an underline in replace and while
-//! an operator waits), and the visual selection; it scrolls by screen row to
-//! keep the cursor in view, and hands every key press to the app.
+//! an operator waits), and the visual selection. What's shown is up to the
+//! Vim engine, which wraps the lines and scrolls as Neovim does: this tells
+//! it the size of the text area, draws from the row it says is at the top,
+//! and hands every key press and wheel turn to the app.
 
-use crate::wrap;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer::{self, Quad, Renderer as _};
 use iced::advanced::text::{self, Paragraph as _, Renderer as _};
@@ -15,7 +16,7 @@ use iced::advanced::{Clipboard, Shell};
 use iced::keyboard;
 use iced::mouse;
 use iced::{Color, Element, Event, Font, Length, Pixels, Point, Rectangle, Size, Theme};
-use omavim_vim::{Mode, Pos};
+use omavim_vim::{Mode, Pos, wrap};
 use ropey::Rope;
 use std::cell::Cell;
 
@@ -48,6 +49,8 @@ pub struct View<'a> {
     pub matches: Vec<std::ops::Range<Pos>>,
     pub current_match: Option<std::ops::Range<Pos>>,
     pub tabstop: usize,
+    /// The first screen row shown: a line, and a row of it.
+    pub top: (usize, usize),
 }
 
 pub struct Editor<'a, Message> {
@@ -55,6 +58,10 @@ pub struct Editor<'a, Message> {
     font: Font,
     size: f32,
     on_key: Box<dyn Fn(KeyPress) -> Message + 'a>,
+    /// The text area changed size: cells in a row, and rows.
+    on_resize: Box<dyn Fn(usize, usize) -> Message + 'a>,
+    /// The wheel turned: rows to scroll (down if positive).
+    on_scroll: Box<dyn Fn(isize) -> Message + 'a>,
 }
 
 impl<'a, Message> Editor<'a, Message> {
@@ -63,27 +70,26 @@ impl<'a, Message> Editor<'a, Message> {
         font: Font,
         size: f32,
         on_key: impl Fn(KeyPress) -> Message + 'a,
+        on_resize: impl Fn(usize, usize) -> Message + 'a,
+        on_scroll: impl Fn(isize) -> Message + 'a,
     ) -> Self {
         Self {
             view,
             font,
             size,
             on_key: Box::new(on_key),
+            on_resize: Box::new(on_resize),
+            on_scroll: Box::new(on_scroll),
         }
     }
 }
 
 #[derive(Default)]
 struct State {
-    /// The first screen row: a line, and a row within it.
-    top: Cell<(usize, usize)>,
-    /// Where the cursor was at the last draw: when it moves the view follows;
-    /// when only the wheel scrolls, the view stays where it was put.
-    last_cursor: Cell<Option<Pos>>,
     /// One cell's width at the current size.
     cell: Cell<Option<(f32, f32)>>,
-    /// The column's width in cells at the last draw, for wheel scrolling.
-    cells: Cell<usize>,
+    /// The text area's size last told to the app: cells and rows.
+    reported: Cell<Option<(usize, usize)>>,
 }
 
 /// A line's chars (without its line break).
@@ -120,33 +126,18 @@ impl<Message> Editor<'_, Message> {
         width
     }
 
-    fn rows(&self, line: usize, cells: usize) -> Vec<(usize, usize)> {
-        wrap::rows(&line_chars(self.view.text, line), cells, self.view.tabstop)
-    }
-
-    /// Move a (line, row) position by `n` screen rows, within the text.
-    fn step(&self, (mut line, mut row): (usize, usize), n: isize, cells: usize) -> (usize, usize) {
-        let last = self.view.text.len_lines() - 1;
-        if n >= 0 {
-            for _ in 0..n {
-                if row + 1 < self.rows(line, cells).len() {
-                    row += 1;
-                } else if line < last {
-                    line += 1;
-                    row = 0;
-                }
-            }
-        } else {
-            for _ in 0..-n {
-                if row > 0 {
-                    row -= 1;
-                } else if line > 0 {
-                    line -= 1;
-                    row = self.rows(line, cells).len() - 1;
-                }
-            }
-        }
-        (line, row)
+    /// The text column in `bounds`: its left edge, its width in cells, and
+    /// the rows that fit.
+    fn geometry(&self, state: &State, bounds: Rectangle) -> (f32, usize, usize) {
+        let cell = self.cell_width(state);
+        let row_h = self.size * LINE_HEIGHT;
+        let column_w = (cell * COLUMN)
+            .min(bounds.width - 2.0 * PADDING)
+            .max(cell * 10.0);
+        let cells = (column_w / cell).floor() as usize;
+        let left = bounds.x + ((bounds.width - cells as f32 * cell) / 2.0).max(0.0);
+        let rows = (((bounds.height - 2.0 * PADDING) / row_h).floor() as usize).max(1);
+        (left, cells, rows)
     }
 }
 
@@ -176,7 +167,7 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         &mut self,
         tree: &mut widget::Tree,
         event: &Event,
-        _layout: Layout<'_>,
+        layout: Layout<'_>,
         _cursor: mouse::Cursor,
         _renderer: &iced::Renderer,
         _clipboard: &mut dyn Clipboard,
@@ -184,6 +175,12 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_ref::<State>();
+        // Tell the app (and so the engine) when the text area's size changes.
+        let (_, cells, rows) = self.geometry(state, layout.bounds());
+        if state.reported.get() != Some((cells, rows)) {
+            state.reported.set(Some((cells, rows)));
+            shell.publish((self.on_resize)(cells, rows));
+        }
         match event {
             Event::Keyboard(keyboard::Event::KeyPressed {
                 key,
@@ -203,11 +200,10 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                     mouse::ScrollDelta::Lines { y, .. } => -y * 3.0,
                     mouse::ScrollDelta::Pixels { y, .. } => -y / (self.size * LINE_HEIGHT),
                 };
-                let cells = state.cells.get().max(10);
-                state
-                    .top
-                    .set(self.step(state.top.get(), rows.round() as isize, cells));
-                shell.request_redraw();
+                let rows = rows.round() as isize;
+                if rows != 0 {
+                    shell.publish((self.on_scroll)(rows));
+                }
                 shell.capture_event();
             }
             _ => {}
@@ -231,40 +227,12 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         let row_h = self.size * LINE_HEIGHT;
         let t = self.view.text;
         let ts = self.view.tabstop;
+        let (left, cells, visible) = self.geometry(state, bounds);
 
-        let column_w = (cell * COLUMN)
-            .min(bounds.width - 2.0 * PADDING)
-            .max(cell * 10.0);
-        let cells = (column_w / cell).floor() as usize;
-        state.cells.set(cells);
-        let left = bounds.x + ((bounds.width - column_w) / 2.0).max(0.0);
-        let visible = (((bounds.height - 2.0 * PADDING) / row_h).floor() as usize).max(1);
-
-        // Follow the cursor when it has moved.
         let cursor = self.view.cursor.min(t.len_chars());
         let cline = t.char_to_line(cursor);
         let ccol = cursor - t.line_to_char(cline);
-        let crow = wrap::row_of(&self.rows(cline, cells), ccol);
-        if state.last_cursor.get() != Some(cursor) {
-            let top = state.top.get();
-            if (cline, crow) < top {
-                state.top.set((cline, crow));
-            } else {
-                // Rows from the top to the cursor; scroll if it's past the bottom.
-                let mut n = 0;
-                let mut p = top;
-                while p < (cline, crow) && n < visible + 1 {
-                    p = self.step(p, 1, cells);
-                    n += 1;
-                }
-                if n >= visible {
-                    state
-                        .top
-                        .set(self.step((cline, crow), -(visible as isize - 1), cells));
-                }
-            }
-            state.last_cursor.set(Some(cursor));
-        }
+        let crow = wrap::layout(&line_chars(t, cline), cells, ts).row_of(ccol);
 
         // Selection as a char range, and whether line breaks are in it.
         let selection = self.view.selection.map(|(a, b, linewise)| {
@@ -286,17 +254,22 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         let mut current = palette.warning;
         current.a = 0.65;
 
-        let (mut line, mut row) = state.top.get();
+        let (mut line, mut row) = self.view.top;
         for screen_row in 0..visible {
             if line >= t.len_lines() {
                 break;
             }
             let chars = line_chars(t, line);
-            let vc = wrap::vcols(&chars, ts);
-            let rows = wrap::rows(&chars, cells, ts);
-            let (start, end) = rows[row.min(rows.len() - 1)];
+            let lay = wrap::layout(&chars, cells, ts);
+            let (vc, rows) = (&lay.vcols, &lay.rows);
+            let row_i = row.min(rows.len() - 1);
+            let (start, end) = rows[row_i];
+            // Screen columns count from the line's start; this row's from
+            // row_i rows of cells in.
+            let base = row_i * cells;
             let y = bounds.y + PADDING + screen_row as f32 * row_h;
-            let x_of = |col: usize| left + (vc[col.min(chars.len())] - vc[start]) as f32 * cell;
+            let x_of =
+                |col: usize| left + vc[col.min(chars.len())].saturating_sub(base) as f32 * cell;
             let line_start = t.line_to_char(line);
 
             // Search matches on this row.
@@ -343,13 +316,27 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                 }
             }
 
-            // The text, tabs drawn as spaces up to their stop.
+            // The text: tabs, and the gaps wrapping leaves (a word moved to
+            // the next row, a wide char that didn't fit), drawn as spaces.
             let mut content = String::new();
+            let mut x = vc[start].saturating_sub(base);
             for i in start..end {
-                if chars[i] == '\t' {
-                    content.push_str(&" ".repeat(vc[i + 1] - vc[i]));
-                } else {
-                    content.push(chars[i]);
+                let at = vc[i].saturating_sub(base);
+                while x < at {
+                    content.push(' ');
+                    x += 1;
+                }
+                // A tab is spaces to its stop; a wide char takes two cells.
+                let (c, cells_used) = match chars[i] {
+                    '\t' => (' ', 1),
+                    c => (c, omavim_vim::text::char_width(c, 0, ts)),
+                };
+                content.push(c);
+                x = at + cells_used;
+                let next = vc[i + 1].saturating_sub(base);
+                while x < next.min(cells) {
+                    content.push(' ');
+                    x += 1;
                 }
             }
             if !content.trim_end().is_empty() {

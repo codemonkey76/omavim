@@ -10,6 +10,7 @@ mod motion;
 pub mod search;
 pub mod text;
 mod textobj;
+pub mod wrap;
 
 pub use engine::{Beep, Register, Vim};
 pub use key::Key;

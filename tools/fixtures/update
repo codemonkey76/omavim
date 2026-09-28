@@ -5,6 +5,9 @@
 set -e
 cd "$(dirname "$0")/../.."
 python3 tools/fixtures/cases.py
+python3 tools/fixtures/wrap.py
+nvim --headless --clean -l tools/fixtures/wrap.lua \
+  crates/omavim-vim/tests/fixtures/wrap_cases.json crates/omavim-vim/tests/fixtures/wrap_expected.json
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 jobs=$(nproc)
@@ -12,8 +15,9 @@ python3 tools/fixtures/split.py split crates/omavim-vim/tests/fixtures/cases.jso
 for part in "$work"/cases-*.json; do
   out="${part%.json}.out.json"
   # Neovim's own messages ("-- INSERT --", "3 fewer lines") are noise here.
-  nvim --headless --clean -l tools/fixtures/nvim.lua "$part" "$out" 2>&1 \
-    | tr '\r' '\n' | grep -E "failed|could not" || true &
+  FIXTURE_IN="$part" FIXTURE_OUT="$out" \
+    nvim --headless --clean -n -c "luafile tools/fixtures/nvim.lua" </dev/null 2>&1 \
+    | tr '\r' '\n' | grep -E "failed|could not|timed out" || true &
 done
 wait
 python3 tools/fixtures/split.py join "$work" crates/omavim-vim/tests/fixtures/expected.json

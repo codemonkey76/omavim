@@ -10,11 +10,16 @@ use std::collections::HashMap;
 use crate::key::Key;
 use crate::motion::{self, Cur, Find};
 use crate::search::{self, Haystack};
+use crate::wrap;
+
+#[path = "scroll.rs"]
+mod scroll;
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };
 use crate::textobj::{self, Found, Vis};
 use crate::{Mode, Pos, TextModel};
+use scroll::{Dir, Scroll};
 
 /// A command couldn't be done. Vim beeps and drops the keys typed after it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,6 +115,10 @@ enum Motion {
         forward: bool,
         whole: bool,
     },
+    /// By screen line: `gj` `gk` `g0` `g^` `gm` `g$`, by the char after g.
+    Screen(char),
+    /// `H`, `M`, `L`.
+    ScreenLine(char),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -168,6 +177,10 @@ enum Action {
     Cancel,
     // Visual mode only.
     SwapEnds,
+    /// CTRL-E, CTRL-D, CTRL-F and the other way.
+    Scroll(Scroll),
+    /// `zt`, `zz`, `zb` and the others: the char after z.
+    Z(char),
 }
 
 /// Where a search puts the cursor relative to its match (`/foo/e+1`).
@@ -348,6 +361,19 @@ pub struct Vim {
     command: Option<String>,
     pub shiftwidth: usize,
     pub tabstop: usize,
+    /// The text area: cells in a row (0: unknown, no wrapping) and rows.
+    width: usize,
+    height: usize,
+    /// The first screen row shown: a line, and a row within it (Neovim's
+    /// topline and skipcol, with 'smoothscroll').
+    top: (usize, usize),
+    /// Columns without wrap padding, as while Neovim runs an operator.
+    no_lbr: bool,
+    /// Vim's 'scroll': rows CTRL-D and CTRL-U move (None: half the window).
+    scroll_lines: Option<usize>,
+    /// j and k (and the arrows) move by screen line, without a count or an
+    /// operator: as `gj` and `gk`.
+    pub display_lines: bool,
 }
 
 impl Default for Vim {
@@ -393,6 +419,12 @@ impl Vim {
             command: None,
             shiftwidth: 8,
             tabstop: 8,
+            width: 0,
+            height: 0,
+            top: (0, 0),
+            no_lbr: false,
+            scroll_lines: None,
+            display_lines: false,
         }
     }
 
@@ -411,8 +443,68 @@ impl Vim {
             last_find: self.last_find,
             shiftwidth: self.shiftwidth,
             tabstop: self.tabstop,
+            width: self.width,
+            height: self.height,
+            display_lines: self.display_lines,
             ..Self::new()
         }
+    }
+
+    /// The text area's size: cells in a row, and rows. Lines wrap at the
+    /// width, as Vim's do with 'wrap' and 'linebreak'.
+    pub fn set_screen(&mut self, t: &dyn TextModel, width: usize, height: usize) {
+        if (width, height) != (self.width, self.height) {
+            self.width = width;
+            self.height = height;
+            self.top.1 = self.top.1.min(self.rows(t, self.top.0).saturating_sub(1));
+            self.scroll_to_cursor(t);
+        }
+    }
+
+    /// The first screen row shown: a line, and a row of it.
+    pub fn top(&self) -> (usize, usize) {
+        self.top
+    }
+
+    /// Show from this row down (the cursor moves into view if need be).
+    pub fn set_top(&mut self, t: &dyn TextModel, line: usize, row: usize) {
+        let line = line.min(last_line(t));
+        self.top = (line, row.min(self.rows(t, line).saturating_sub(1)));
+    }
+
+    /// How `line` is laid out on screen.
+    pub fn layout(&self, t: &dyn TextModel, line: usize) -> wrap::Layout {
+        let chars: Vec<char> = line_text(t, line).chars().collect();
+        wrap::layout(&chars, self.width, self.tabstop)
+    }
+
+    /// Screen rows `line` takes.
+    fn rows(&self, t: &dyn TextModel, line: usize) -> usize {
+        if self.width == 0 {
+            1
+        } else {
+            self.layout(t, line).rows.len()
+        }
+    }
+
+    /// The screen column (Vim's virtual column) where a char starts,
+    /// counting tabs, wide chars and the padding wrapping adds.
+    fn vcol(&self, t: &dyn TextModel, line: usize, col: usize) -> usize {
+        if self.width == 0 || self.no_lbr {
+            return text::vcol(t, line, col, self.tabstop);
+        }
+        let l = self.layout(t, line);
+        l.vcols[col.min(l.vcols.len() - 1)]
+    }
+
+    /// The char at a screen column (the line's end if it's past it).
+    fn col_at(&self, t: &dyn TextModel, line: usize, vcol: usize) -> usize {
+        if self.width == 0 || self.no_lbr {
+            return text::col_at_vcol(t, line, vcol, self.tabstop);
+        }
+        let l = self.layout(t, line);
+        let len = l.vcols.len() - 1;
+        (0..len).find(|&i| l.vcols[i + 1] > vcol).unwrap_or(len)
     }
 
     pub fn mode(&self) -> Mode {
@@ -709,6 +801,9 @@ impl Vim {
                 self.close_group();
             }
         }
+        if self.pending.is_empty() && !self.replaying {
+            self.scroll_to_cursor(t);
+        }
         result
     }
 
@@ -724,6 +819,15 @@ impl Vim {
                 let keys = std::mem::take(&mut self.pending);
                 if let Some(i) = search_start(&keys) {
                     cmd.pattern = Some(line_text_of(&keys[i + 1..keys.len() - 1]));
+                }
+                if self.display_lines && cmd.count.is_none() && self.width > 0 {
+                    match cmd.action {
+                        Action::Move(Motion::Down) => {
+                            cmd.action = Action::Move(Motion::Screen('j'))
+                        }
+                        Action::Move(Motion::Up) => cmd.action = Action::Move(Motion::Screen('k')),
+                        _ => {}
+                    }
                 }
                 self.run(t, cmd, keys)
             }
@@ -927,6 +1031,8 @@ impl Vim {
             Action::Repeat => self.repeat(t, cmd.count),
             Action::Cancel => Ok(()),
             Action::SwapEnds => Err(Beep),
+            Action::Scroll(s) => self.scroll(t, s, cmd.count),
+            Action::Z(c) => self.z(t, c, cmd.count),
         }
     }
 
@@ -964,8 +1070,7 @@ impl Vim {
         let n = count.unwrap_or(1);
         let c = self.cur(t);
         let len = line_len(t, c.line);
-        let ts = self.tabstop;
-        let want = |s: &Self| s.want.unwrap_or_else(|| text::vcol(t, c.line, c.col, ts));
+        let want = |s: &Self| s.want.unwrap_or_else(|| s.virtcol(t));
         let (to, kind) = match m {
             Motion::Left => {
                 if c.col == 0 {
@@ -1014,10 +1119,7 @@ impl Vim {
                 };
                 let v = want(self);
                 self.want = Some(v);
-                (
-                    Cur::new(target, text::col_at_vcol(t, target, v, ts)),
-                    Kind::Linewise,
-                )
+                (Cur::new(target, self.col_at(t, target, v)), Kind::Linewise)
             }
             Motion::LineStart => {
                 self.want = None;
@@ -1059,7 +1161,7 @@ impl Vim {
             }
             Motion::Column => {
                 self.want = None;
-                let col = text::col_at_vcol(t, c.line, n - 1, ts);
+                let col = self.col_at(t, c.line, n - 1);
                 (
                     Cur::new(c.line, col.min(len.saturating_sub(1))),
                     Kind::Exclusive,
@@ -1073,10 +1175,7 @@ impl Vim {
                 };
                 let v = want(self);
                 self.want = Some(v);
-                (
-                    Cur::new(line, text::col_at_vcol(t, line, v, ts)),
-                    Kind::Linewise,
-                )
+                (Cur::new(line, self.col_at(t, line, v)), Kind::Linewise)
             }
             Motion::NextLine | Motion::PrevLine | Motion::CurrentLine => {
                 let line = match m {
@@ -1171,6 +1270,37 @@ impl Vim {
                 (to, Kind::Exclusive)
             }
             Motion::Object(..) => return Err(Beep),
+            Motion::Screen(which) => {
+                // These move the cursor as they work: put it back after.
+                let here = self.cursor;
+                let atend = self.want == Some(usize::MAX);
+                let result = match which {
+                    'j' | 'k' => {
+                        let dir = if which == 'j' {
+                            Dir::Forward
+                        } else {
+                            Dir::Backward
+                        };
+                        let (to, ok) = self.screengo(t, dir, n);
+                        if ok { Ok(to) } else { Err(Beep) }
+                    }
+                    '$' => self.screen_end(t, n),
+                    _ => Ok(self.screen_home(t, which)),
+                };
+                self.cursor = here;
+                let kind = match which {
+                    '$' => Kind::Inclusive,
+                    'j' | 'k' if atend => Kind::Inclusive,
+                    _ => Kind::Exclusive,
+                };
+                return result.map(|to| (to, kind));
+            }
+            Motion::ScreenLine(which) => {
+                let here = self.cursor;
+                let to = self.screen_line(t, which, n, op);
+                self.cursor = here;
+                return Ok((to, Kind::Linewise));
+            }
             Motion::Search(forward) => {
                 let text = self.search_input.take().unwrap_or_default();
                 let (pat, off) = split_search(&text, if forward { '/' } else { '?' });
@@ -1455,13 +1585,7 @@ impl Vim {
             self.cursor = self.cursor.min(to);
             return self.apply_lines(t, op, sl, el, 0);
         }
-        if adjusted
-            && op == Op::Delete
-            && matches!(
-                m,
-                Motion::Search(_) | Motion::SearchNext(_) | Motion::Star { .. }
-            )
-        {
+        if adjusted && op == Op::Delete {
             // Made linewise by the rule above: Vim goes to the first
             // non-blank, not back to the column.
             self.apply_lines(t, op, sl, el, 0)?;
@@ -1470,11 +1594,15 @@ impl Vim {
             self.clamp(t);
             return Ok(());
         }
+        if kind == Kind::Linewise && matches!(op, Op::Yank | Op::Lower | Op::Upper | Op::Toggle) {
+            // These leave the cursor at the operator's start.
+            self.cursor = self.cursor.min(to);
+        }
         if kind == Kind::Linewise {
             let v = match self.want {
                 // After `$` a linewise delete keeps the cursor's own column.
                 Some(w) if w != usize::MAX || op != Op::Delete => w,
-                _ => text::vcol(t, start_cur.line, start_cur.col, self.tabstop),
+                _ => self.vcol(t, start_cur.line, start_cur.col),
             };
             return self.apply_lines(t, op, sl, el, v);
         }
@@ -1533,7 +1661,7 @@ impl Vim {
         let keep = self
             .want
             .filter(|&w| w != usize::MAX)
-            .unwrap_or_else(|| text::vcol(t, line, col, self.tabstop));
+            .unwrap_or_else(|| self.vcol(t, line, col));
         self.want = None;
         let (start, mut end) = (o.start, o.end);
         let mut inclusive = o.inclusive;
@@ -1571,7 +1699,7 @@ impl Vim {
             }
             // The cursor goes to the object's start.
             self.cursor = Self::at(t, start);
-            let v = text::vcol(t, start.line, start.col, self.tabstop);
+            let v = self.vcol(t, start.line, start.col);
             return self.apply_lines(t, op, start.line, end.line, v);
         }
         let from = Self::at(t, start);
@@ -1599,12 +1727,13 @@ impl Vim {
         let v = match op {
             // Vim moves to the first non-blank before these (nv_lineop).
             Op::Change | Op::Lower | Op::Upper | Op::Toggle => {
-                text::vcol(t, line, first_non_blank(t, line), self.tabstop)
+                self.vcol(t, line, first_non_blank(t, line))
             }
-            _ => self
-                .want
-                .unwrap_or_else(|| text::vcol(t, line, col, self.tabstop)),
+            _ => self.want.unwrap_or_else(|| self.vcol(t, line, col)),
         };
+        if matches!(op, Op::Lower | Op::Upper | Op::Toggle) {
+            self.cursor = text::pos(t, line, first_non_blank(t, line));
+        }
         self.apply_lines(t, op, line, line + count - 1, v)
     }
 
@@ -1618,13 +1747,27 @@ impl Vim {
         last: usize,
         vcol: usize,
     ) -> R {
+        // Neovim turns 'linebreak' off while an operator runs.
+        let saved = std::mem::replace(&mut self.no_lbr, true);
+        let result = self.apply_lines_inner(t, op, first, last, vcol);
+        self.no_lbr = saved;
+        result
+    }
+
+    fn apply_lines_inner(
+        &mut self,
+        t: &mut dyn TextModel,
+        op: Op,
+        first: usize,
+        last: usize,
+        vcol: usize,
+    ) -> R {
         let start = t.line_to_char(first);
         let end = text::pos(t, last, line_len(t, last));
         let mut yanked = t.slice(start..end);
         yanked.push('\n');
-        let ts = self.tabstop;
         let place = |s: &mut Self, t: &dyn TextModel, line: usize| {
-            let col = text::col_at_vcol(t, line, vcol, ts);
+            let col = s.col_at(t, line, vcol);
             s.cursor = text::pos(t, line, col.min(line_len(t, line).saturating_sub(1)));
         };
         match op {
@@ -1634,6 +1777,7 @@ impl Vim {
                 if first < line {
                     place(self, t, first);
                 }
+                self.clamp(t);
                 Ok(())
             }
             Op::Delete => {
@@ -1681,7 +1825,13 @@ impl Vim {
             Op::Lower | Op::Upper | Op::Toggle => {
                 self.begin_group();
                 self.map_case(t, start..end, op);
-                place(self, t, first);
+                // The cursor stays where the caller put it: the operator's
+                // start.
+                let (line, _) = self.lc(t);
+                if line != first {
+                    place(self, t, first);
+                }
+                self.clamp(t);
                 Ok(())
             }
         }
@@ -1689,6 +1839,18 @@ impl Vim {
 
     /// An operator over the chars in `range`.
     fn apply_chars(&mut self, t: &mut dyn TextModel, op: Op, range: std::ops::Range<Pos>) -> R {
+        let saved = std::mem::replace(&mut self.no_lbr, true);
+        let result = self.apply_chars_inner(t, op, range);
+        self.no_lbr = saved;
+        result
+    }
+
+    fn apply_chars_inner(
+        &mut self,
+        t: &mut dyn TextModel,
+        op: Op,
+        range: std::ops::Range<Pos>,
+    ) -> R {
         let yanked = t.slice(range.clone());
         match op {
             Op::Yank => {
@@ -1725,10 +1887,11 @@ impl Vim {
             Op::ShiftRight | Op::ShiftLeft => {
                 let (first, _) = text::line_col(t, range.start);
                 let (last, _) = text::line_col(t, range.end.saturating_sub(1).max(range.start));
+                // The column from before the operator, when 'linebreak' was on.
                 let (l, c) = self.lc(t);
-                let v = self
-                    .want
-                    .unwrap_or_else(|| text::vcol(t, l, c, self.tabstop));
+                let saved = std::mem::replace(&mut self.no_lbr, false);
+                let v = self.want.unwrap_or_else(|| self.vcol(t, l, c));
+                self.no_lbr = saved;
                 self.apply_lines(t, op, first, last, v)
             }
             Op::Lower | Op::Upper | Op::Toggle => {
@@ -2236,15 +2399,10 @@ impl Vim {
         let (al, ac) = text::line_col(t, a);
         let (bl, bc) = text::line_col(t, b);
         let linewise = self.mode == Mode::VisualLine;
-        let ts = self.tabstop;
         if al == bl {
-            (
-                linewise,
-                1,
-                text::vcol(t, bl, bc, ts) - text::vcol(t, al, ac, ts) + 1,
-            )
+            (linewise, 1, self.vcol(t, bl, bc) - self.vcol(t, al, ac) + 1)
         } else {
-            (linewise, bl - al + 1, text::vcol(t, bl, bc, ts))
+            (linewise, bl - al + 1, self.vcol(t, bl, bc))
         }
     }
 
@@ -2279,6 +2437,8 @@ impl Vim {
         exit: fn(&mut Self),
     ) -> R {
         match cmd.action {
+            Action::Scroll(s) => self.scroll(t, s, cmd.count),
+            Action::Z(c) => self.z(t, c, cmd.count),
             Action::Move(Motion::Object(obj, around)) => {
                 let vis = Vis {
                     anchor: {
@@ -2323,7 +2483,7 @@ impl Vim {
                 let lines = linewise || matches!(cmd.action, Action::Operate(_, None));
                 let keep = self.want.unwrap_or_else(|| {
                     let (l, c) = text::line_col(t, self.cursor);
-                    text::vcol(t, l, c, self.tabstop)
+                    self.vcol(t, l, c)
                 });
                 exit(self);
                 self.cursor = a;
@@ -2492,8 +2652,10 @@ impl Vim {
             return;
         }
         let line = t.char_to_line(range.start.min(t.len_chars()));
+        let last = t.char_to_line(range.end.min(t.len_chars()));
         self.changes += 1;
         t.replace(range.clone(), with);
+        self.changed_lines(t, line, last, with.matches('\n').count());
         self.begin_group();
         if let Some(g) = self.group.as_mut() {
             g.edits.push(Edit {
@@ -2512,7 +2674,10 @@ impl Vim {
                 return if i == 0 { Err(Beep) } else { Ok(()) };
             };
             for e in g.edits.iter().rev() {
-                t.replace(e.at..e.at + e.inserted.chars().count(), &e.removed);
+                let end = e.at + e.inserted.chars().count();
+                let (first, last) = (t.char_to_line(e.at), t.char_to_line(end.min(t.len_chars())));
+                t.replace(e.at..end, &e.removed);
+                self.changed_lines(t, first, last, e.removed.matches('\n').count());
             }
             self.changes += 1;
             let line = g
@@ -2541,7 +2706,10 @@ impl Vim {
                 return Ok(());
             };
             for e in &g.edits {
-                t.replace(e.at..e.at + e.removed.chars().count(), &e.inserted);
+                let end = e.at + e.removed.chars().count();
+                let (first, last) = (t.char_to_line(e.at), t.char_to_line(end.min(t.len_chars())));
+                t.replace(e.at..end, &e.inserted);
+                self.changed_lines(t, first, last, e.inserted.matches('\n').count());
             }
             self.changes += 1;
             let line = g
@@ -2609,21 +2777,16 @@ impl Vim {
                     let (line, col) = self.lc(t);
                     self.anchor = self.cursor;
                     let end_line = (line + lines - 1).min(last_line(t));
-                    let ts = self.tabstop;
                     self.cursor = if *lines == 1 && !linewise {
-                        let v = text::vcol(t, line, col, ts) + last_col_or_chars - 1;
+                        let v = self.vcol(t, line, col) + last_col_or_chars - 1;
                         text::pos(
                             t,
                             line,
-                            text::col_at_vcol(t, line, v, ts)
+                            self.col_at(t, line, v)
                                 .min(line_len(t, line).saturating_sub(1)),
                         )
                     } else {
-                        text::pos(
-                            t,
-                            end_line,
-                            text::col_at_vcol(t, end_line, *last_col_or_chars, ts),
-                        )
+                        text::pos(t, end_line, self.col_at(t, end_line, *last_col_or_chars))
                     };
                     self.mode = if *linewise {
                         Mode::VisualLine
@@ -2704,7 +2867,9 @@ fn is_change(action: Action, visual: bool) -> bool {
         | Action::Redo
         | Action::Repeat
         | Action::Cancel
-        | Action::SwapEnds => false,
+        | Action::SwapEnds
+        | Action::Scroll(_)
+        | Action::Z(_) => false,
         Action::Put(_) if visual => true,
         _ => true,
     }
@@ -2861,6 +3026,7 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
                 Some(Err(())) => Err(()),
             };
         }
+        Key::Char(c @ ('H' | 'M' | 'L')) => Motion::ScreenLine(c),
         Key::Char('n') => Motion::SearchNext(false),
         Key::Char('N') => Motion::SearchNext(true),
         Key::Char('*') => Motion::Star {
@@ -2913,6 +3079,13 @@ fn parse_motion(keys: &[Key]) -> Result<Option<(Motion, usize)>, ()> {
                 Some(Key::Char('_')) => Ok(Some((Motion::LastNonBlank, 2))),
                 Some(Key::Char('e')) => Ok(Some((Motion::WordEndBack(false), 2))),
                 Some(Key::Char('E')) => Ok(Some((Motion::WordEndBack(true), 2))),
+                Some(Key::Char(c @ ('j' | 'k' | '0' | '^' | 'm' | '$'))) => {
+                    Ok(Some((Motion::Screen(*c), 2)))
+                }
+                Some(Key::Down) => Ok(Some((Motion::Screen('j'), 2))),
+                Some(Key::Up) => Ok(Some((Motion::Screen('k'), 2))),
+                Some(Key::Home) => Ok(Some((Motion::Screen('0'), 2))),
+                Some(Key::End) => Ok(Some((Motion::Screen('$'), 2))),
                 Some(Key::Char('*')) => Ok(Some((
                     Motion::Star {
                         forward: true,
@@ -2972,6 +3145,27 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             pattern: None,
         })
     };
+    // Scrolling, the same in normal and visual mode.
+    let scroll = match first {
+        Key::Ctrl('e') => Some(Scroll::Line(true)),
+        Key::Ctrl('y') => Some(Scroll::Line(false)),
+        Key::Ctrl('d') => Some(Scroll::Half(true)),
+        Key::Ctrl('u') => Some(Scroll::Half(false)),
+        Key::Ctrl('f') | Key::PageDown => Some(Scroll::Page(true)),
+        Key::Ctrl('b') | Key::PageUp => Some(Scroll::Page(false)),
+        _ => None,
+    };
+    if let Some(s) = scroll {
+        return done(Action::Scroll(s));
+    }
+    if first == Key::Char('z') {
+        return match rest.get(1) {
+            None => Parse::Incomplete,
+            Some(Key::Char(c)) if "tz.b-+^".contains(*c) => done(Action::Z(*c)),
+            Some(Key::Enter) => done(Action::Z('\r')),
+            Some(_) => Parse::Invalid,
+        };
+    }
     let op = |k: Key, second: Option<&Key>| -> Option<Option<Op>> {
         // Some(Some(op)): an operator; Some(None): needs another key.
         match k {

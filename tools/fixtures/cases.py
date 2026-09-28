@@ -39,11 +39,28 @@ TEXTS = {
     ),
 }
 
+# A text long enough to scroll in the 30x8 window the cases run in: lines of
+# many lengths (one taller than the window), blank lines, indents, a tab.
+_WORDS = ("the quick brown fox jumps over a lazy dog while it was bright and cold "
+          "in april and the clocks were striking thirteen").split()
+_LONG = []
+for i in range(40):
+    if i % 7 == 3:
+        _LONG.append("")
+    elif i == 16:
+        _LONG.append(" ".join(_WORDS[(j * 5) % len(_WORDS)] for j in range(60)))
+    else:
+        n = (i * 7) % 23 + 1
+        words = " ".join(_WORDS[(i + j) % len(_WORDS)] for j in range(n))
+        _LONG.append(("    " if i % 5 == 1 else "\t" if i == 12 else "") + words + ".")
+TEXTS["long"] = "\n".join(_LONG)
+
 CURSORS = {
     "prose": [(0, 0), (0, 10), (1, 30), (3, 17), (4, 6), (5, 8)],
     "code": [(0, 0), (1, 12), (1, 16), (2, 4), (3, 0), (6, 9)],
     "edge": [(0, 0), (1, 0), (2, 2), (3, 1), (4, 3)],
     "unicode": [(0, 3), (1, 6), (1, 13), (2, 1)],
+    "long": [(0, 0), (6, 10), (16, 100), (20, 3), (39, 5)],
     "markup": [(0, 2), (0, 12), (1, 8), (1, 14), (1, 30), (1, 45), (2, 10), (2, 22),
                (2, 36), (2, 44), (3, 0), (4, 0), (5, 9), (5, 16), (5, 30), (6, 3)],
 }
@@ -107,6 +124,22 @@ SEARCH = [
     "V/e<CR>d", "vnd", "/o<CR>x.n.", "d/o<CR>u", "/o<BS>e<CR>", "/ox<C-u>e<CR>", "/<BS>x", "/o<Esc>x",
 ]
 
+# Screen-line motions and scrolling, run on "long" from several views.
+VIEW = [
+    "gj", "gk", "3gj", "3gk", "g0", "g^", "gm", "g$", "2g$", "g$gj", "g$gk", "$gj", "$gk", "gjgj",
+    "H", "M", "L", "3H", "3L", "dH", "yL", "dM", "dgj", "ygk",
+    "<C-e>", "<C-y>", "3<C-e>", "3<C-y>", "10<C-e>", "10<C-y>", "<C-e><C-e><C-e><C-e>",
+    "<C-d>", "<C-u>", "<C-d><C-d>", "<C-u><C-u>", "2<C-d>", "2<C-u>", "2<C-d><C-d>",
+    "<C-f>", "<C-b>", "<C-f><C-f>", "<C-b><C-b>", "2<C-f>", "<PageDown>", "<PageUp>",
+    "zt", "zz", "zb", "z<CR>", "z.", "z-", "z+", "z^", "5zt", "30zz", "20zb", "jzt", "kzb",
+    "G", "gg", "20G", "}}}", "{{", "30j", "30k", "/april<CR>", "?the<CR>", "Gdd", "ggdd",
+    "vjjj<C-e>", "Vjjjzz", "ix<Esc><C-d>",
+]
+VIEW_STARTS = [  # (cursor, top) in "long"
+    ((0, 0), None), ((8, 2), (6, 0)), ((16, 50), (16, 0)), ((16, 200), (16, 5)),
+    ((19, 0), (16, 7)), ((25, 4), (20, 0)), ((39, 3), (33, 0)),
+]
+
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
 
@@ -128,6 +161,11 @@ def cases():
     for name, text in TEXTS.items():
         for (line, col), k in itertools.product(CURSORS[name], keys):
             out.append({"name": f"{name}@{line},{col}: {k}", "text": text, "cursor": [line, col], "keys": k})
+    for ((line, col), top), k in itertools.product(VIEW_STARTS, VIEW):
+        case = {"name": f"long@{line},{col}^{top}: {k}", "text": TEXTS["long"], "cursor": [line, col], "keys": k}
+        if top:
+            case["top"] = list(top)
+        out.append(case)
     return out
 
 
