@@ -217,7 +217,7 @@ local function start(case, done)
       local text = vim.fn.getreg(r)
       if text ~= "" then result.registers[r] = { utf8(text), vim.fn.getregtype(r) } end
     end
-    if mode == "v" or mode == "V" then
+    if mode == "v" or mode == "V" or mode == "\22" then
       result.visual_start = pos(vim.fn.getpos("v"))
     end
     -- Marks that are set, and the jump list.

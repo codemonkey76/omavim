@@ -225,6 +225,20 @@ FORMAT_TEXT = (
 FORMAT_CURSORS = [(0, 5), (1, 3), (3, 8), (4, 10), (5, 0), (6, 4), (7, 3), (8, 5), (9, 2), (10, 3),
                   (11, 6), (12, 2), (14, 0), (15, 3), (16, 10), (17, 2), (18, 9), (19, 0)]
 
+# Visual block mode.
+BLOCK = [
+    "<C-v>", "<C-v>jl", "<C-v>jjly", "<C-v>jjld", "<C-v>jjlx", "<C-v>jjlX", "<C-v>jjlD", "<C-v>jjlY",
+    "<C-v>j$y", "<C-v>j$d", "<C-v>jjlo", "<C-v>jjlO", "<C-v>jjlOd", "<C-v>jjlOO", "<C-v>jjlyP", "<C-v>jjlyp",
+    "<C-v>jjly$p", "<C-v>jjly2p", "<C-v>jjldp", "<C-v>jjly<Esc>gv", "<C-v>jjl<Esc>'<", "<C-v>jjl<Esc>`>",
+    "<C-v>jjlv", "<C-v>jjlV", "vj<C-v>", "Vj<C-v>", "<C-v>jj<C-v>", "<C-v>jwd", "<C-v>3jey", "<C-v>G$y",
+    "<C-v>jjldu", "<C-v>jjly`]", "<C-v>jjld`[", "<C-v>kkhy", "<C-v>kkhd", "<C-v>jj$hd", "<C-v>jjly3jp",
+    "<C-v>jjly3jP", "<C-v>jjlyGp", "\"a<C-v>jjly\"ap", "<C-v>jjl\"bd\"bP", "<C-v>jj<Esc>", "<C-v>jjlygvd",
+    "<C-v>jjIX<Esc>", "<C-v>jjlIab<Esc>", "<C-v>jjAX<Esc>", "<C-v>jjlAab<Esc>", "<C-v>jj$AX<Esc>", "<C-v>jjIX<Esc>u",
+    "<C-v>jjcX<Esc>", "<C-v>jjlcab<Esc>", "<C-v>jjCX<Esc>", "<C-v>jjlsX<Esc>", "<C-v>jjSX<Esc>", "<C-v>jjRX<Esc>",
+    "<C-v>jjIX<Esc>`[", "<C-v>jjAX<Esc>`]", "<C-v>jjcX<Esc>`]", "<C-v>jjIa<CR>b<Esc>", "<C-v>jjIX<Esc>j.",
+    "<C-v>jjAX<Esc>'^", "<C-v>jjI<BS>X<Esc>", "<C-v>jjlIX<Esc>", "<C-v>jjhIX<Esc>", "<C-v>jjhAX<Esc>",
+]
+
 # CTRL-A and CTRL-X, on a text of numbers, from several places.
 NUMBERS_TEXT = (
     "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n"
@@ -267,7 +281,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL + CONFIRM + FORMAT
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL + CONFIRM + FORMAT + BLOCK
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

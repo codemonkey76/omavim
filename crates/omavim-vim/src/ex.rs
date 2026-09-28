@@ -227,6 +227,7 @@ impl Vim {
                         Register {
                             text: cmd.to_string(),
                             linewise: false,
+                            block: None,
                         },
                     );
                 }
@@ -1397,7 +1398,11 @@ impl Vim {
             }
             for _ in 0..4 {
                 let key = match self.mode {
-                    Mode::Insert | Mode::Replace | Mode::Visual | Mode::VisualLine => Key::Esc,
+                    Mode::Insert
+                    | Mode::Replace
+                    | Mode::Visual
+                    | Mode::VisualLine
+                    | Mode::VisualBlock => Key::Esc,
                     Mode::CommandLine => Key::Ctrl('c'),
                     _ if !self.pending.is_empty() => Key::Esc,
                     _ => break,

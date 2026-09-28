@@ -339,9 +339,11 @@ impl App {
             ..palette.text
         };
         let mode = self.vim.mode();
+        let block = self.vim.visual_block(&self.doc.text);
         let selection = self
             .vim
             .visual_start()
+            .filter(|_| block.is_none())
             .map(|start| (start, self.vim.cursor(), mode == Mode::VisualLine));
         let (line, col) = omavim_vim::text::line_col(
             &self.doc.text,
@@ -408,6 +410,7 @@ impl App {
             cursor: self.vim.cursor(),
             mode,
             selection,
+            block,
             matches: self.vim.search_highlights(&self.doc.text, near),
             current_match: self.vim.search_preview(&self.doc.text),
             tabstop: self.vim.tabstop,

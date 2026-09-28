@@ -95,7 +95,7 @@ impl Vim {
         let on_tab_end = text::char_at(t, l, c) == Some('\t')
             && match self.mode {
                 Mode::Normal | Mode::OperatorPending => true,
-                Mode::Visual | Mode::VisualLine => self.cursor > self.anchor,
+                Mode::Visual | Mode::VisualLine | Mode::VisualBlock => self.cursor > self.anchor,
                 _ => false,
             };
         if on_tab_end {
@@ -120,7 +120,10 @@ impl Vim {
     /// coladvance(): false if the column isn't reached (the line is
     /// shorter, or the column is inside a wide char or tab).
     fn coladvance(&mut self, t: &dyn TextModel, line: usize, wcol: usize) -> bool {
-        let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+        let visual = matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        );
         let len = line_len(t, line);
         let mut col = if wcol == usize::MAX {
             len

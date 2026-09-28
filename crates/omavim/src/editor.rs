@@ -44,6 +44,9 @@ pub struct View<'a> {
     /// A visual selection: its two ends (in either order), and whether it's
     /// linewise. Inclusive; after `$` it takes the line break.
     pub selection: Option<(Pos, Pos, bool)>,
+    /// A visual block instead: its first and last lines, and its screen
+    /// columns (both in; the end `usize::MAX` to each line's end).
+    pub block: Option<(usize, usize, usize, usize)>,
     /// Search matches to highlight, and the one a search being typed would
     /// go to.
     pub matches: Vec<std::ops::Range<Pos>>,
@@ -289,6 +292,24 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                         renderer,
                         Rectangle::new(Point::new(x0, y), Size::new(x1 - x0, row_h)),
                         color,
+                    );
+                }
+            }
+
+            // A block: the chars on this row in its screen columns.
+            if let Some((top, bottom, bs, be)) = self.view.block
+                && (top..=bottom).contains(&line)
+            {
+                let inside: Vec<usize> = (start..end)
+                    .filter(|&i| vc[i] <= be && vc[i + 1] > bs)
+                    .collect();
+                if let (Some(&from), Some(&to)) = (inside.first(), inside.last()) {
+                    let x0 = x_of(from);
+                    let x1 = x_of(to + 1);
+                    fill(
+                        renderer,
+                        Rectangle::new(Point::new(x0, y), Size::new(x1 - x0, row_h)),
+                        selected,
                     );
                 }
             }

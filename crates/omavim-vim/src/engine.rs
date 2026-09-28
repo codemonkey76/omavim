@@ -14,6 +14,8 @@ use crate::wrap;
 
 #[path = "addsub.rs"]
 mod addsub;
+#[path = "block.rs"]
+mod block;
 #[path = "ex.rs"]
 mod ex;
 #[path = "format.rs"]
@@ -41,11 +43,15 @@ type R<T = ()> = Result<T, Beep>;
 pub struct Register {
     pub text: String,
     pub linewise: bool,
+    /// A block (from visual block mode): its width less one (Vim's
+    /// y_width). Its lines are the text's.
+    pub block: Option<usize>,
 }
 
 static EMPTY: Register = Register {
     text: String::new(),
     linewise: false,
+    block: None,
 };
 
 /// A register name that can be given with `"`: the ones that can be read.
@@ -78,11 +84,13 @@ fn append(old: &Register, new: &Register) -> Register {
         Register {
             text,
             linewise: true,
+            block: None,
         }
     } else {
         Register {
             text: format!("{}{}", old.text, new.text),
             linewise: false,
+            block: None,
         }
     }
 }
@@ -185,13 +193,17 @@ enum Action {
     Join(bool),
     ToggleCase,
     Put(bool),
-    Visual(bool),
+    /// `v`, `V`, CTRL-V: start (or switch to, or leave) that visual mode.
+    Visual(Mode),
     Undo,
     Redo,
     Repeat,
     Cancel,
     // Visual mode only.
-    SwapEnds,
+    /// `o`, and `O` (in block mode, the other corner on the same line).
+    SwapEnds(bool),
+    /// `D` and `C`: in block mode to the end of each line, else linewise.
+    OperateToEnd(Op),
     /// CTRL-E, CTRL-D, CTRL-F and the other way.
     Scroll(Scroll),
     /// `zt`, `zz`, `zb` and the others: the char after z.
@@ -337,6 +349,8 @@ struct Session {
     did_ai: bool,
     /// Replace mode: the chars overwritten, so Backspace can put them back.
     replaced: Vec<Option<char>>,
+    /// A block insert or change: for the block's other lines at the end.
+    block: Option<block::BlockInsert>,
 }
 
 #[derive(Debug, Clone)]
@@ -348,7 +362,7 @@ enum LastChange {
     },
     /// A visual operator: the same extent from the cursor, then the operator.
     Visual {
-        linewise: bool,
+        mode: Mode,
         lines: usize,
         last_col_or_chars: usize,
         register: Option<char>,
@@ -382,6 +396,12 @@ pub struct Vim {
     buffer_empty: bool,
     /// `:normal` is typing its keys.
     normal_depth: usize,
+    /// The selection a visual change that went on in insert mode had, for
+    /// `.` (recorded when insert mode ends).
+    insert_extent: Option<(Mode, usize, usize)>,
+    /// `.` repeating a block: its width, from the start's screen column
+    /// (Vim's redo_VIsual), whatever the end line's length.
+    redo_block_width: Option<usize>,
     /// `:s///c` is asking about a match.
     confirm: Option<ex::Confirm>,
     /// Where the cursor was when the command being run was typed (Vim's
@@ -480,6 +500,8 @@ impl Vim {
             global_beginline: false,
             buffer_empty: false,
             normal_depth: 0,
+            insert_extent: None,
+            redo_block_width: None,
             confirm: None,
             cmd_start: 0,
             unnamed: None,
@@ -603,7 +625,10 @@ impl Vim {
     fn col_on(&self, t: &dyn TextModel, line: usize, vcol: usize) -> usize {
         let col = self.col_at(t, line, vcol);
         let len = line_len(t, line);
-        if matches!(self.mode, Mode::Visual | Mode::VisualLine) {
+        if matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        ) {
             col
         } else {
             col.min(len.saturating_sub(1))
@@ -645,7 +670,11 @@ impl Vim {
 
     /// Where a visual selection started, while one is active.
     pub fn visual_start(&self) -> Option<Pos> {
-        matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some(self.anchor)
+        matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        )
+        .then_some(self.anchor)
     }
 
     /// The command line while it's being typed, with its `:`, `/` or `?`.
@@ -669,7 +698,10 @@ impl Vim {
     }
 
     fn prompt_edit(&self) -> Option<(bool, LineEdit)> {
-        if !matches!(self.mode, Mode::Normal | Mode::Visual | Mode::VisualLine) {
+        if !matches!(
+            self.mode,
+            Mode::Normal | Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        ) {
             return None;
         }
         let i = search_start(&self.pending)?;
@@ -793,6 +825,7 @@ impl Vim {
         let reg = Register {
             text: text.to_string(),
             linewise: text.ends_with('\n'),
+            block: None,
         };
         self.registers.insert(register, reg);
     }
@@ -818,6 +851,7 @@ impl Vim {
                     Register {
                         text: n.to_string(),
                         linewise: false,
+                        block: None,
                     },
                 );
             }
@@ -832,7 +866,30 @@ impl Vim {
     /// `%`-like motion) into `"1`, shifting `"1`–`"8` along; a smaller
     /// delete into `"-`. `""` is then whichever was written.
     fn store(&mut self, text: String, linewise: bool, delete: bool) {
-        let reg = Register { text, linewise };
+        self.store_register(
+            Register {
+                text,
+                linewise,
+                block: None,
+            },
+            delete,
+        );
+    }
+
+    /// A block (lines of text, and its width) into the registers.
+    fn store_block(&mut self, text: String, width: usize, delete: bool) {
+        self.store_register(
+            Register {
+                text,
+                linewise: false,
+                block: Some(width),
+            },
+            delete,
+        );
+    }
+
+    fn store_register(&mut self, reg: Register, delete: bool) {
+        let linewise = reg.linewise;
         let name = self.reg_name;
         if name == Some('_') {
             return;
@@ -916,14 +973,17 @@ impl Vim {
             Some(r) if c.is_ascii_uppercase() && r.linewise => Register {
                 text: format!("{}{text}\n", r.text.strip_suffix('\n').unwrap_or(&r.text)),
                 linewise: true,
+                block: None,
             },
             Some(r) if c.is_ascii_uppercase() => Register {
                 text: format!("{}{text}", r.text),
                 linewise: false,
+                block: None,
             },
             _ => Register {
                 text,
                 linewise: false,
+                block: None,
             },
         };
         self.registers.insert(lower, reg);
@@ -1021,12 +1081,11 @@ impl Vim {
         {
             rec.push(key);
         }
-        let was_visual = matches!(self.mode, Mode::Visual | Mode::VisualLine).then_some((
+        let was_visual = matches!(
             self.mode,
-            self.anchor,
-            self.cursor,
-            self.want,
-        ));
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        )
+        .then_some((self.mode, self.anchor, self.cursor, self.want));
         let counted = !self.pending.is_empty()
             && self
                 .pending
@@ -1057,7 +1116,9 @@ impl Vim {
                 self.start_cmdline(&prefill);
                 Ok(())
             }
-            Mode::Visual | Mode::VisualLine if key == Key::Char(':') && self.pending.is_empty() => {
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+                if key == Key::Char(':') && self.pending.is_empty() =>
+            {
                 // An operator on the selection: the cursor goes to its start
                 // (a line selection's first column).
                 let lines = self.mode == Mode::VisualLine;
@@ -1074,7 +1135,10 @@ impl Vim {
             _ => self.command_key(t, key),
         };
         if let Some((mode, anchor, cursor, want)) = was_visual
-            && !matches!(self.mode, Mode::Visual | Mode::VisualLine)
+            && !matches!(
+                self.mode,
+                Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+            )
             && !std::mem::take(&mut self.visual_marked)
         {
             let at = |p: Pos| text::line_col(t, p.min(t.len_chars()));
@@ -1116,7 +1180,10 @@ impl Vim {
             self.stop_recording();
             return Ok(());
         }
-        let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+        let visual = matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        );
         match parse(&self.pending, visual) {
             Parse::Incomplete => Ok(()),
             Parse::Invalid => Err(Beep),
@@ -1145,7 +1212,10 @@ impl Vim {
 
     fn run(&mut self, t: &mut dyn TextModel, cmd: Command, keys: Vec<Key>) -> R {
         self.cmd_start = self.cursor;
-        let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+        let visual = matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        );
         let changes = is_change(cmd.action, visual);
         let register = cmd.register.filter(|&r| r != '"');
         let writes = match cmd.action {
@@ -1201,17 +1271,24 @@ impl Vim {
         if result.is_ok() && changes && !self.replaying && self.session.is_none() {
             self.finish_change(count, visual_extent);
         }
+        // (A visual change that goes on in insert mode is repeated on the
+        // same size of selection too.)
+        self.insert_extent = if self.session.is_some() {
+            visual_extent
+        } else {
+            None
+        };
         if self.session.is_none() {
             self.close_group();
         }
         result
     }
 
-    fn finish_change(&mut self, count: Option<usize>, visual: Option<(bool, usize, usize)>) {
+    fn finish_change(&mut self, count: Option<usize>, visual: Option<(Mode, usize, usize)>) {
         if let Some(keys) = self.recording.take() {
             self.last_change = Some(match visual {
-                Some((linewise, lines, last)) => LastChange::Visual {
-                    linewise,
+                Some((mode, lines, last)) => LastChange::Visual {
+                    mode,
                     lines,
                     last_col_or_chars: last,
                     register: self.recording_register,
@@ -1280,20 +1357,16 @@ impl Vim {
                 Ok(())
             }
             Action::Put(before) => self.put(t, before, count),
-            Action::Visual(linewise) => {
+            Action::Visual(mode) => {
                 self.anchor = self.cursor;
-                self.mode = if linewise {
-                    Mode::VisualLine
-                } else {
-                    Mode::Visual
-                };
+                self.mode = mode;
                 Ok(())
             }
             Action::Undo => self.undo(t, count),
             Action::Redo => self.redo(t, count),
             Action::Repeat => self.repeat(t, cmd.count),
             Action::Cancel => Ok(()),
-            Action::SwapEnds => Err(Beep),
+            Action::SwapEnds(_) | Action::OperateToEnd(_) => Err(Beep),
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
             Action::SetMark(c) => {
@@ -1408,7 +1481,10 @@ impl Vim {
             }
             Motion::Right => {
                 // Visual mode can go onto the end of the line (Vim's past_line).
-                let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+                let visual = matches!(
+                    self.mode,
+                    Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+                );
                 let max = if op || visual {
                     len
                 } else {
@@ -1763,6 +1839,7 @@ impl Vim {
             Register {
                 text: pattern.clone(),
                 linewise: false,
+                block: None,
             },
         );
         self.last_search = Some(LastSearch {
@@ -2529,6 +2606,9 @@ impl Vim {
 
     fn put(&mut self, t: &mut dyn TextModel, before: bool, count: usize) -> R {
         let reg = self.read_register()?;
+        if let Some(width) = reg.block {
+            return self.put_block(t, &reg.text, width, before, count);
+        }
         self.begin_group();
         let (line, col) = self.lc(t);
         // '[ where the text starts, '] on the last char of its last line.
@@ -2874,6 +2954,7 @@ impl Vim {
 
     fn leave_insert(&mut self, t: &mut dyn TextModel) {
         let session = self.session.take();
+        let block = session.as_ref().and_then(|s| s.block.clone());
         if let Some(s) = &session {
             // `".`: what was typed, as Vim keeps it.
             let text: String = s
@@ -2895,6 +2976,7 @@ impl Vim {
                 Register {
                     text,
                     linewise: false,
+                    block: None,
                 },
             );
         }
@@ -2941,25 +3023,42 @@ impl Vim {
         }
         self.clamp(t);
         self.want = None;
+        if let Some(b) = block {
+            self.block_insert_finish(t, b);
+        }
         self.close_group();
         if !self.replaying {
-            self.finish_change(None, None);
+            let extent = self.insert_extent.take();
+            self.finish_change(None, extent);
         }
     }
 
     // ── Visual mode ──────────────────────────────────────────────────────
 
-    /// (linewise, lines, screen columns) for `.`: on one line the width of
-    /// the selection, over several the end's screen column (as Vim's redo).
-    fn visual_extent(&self, t: &dyn TextModel) -> (bool, usize, usize) {
+    /// (mode, lines, screen columns) for `.`: on one line the width of the
+    /// selection, over several the end's screen column (as Vim's redo); a
+    /// block's width (`usize::MAX` after `$`).
+    fn visual_extent(&self, t: &dyn TextModel) -> (Mode, usize, usize) {
+        if self.mode == Mode::VisualBlock {
+            let a = self.block_area(t);
+            let width = if a.to_end {
+                usize::MAX
+            } else {
+                a.end_vcol - a.start_vcol + 1
+            };
+            return (Mode::VisualBlock, a.bottom - a.top + 1, width);
+        }
         let (a, b) = (self.anchor.min(self.cursor), self.anchor.max(self.cursor));
         let (al, ac) = text::line_col(t, a);
         let (bl, bc) = text::line_col(t, b);
-        let linewise = self.mode == Mode::VisualLine;
         if al == bl {
-            (linewise, 1, self.vcol(t, bl, bc) - self.vcol(t, al, ac) + 1)
+            (
+                self.mode,
+                1,
+                self.vcol(t, bl, bc) - self.vcol(t, al, ac) + 1,
+            )
         } else {
-            (linewise, bl - al + 1, self.vcol(t, bl, bc))
+            (self.mode, bl - al + 1, self.vcol(t, bl, bc))
         }
     }
 
@@ -2975,22 +3074,28 @@ impl Vim {
         let ends = !matches!(
             cmd.action,
             Action::Move(_)
-                | Action::SwapEnds
+                | Action::SwapEnds(_)
                 | Action::Scroll(_)
                 | Action::Z(_)
                 | Action::Reselect
                 | Action::SetMark(_)
-        ) && !matches!(cmd.action, Action::Visual(l) if l != linewise);
+        ) && !matches!(cmd.action, Action::Visual(m) if m != self.mode);
         if ends {
             let at = |p: Pos| self.mk(t, text::line_col(t, p.min(t.len_chars())));
             let want = self.want.unwrap_or_else(|| self.virtcol(t));
             self.marks.visual = Some((at(self.anchor), at(self.cursor), self.mode, want));
             self.visual_marked = true;
         }
-        let result = self.run_visual_inner(t, cmd, a, b, al, bl, linewise, count, exit);
+        let result = if self.mode == Mode::VisualBlock
+            && let Some(r) = self.run_block(t, &cmd, exit)
+        {
+            r
+        } else {
+            self.run_visual_inner(t, cmd, a, b, al, bl, linewise, count, exit)
+        };
         if !matches!(
             self.mode,
-            Mode::Visual | Mode::VisualLine | Mode::Insert | Mode::Replace
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock | Mode::Insert | Mode::Replace
         ) {
             self.clamp(t);
         }
@@ -3107,9 +3212,13 @@ impl Vim {
             }
             Action::Move(m) => {
                 // In visual mode the cursor can rest on a line's end (after
-                // j/k from a longer line), selecting its line break.
+                // j/k from a longer line, or `$`), selecting its line break.
                 let (to, _) = self.motion(t, m, cmd.count, false)?;
                 self.cursor = to;
+                if m == Motion::LineEnd {
+                    let (l, _) = self.lc(t);
+                    self.cursor = text::pos(t, l, line_len(t, l));
+                }
                 Ok(())
             }
             Action::Operate(op, None) | Action::Operate(op, Some(_)) => {
@@ -3238,19 +3347,29 @@ impl Vim {
                 self.clamp(t);
                 Ok(())
             }
-            Action::Visual(to_lines) => {
-                if to_lines == linewise {
+            Action::Visual(mode) => {
+                if mode == self.mode {
                     exit(self);
                 } else {
-                    self.mode = if to_lines {
-                        Mode::VisualLine
-                    } else {
-                        Mode::Visual
-                    };
+                    self.mode = mode;
                 }
                 Ok(())
             }
-            Action::SwapEnds => {
+            Action::OperateToEnd(op) => self.run_visual_inner(
+                t,
+                Command {
+                    action: Action::Operate(op, None),
+                    ..cmd
+                },
+                a,
+                b,
+                al,
+                bl,
+                linewise,
+                count,
+                exit,
+            ),
+            Action::SwapEnds(_) => {
                 std::mem::swap(&mut self.anchor, &mut self.cursor);
                 self.want = None;
                 Ok(())
@@ -3271,8 +3390,6 @@ impl Vim {
 
     // ── Undo and repeat ──────────────────────────────────────────────────
 
-    /// Where undoing the change under way puts the cursor, if not where
-    /// it was before it.
     /// An undo step that changes nothing (Vim saved the line for undo, and
     /// nothing changed), at `at`.
     fn noop_undo_step(&mut self, t: &dyn TextModel, at: Pos) {
@@ -3290,6 +3407,8 @@ impl Vim {
         }
     }
 
+    /// Where undoing the change under way puts the cursor, if not where
+    /// it was before it.
     fn set_undo_cursor(&mut self, pos: Pos) {
         if let Some(g) = self.group.as_mut()
             && g.edits.is_empty()
@@ -3586,16 +3705,28 @@ impl Vim {
                     }
                 }
                 LastChange::Visual {
-                    linewise,
+                    mode,
                     lines,
                     last_col_or_chars,
                     register,
                     keys,
                 } => {
+                    let linewise = *mode == Mode::VisualLine;
                     let (line, col) = self.lc(t);
                     self.anchor = self.cursor;
                     let end_line = (line + lines - 1).min(last_line(t));
-                    self.cursor = if *lines == 1 && !linewise {
+                    self.cursor = if *mode == Mode::VisualBlock {
+                        // The same block from here (Vim's redo_VIsual).
+                        if *last_col_or_chars == usize::MAX {
+                            self.want = Some(usize::MAX);
+                            text::pos(t, end_line, line_len(t, end_line))
+                        } else {
+                            self.redo_block_width = Some(*last_col_or_chars);
+                            let v = text::vcol(t, line, col, self.tabstop) + last_col_or_chars - 1;
+                            let c = text::col_at_vcol(t, end_line, v, self.tabstop);
+                            text::pos(t, end_line, c.min(line_len(t, end_line)))
+                        }
+                    } else if *lines == 1 && !linewise {
                         let v = self.vcol(t, line, col) + last_col_or_chars - 1;
                         text::pos(
                             t,
@@ -3606,11 +3737,7 @@ impl Vim {
                     } else {
                         text::pos(t, end_line, self.col_at(t, end_line, *last_col_or_chars))
                     };
-                    self.mode = if *linewise {
-                        Mode::VisualLine
-                    } else {
-                        Mode::Visual
-                    };
+                    self.mode = *mode;
                     // The operator is the keys' last command.
                     let mut op = register_keys(*register);
                     op.extend(keys.iter().copied().skip_while(|k| !is_operator_key(*k)));
@@ -3622,6 +3749,7 @@ impl Vim {
             Ok(())
         })();
         self.replaying = replaying;
+        self.redo_block_width = None;
         if let (Some(n), Some(LastChange::Keys { count: c, .. })) = (count, &mut self.last_change) {
             *c = Some(n);
         }
@@ -3638,6 +3766,7 @@ impl Session {
             start,
             did_ai: false,
             replaced: Vec::new(),
+            block: None,
         }
     }
 }
@@ -3672,6 +3801,8 @@ fn is_operator_key(k: Key) -> bool {
                 | 'S'
                 | 'Y'
                 | 'R'
+                | 'I'
+                | 'A'
         ) | Key::Ctrl('a' | 'x')
     )
 }
@@ -3685,7 +3816,7 @@ fn is_change(action: Action, visual: bool) -> bool {
         | Action::Redo
         | Action::Repeat
         | Action::Cancel
-        | Action::SwapEnds
+        | Action::SwapEnds(_)
         | Action::Scroll(_)
         | Action::Z(_)
         | Action::Record(_)
@@ -3996,9 +4127,13 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             Key::Char('d' | 'x') | Key::Delete => {
                 Some(Action::Operate(Op::Delete, Some(Motion::Right)))
             }
-            Key::Char('X' | 'D') => Some(Action::Operate(Op::Delete, None)),
+            Key::Char('X') => Some(Action::Operate(Op::Delete, None)),
+            Key::Char('D') => Some(Action::OperateToEnd(Op::Delete)),
             Key::Char('c' | 's') => Some(Action::Operate(Op::Change, Some(Motion::Right))),
-            Key::Char('C' | 'S' | 'R') => Some(Action::Operate(Op::Change, None)),
+            Key::Char('S' | 'R') => Some(Action::Operate(Op::Change, None)),
+            Key::Char('I') => Some(Action::Insert(Insert::LineStart)),
+            Key::Char('A') => Some(Action::Insert(Insert::LineEnd)),
+            Key::Char('C') => Some(Action::OperateToEnd(Op::Change)),
             Key::Char('y') => Some(Action::Operate(Op::Yank, Some(Motion::Right))),
             Key::Char('Y') => Some(Action::Operate(Op::Yank, None)),
             Key::Char('>') => Some(Action::Operate(Op::ShiftRight, None)),
@@ -4008,9 +4143,11 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             Key::Char('U') => Some(Action::Operate(Op::Upper, Some(Motion::Right))),
             Key::Char('J') => Some(Action::Join(true)),
             Key::Char('p' | 'P') => Some(Action::Put(false)),
-            Key::Char('o' | 'O') => Some(Action::SwapEnds),
-            Key::Char('v') => Some(Action::Visual(false)),
-            Key::Char('V') => Some(Action::Visual(true)),
+            Key::Char('o') => Some(Action::SwapEnds(false)),
+            Key::Char('O') => Some(Action::SwapEnds(true)),
+            Key::Char('v') => Some(Action::Visual(Mode::Visual)),
+            Key::Char('V') => Some(Action::Visual(Mode::VisualLine)),
+            Key::Ctrl('v' | 'q') => Some(Action::Visual(Mode::VisualBlock)),
             Key::Esc | Key::Ctrl('c') => Some(Action::Cancel),
             Key::Ctrl('a') => Some(Action::AddSub {
                 sub: false,
@@ -4124,8 +4261,9 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Key::Tab | Key::Ctrl('i') => Some(Action::Jump(true)),
         Key::Char('p') => Some(Action::Put(false)),
         Key::Char('P') => Some(Action::Put(true)),
-        Key::Char('v') => Some(Action::Visual(false)),
-        Key::Char('V') => Some(Action::Visual(true)),
+        Key::Char('v') => Some(Action::Visual(Mode::Visual)),
+        Key::Char('V') => Some(Action::Visual(Mode::VisualLine)),
+        Key::Ctrl('v' | 'q') => Some(Action::Visual(Mode::VisualBlock)),
         Key::Char('u') => Some(Action::Undo),
         Key::Ctrl('r') => Some(Action::Redo),
         Key::Char('.') => Some(Action::Repeat),

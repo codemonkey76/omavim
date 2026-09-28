@@ -528,7 +528,10 @@ impl Vim {
 
     /// The cursor to a mark's place (clamped onto its line).
     pub(super) fn to_mark(&self, t: &dyn TextModel, (l, c): (usize, usize)) -> usize {
-        let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
+        let visual = matches!(
+            self.mode,
+            Mode::Visual | Mode::VisualLine | Mode::VisualBlock
+        );
         let len = line_len(t, l);
         let max = if visual { len } else { len.saturating_sub(1) };
         text::pos(t, l, c.min(max))

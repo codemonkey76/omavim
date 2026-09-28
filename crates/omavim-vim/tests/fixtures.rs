@@ -45,6 +45,15 @@ struct Expected {
     aborted: bool,
 }
 
+/// As Neovim's getregtype(): "v", "V", or CTRL-V and a block's width.
+fn reg_type(reg: &omavim_vim::Register) -> String {
+    match reg.block {
+        Some(w) => format!("\u{16}{}", w + 1),
+        None if reg.linewise => "V".into(),
+        None => "v".into(),
+    }
+}
+
 fn mode_name(m: Mode) -> &'static str {
     match m {
         Mode::Normal => "n",
@@ -107,16 +116,13 @@ fn run(case: &Case, start_top: (usize, usize)) -> Expected {
         jumps,
         mode: mode_name(vim.mode()).into(),
         register: reg.text.clone(),
-        register_type: if reg.linewise { "V".into() } else { "v".into() },
+        register_type: reg_type(&reg),
         visual_start: vim.visual_start().map(|p| text::line_col(&rope, p)),
         registers: "0123456789abcdefghijklmnopqrstuvwxyz-/"
             .chars()
             .filter_map(|r| {
                 let reg = vim.get_register(r);
-                (!reg.text.is_empty()).then(|| {
-                    let kind = if reg.linewise { "V" } else { "v" };
-                    (r.to_string(), (reg.text.clone(), kind.to_string()))
-                })
+                (!reg.text.is_empty()).then(|| (r.to_string(), (reg.text.clone(), reg_type(reg))))
             })
             .collect(),
         aborted,
@@ -143,6 +149,10 @@ const KNOWN: &[(&str, &str)] = &[
     (
         "long@16,100: yyo<C-r>0<Esc>",
         "inserting a tall line: view mid-insert",
+    ),
+    (
+        "long@16,100: <C-v>jj$AX<Esc>",
+        "appending at the end of a tall line, then back up it: view",
     ),
     (
         "markup@6,3: :g/e/j<CR>",
