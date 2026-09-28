@@ -75,15 +75,25 @@ pub struct Run {
 /// Pages of lines of runs.
 pub type Pages = Vec<Vec<Vec<Run>>>;
 
-/// Lay the text out on pages: `faces` are sorted char ranges.
-pub fn layout(text: &Rope, faces: &[(Range<usize>, Face)], paper: &Paper, tabstop: usize) -> Pages {
+/// Lay the text out on pages, wrapped as `wrapping` says (at the paper's
+/// width): `faces` are sorted char ranges.
+pub fn layout(
+    text: &Rope,
+    faces: &[(Range<usize>, Face)],
+    paper: &Paper,
+    wrapping: &wrap::Wrap,
+) -> Pages {
     let (cols, rows) = paper.grid();
+    let wrapping = wrap::Wrap {
+        width: cols,
+        ..*wrapping
+    };
     let mut lines: Vec<Vec<Run>> = Vec::new();
     let mut at = 0;
     let mut f = 0;
     for line in text.lines() {
         let chars: Vec<char> = line.chars().filter(|&c| c != '\n' && c != '\r').collect();
-        let l = wrap::layout(&chars, cols, tabstop);
+        let l = wrap::layout_with(&chars, &wrapping);
         let mut printed: Vec<Vec<Run>> = vec![Vec::new(); l.rows.len().max(1)];
         for (i, &c) in chars.iter().enumerate() {
             let pos = at + i;
@@ -180,6 +190,13 @@ pub fn pdf(pages: &Pages, paper: &Paper, title: &str) -> Result<Vec<u8>, String>
 mod tests {
     use super::*;
 
+    const PLAIN: wrap::Wrap = wrap::Wrap {
+        width: 0,
+        tabstop: 8,
+        breakindent: false,
+        breakat: wrap::BREAKAT,
+    };
+
     fn runs(pages: &Pages) -> Vec<Vec<String>> {
         pages[0]
             .iter()
@@ -203,7 +220,7 @@ mod tests {
             margins: [MIN_MARGIN; 4],
         };
         let text = Rope::from_str("one two three four\nfive\n\nsix\n");
-        let pages = layout(&text, &[], &paper, 8);
+        let pages = layout(&text, &[], &paper, &PLAIN);
         assert_eq!(
             runs(&pages),
             [
@@ -226,7 +243,7 @@ mod tests {
                 italic: false,
             },
         )];
-        let pages = layout(&text, &faces, &Paper::a4(), 8);
+        let pages = layout(&text, &faces, &Paper::a4(), &PLAIN);
         let got: Vec<(String, bool)> = pages[0][0]
             .iter()
             .map(|r| (r.text.clone(), r.face.bold))
@@ -271,7 +288,7 @@ mod tests {
         let paper = Paper::a4();
         std::fs::write(
             out,
-            pdf(&layout(&text, &faces, &paper, 8), &paper, "README.md").unwrap(),
+            pdf(&layout(&text, &faces, &paper, &PLAIN), &paper, "README.md").unwrap(),
         )
         .unwrap();
     }
@@ -280,7 +297,7 @@ mod tests {
     fn the_pdf_is_a4_with_12pt_text() {
         let text = Rope::from_str("# Title\n\nSome words.\n");
         let paper = Paper::a4();
-        let bytes = pdf(&layout(&text, &[], &paper, 8), &paper, "notes.md").unwrap();
+        let bytes = pdf(&layout(&text, &[], &paper, &PLAIN), &paper, "notes.md").unwrap();
         let pdf = String::from_utf8_lossy(&bytes);
         assert!(pdf.starts_with("%PDF-"));
         // A4 is 595.28 by 841.89 points.

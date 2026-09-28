@@ -51,6 +51,9 @@ pub struct View<'a> {
     pub matches: Vec<std::ops::Range<Pos>>,
     pub current_match: Option<std::ops::Range<Pos>>,
     pub tabstop: usize,
+    /// 'breakindent' and 'breakat', as Vim wraps with them.
+    pub breakindent: bool,
+    pub breakat: &'a str,
     /// The first screen row shown: a line, and a row of it.
     pub top: (usize, usize),
     /// Syntax highlighting: char ranges (in order) and how to draw them.
@@ -254,11 +257,17 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
         let t = self.view.text;
         let ts = self.view.tabstop;
         let (left, cells, visible) = self.geometry(state, bounds);
+        let wrapping = wrap::Wrap {
+            width: cells,
+            tabstop: ts,
+            breakindent: self.view.breakindent,
+            breakat: self.view.breakat,
+        };
 
         let cursor = self.view.cursor.min(t.len_chars());
         let cline = t.char_to_line(cursor);
         let ccol = cursor - t.line_to_char(cline);
-        let crow = wrap::layout(&line_chars(t, cline), cells, ts).row_of(ccol);
+        let crow = wrap::layout_with(&line_chars(t, cline), &wrapping).row_of(ccol);
 
         // Selection as a char range, and whether line breaks are in it.
         let selection = self.view.selection.map(|(a, b, linewise)| {
@@ -286,7 +295,7 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                 break;
             }
             let chars = line_chars(t, line);
-            let lay = wrap::layout(&chars, cells, ts);
+            let lay = wrap::layout_with(&chars, &wrapping);
             let (vc, rows) = (&lay.vcols, &lay.rows);
             let row_i = row.min(rows.len() - 1);
             let (start, end) = rows[row_i];

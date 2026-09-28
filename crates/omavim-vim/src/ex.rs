@@ -856,6 +856,21 @@ impl Vim {
             let Some(full) = full else {
                 return err(self, &format!("E518: Unknown option: {name}"));
             };
+            if full == "breakat" {
+                match value {
+                    Some(v) if !query => {
+                        self.breakat = v.to_string();
+                        // (Columns move: the one j and k aim for is found again.)
+                        self.want = None;
+                    }
+                    None if reset => {
+                        self.breakat = crate::wrap::BREAKAT.to_string();
+                        self.want = None;
+                    }
+                    _ => shown.push(format!("  breakat={}", self.breakat)),
+                }
+                continue;
+            }
             if full == "filetype" {
                 match value {
                     Some(v) if !query => {
@@ -880,6 +895,10 @@ impl Vim {
                     on
                 };
                 self.set_flag(full, v);
+                if full == "breakindent" {
+                    // (Columns move: the one j and k aim for is found again.)
+                    self.want = None;
+                }
                 if full == "hlsearch" && v {
                     self.hl = true;
                 }
@@ -920,6 +939,7 @@ impl Vim {
             "ignorecase" => self.ignorecase,
             "smartcase" => self.smartcase,
             "wrapscan" => self.wrapscan,
+            "breakindent" => self.breakindent,
             _ => self.hlsearch,
         }
     }
@@ -929,6 +949,7 @@ impl Vim {
             "ignorecase" => self.ignorecase = v,
             "smartcase" => self.smartcase = v,
             "wrapscan" => self.wrapscan = v,
+            "breakindent" => self.breakindent = v,
             _ => self.hlsearch = v,
         }
     }
@@ -944,12 +965,14 @@ fn canonical(name: &str) -> Option<&'static str> {
         "tabstop" | "ts" => "tabstop",
         "shiftwidth" | "sw" => "shiftwidth",
         "filetype" | "ft" => "filetype",
+        "breakindent" | "bri" => "breakindent",
+        "breakat" | "brk" => "breakat",
         _ => return None,
     })
 }
 
 fn bool_option(name: &str) -> bool {
-    canonical(name).is_some_and(|n| !matches!(n, "tabstop" | "shiftwidth" | "filetype"))
+    canonical(name).is_some_and(|n| !matches!(n, "tabstop" | "shiftwidth" | "filetype" | "breakat"))
 }
 
 /// A `:d`/`:y` argument: a register name, then a count.

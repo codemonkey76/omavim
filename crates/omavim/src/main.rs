@@ -200,10 +200,12 @@ impl App {
         let (config, config_error) = Config::load();
         let status = config_error.or(others.into_iter().next()).or(status);
         let mut vim = Vim::new();
-        // For writing: j and k go by screen line, as gj and gk.
+        // For writing: j and k go by screen line, as gj and gk, and wrapped
+        // lines keep their indent.
         vim.display_lines = true;
+        vim.breakindent = true;
         vim.set_file_name(doc.path.as_deref().and_then(|p| p.to_str()));
-        vim.set_filetype(doc.filetype());
+        set_filetype(&mut vim, &doc);
         let mut app = Self {
             doc,
             vim,
@@ -320,7 +322,7 @@ impl App {
                 self.doc.path = Some(path);
                 // (A new name may be a new language.)
                 self.doc.detect_language();
-                self.vim.set_filetype(self.doc.filetype());
+                set_filetype(&mut self.vim, &self.doc);
                 self.doc.dirty = false;
                 if let Some(then) = self.after_save.take() {
                     return self.go(then);
@@ -488,7 +490,7 @@ impl App {
                 .collect(),
             None => Vec::new(),
         };
-        let pages = print::layout(t, &faces, &paper, self.vim.tabstop);
+        let pages = print::layout(t, &faces, &paper, &self.vim.wrap());
         let title = self.doc.name();
         self.status = Some(format!(
             "Printing {} page{}",
@@ -515,6 +517,7 @@ impl App {
         if let Some(filetype) = self.vim.take_filetype() {
             self.doc
                 .set_language(omavim_syntax::Lang::from_name(&filetype));
+            self.vim.breakat = breakat(&self.doc).into();
         }
         if self.vim.changes() != before {
             self.doc.dirty = true;
@@ -742,7 +745,7 @@ impl App {
         self.vim = self.vim.for_other_text();
         self.vim
             .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
-        self.vim.set_filetype(self.doc.filetype());
+        set_filetype(&mut self.vim, &self.doc);
         self.offer_draft();
     }
 
@@ -1125,6 +1128,8 @@ impl App {
             matches: self.vim.search_highlights(&self.doc.text, near),
             current_match: self.vim.search_preview(&self.doc.text),
             tabstop: self.vim.tabstop,
+            breakindent: self.vim.breakindent,
+            breakat: &self.vim.breakat,
             top: self.vim.top(),
             highlights: self.highlights(),
         };
@@ -1198,6 +1203,22 @@ impl App {
         .height(Length::Fill)
         .center_x(Length::Fill);
         panel.into()
+    }
+}
+
+/// Tell Vim the document's language, and wrap as suits it.
+fn set_filetype(vim: &mut Vim, doc: &Document) {
+    vim.set_filetype(doc.filetype());
+    vim.breakat = breakat(doc).into();
+}
+
+/// Where wrapped rows may end: Vim's 'breakat', but in code not after a `-`
+/// (so `->`, `=>`'s neighbours and `-=` stay whole).
+fn breakat(doc: &Document) -> &'static str {
+    use omavim_syntax::Lang;
+    match doc.syntax.as_ref().map(|s| s.lang()) {
+        None | Some(Lang::Markdown | Lang::MarkdownInline) => omavim_vim::wrap::BREAKAT,
+        Some(_) => " \t!@*+;:,./?",
     }
 }
 

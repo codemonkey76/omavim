@@ -1,15 +1,21 @@
 -- Records where Neovim puts each char of a line on screen, with 'linebreak'
--- and 'wrap' on, in a window of the case's width. For wrap_cases.json:
+-- and 'wrap' on (and 'breakindent' and 'breakat' as the case has them), in a
+-- window of the case's width. For wrap_cases.json:
 --   nvim --headless --clean -l tools/fixtures/wrap.lua IN.json OUT.json
 local input, output = arg[1], arg[2]
 local cases = vim.json.decode(table.concat(vim.fn.readfile(input), "\n"))
+-- (Room for windows as wide as the cases want.)
+vim.o.columns = 250
 vim.cmd("vsplit | split")
 vim.wo.linebreak = true
 vim.wo.number = false
 vim.wo.signcolumn = "no"
 vim.wo.foldcolumn = "0"
 local results = {}
+local breakat = vim.o.breakat
 for _, case in ipairs(cases) do
+  vim.wo.breakindent = case.breakindent or false
+  vim.o.breakat = case.breakat or breakat
   vim.api.nvim_win_set_width(0, case.width)
   vim.api.nvim_buf_set_lines(0, 0, -1, false, { case.line })
   local cells = {}

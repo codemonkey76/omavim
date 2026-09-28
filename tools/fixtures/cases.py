@@ -281,6 +281,28 @@ MACROS = [
 ]
 
 
+# The same with 'breakindent' (as Omavim wraps), on indented lines longer
+# than the window, from a few views.
+INDENTED_TEXT = "\n".join([
+    "function send($settings) {",
+    "    $messageId = null;",
+    "    // Only the Graph path carries files today, so the caller checks first.",
+    "    match ($settings->provider_type) {",
+    "        'smtp' => $messageId = $this->sendViaSmtp($settings, $to, $subject, $body),",
+    "        'ses' => $messageId = $this->sendViaSes($settings, $to, $subject, $body, $cc),",
+    "\t\tdefault => throw new RuntimeException(\"Unsupported provider here\"),",
+    "    };",
+    "",
+    "  - a list item that goes on for quite a long way past the edge of the window",
+    "                        deeply indented words that wrap onto the next rows here",
+    "}",
+])
+BRI_VIEW = ["gj", "gk", "3gj", "3gk", "g0", "g^", "gm", "g$", "g$gj", "$gk", "gjgj", "j", "k",
+            "dgj", "ygk", "<C-e>", "3<C-e>", "<C-y>", "<C-d>", "<C-f>", "zt", "zz", "zb", "G", "gg", "H", "L"]
+BRI_STARTS = [((0, 0), None), ((2, 30), None), ((4, 60), (3, 0)), ((6, 20), (4, 1)), ((9, 50), (8, 0)),
+              ((10, 40), (9, 1))]
+
+
 def cases():
     out = []
     keys = (
@@ -313,6 +335,13 @@ def cases():
         case = {"name": f"numbers@{line},{col}: {k}", "text": NUMBERS_TEXT, "cursor": [line, col], "keys": k}
         if "`" in k:
             case["all_marks"] = True
+        out.append(case)
+    for ((line, col), top), k in itertools.product(BRI_STARTS, BRI_VIEW):
+        # (The option set first, as the keys find it in Omavim.)
+        case = {"name": f"bri@{line},{col}^{top}: {k}", "text": INDENTED_TEXT, "cursor": [line, col],
+                "keys": ":set bri<CR>" + k}
+        if top:
+            case["top"] = list(top)
         out.append(case)
     for ((line, col), top), k in itertools.product(VIEW_STARTS, VIEW):
         case = {"name": f"long@{line},{col}^{top}: {k}", "text": TEXTS["long"], "cursor": [line, col], "keys": k}

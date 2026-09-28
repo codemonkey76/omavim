@@ -2,13 +2,16 @@
 //! screen (row, column) in windows of several widths, with 'linebreak' on.
 //! Regenerate with tools/fixtures/update.
 
-use omavim_vim::wrap::layout;
+use omavim_vim::wrap::{BREAKAT, Wrap, layout_with};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Case {
     line: String,
     width: usize,
+    #[serde(default)]
+    breakindent: bool,
+    breakat: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -29,7 +32,15 @@ fn wraps_like_neovim() {
             "Neovim's window wasn't the width asked for"
         );
         let chars: Vec<char> = case.line.chars().collect();
-        let l = layout(&chars, case.width, 8);
+        let l = layout_with(
+            &chars,
+            &Wrap {
+                width: case.width,
+                tabstop: 8,
+                breakindent: case.breakindent,
+                breakat: case.breakat.as_deref().unwrap_or(BREAKAT),
+            },
+        );
         let got: Vec<(usize, usize)> = (0..chars.len())
             .map(|i| (l.vcols[i] / case.width, l.vcols[i] % case.width))
             .collect();

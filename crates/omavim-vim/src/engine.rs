@@ -470,6 +470,10 @@ pub struct Vim {
     command: Option<String>,
     pub shiftwidth: usize,
     pub tabstop: usize,
+    /// 'breakindent': wrapped rows start as far in as their line.
+    pub breakindent: bool,
+    /// 'breakat': where a wrapped row may end.
+    pub breakat: String,
     /// 'filetype', and whether `:set` changed it since the app last looked.
     filetype: String,
     filetype_set: bool,
@@ -552,6 +556,8 @@ impl Vim {
             command: None,
             shiftwidth: 8,
             tabstop: 8,
+            breakindent: false,
+            breakat: wrap::BREAKAT.to_string(),
             filetype: String::new(),
             filetype_set: false,
             width: 0,
@@ -618,7 +624,17 @@ impl Vim {
     /// How `line` is laid out on screen.
     pub fn layout(&self, t: &dyn TextModel, line: usize) -> wrap::Layout {
         let chars: Vec<char> = line_text(t, line).chars().collect();
-        wrap::layout(&chars, self.width, self.tabstop)
+        wrap::layout_with(&chars, &self.wrap())
+    }
+
+    /// How lines wrap: the window's width and the wrapping options.
+    pub fn wrap(&self) -> wrap::Wrap<'_> {
+        wrap::Wrap {
+            width: self.width,
+            tabstop: self.tabstop,
+            breakindent: self.breakindent,
+            breakat: &self.breakat,
+        }
     }
 
     /// Screen rows `line` takes.
@@ -662,6 +678,16 @@ impl Vim {
         }
         let l = self.layout(t, line);
         let len = l.vcols.len() - 1;
+        // A later row's 'breakindent' cells are its first char's (Vim's
+        // "head"), not the padded char's before them.
+        let w = self.width;
+        let chars: Vec<char> = line_text(t, line).chars().collect();
+        let indent = self.wrap().indent(&chars);
+        let vcol = if vcol >= w && vcol % w < indent {
+            vcol - vcol % w + indent
+        } else {
+            vcol
+        };
         (0..len).find(|&i| l.vcols[i + 1] > vcol).unwrap_or(len)
     }
 

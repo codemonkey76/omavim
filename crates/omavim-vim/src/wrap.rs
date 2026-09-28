@@ -7,8 +7,32 @@ use crate::text::char_width;
 /// Vim's default 'breakat': a row may end after one of these.
 pub const BREAKAT: &str = " \t!@*-+;:,./?";
 
-fn is_break(c: char) -> bool {
-    BREAKAT.contains(c)
+/// How lines wrap: Vim's 'breakindent' and 'breakat' as well as the width.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Wrap<'a> {
+    /// Cells in a row (0: no wrapping).
+    pub width: usize,
+    pub tabstop: usize,
+    /// Rows after the first start as far in as the line (Vim's
+    /// 'breakindent', with its default 'breakindentopt').
+    pub breakindent: bool,
+    /// Where a row may end ('breakat').
+    pub breakat: &'a str,
+}
+
+impl Wrap<'_> {
+    /// How far in rows after the first start: the line's indent, less what
+    /// would leave fewer than 20 cells (Vim's `min:20`).
+    pub fn indent(&self, chars: &[char]) -> usize {
+        if !self.breakindent || self.width == 0 {
+            return 0;
+        }
+        let mut v = 0;
+        for &c in chars.iter().take_while(|&&c| c == ' ' || c == '\t') {
+            v += char_width(c, v, self.tabstop);
+        }
+        v.min(self.width.saturating_sub(20))
+    }
 }
 
 fn is_wide(c: char) -> bool {
@@ -39,19 +63,40 @@ impl Layout {
 /// Lay a line out in rows `width` cells wide (0: no wrapping), as Neovim
 /// does with 'linebreak' and the default 'breakat' (its charsize_regular()).
 pub fn layout(chars: &[char], width: usize, tabstop: usize) -> Layout {
+    layout_with(
+        chars,
+        &Wrap {
+            width,
+            tabstop,
+            breakindent: false,
+            breakat: BREAKAT,
+        },
+    )
+}
+
+/// Lay a line out as `wrap` says; with 'breakindent', the cells before each
+/// later row's first char are counted in its column, as padding is.
+pub fn layout_with(chars: &[char], wrap: &Wrap) -> Layout {
+    let Wrap { width, tabstop, .. } = *wrap;
+    let is_break = |c: char| wrap.breakat.contains(c);
+    let indent = wrap.indent(chars);
     let mut vcols = Vec::with_capacity(chars.len() + 1);
     // No break in the break chars a line starts with (its indent, `// `).
     let lead = chars.iter().take_while(|&&c| is_break(c)).count();
     let mut v = 0;
     for (i, &c) in chars.iter().enumerate() {
+        if indent > 0 && v > 0 && v % width == 0 {
+            v += indent;
+        }
         vcols.push(v);
         let mut size = char_width(c, v, tabstop);
         if width > 0 {
             // A wide char that would start in a row's last cell goes to the
-            // next row, leaving a filler cell.
+            // next row (in as far as that row starts), leaving a filler cell.
             if size == 2 && is_wide(c) && v % width == width - 1 {
-                size += 1;
-                *vcols.last_mut().unwrap() += 1;
+                let pad = 1 + indent;
+                size += pad;
+                *vcols.last_mut().unwrap() += pad;
             }
             // At a break char before a word: if the word and the break chars
             // after it don't fit, pad to the row's end so it starts the next

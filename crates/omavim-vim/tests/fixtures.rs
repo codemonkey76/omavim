@@ -135,6 +135,10 @@ fn run(case: &Case, start_top: (usize, usize)) -> Expected {
 /// copy. Anything not listed must match exactly.
 const KNOWN: &[(&str, &str)] = &[
     (
+        "bri@6,20^(4, 1): H",
+        "a view scrolled into a line before :set bri rewraps it: Neovim's skipcol",
+    ),
+    (
         "long@16,100: Vj>",
         "visual op from inside a tall line: view mid-command",
     ),

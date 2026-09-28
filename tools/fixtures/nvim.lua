@@ -162,6 +162,7 @@ local function start(case, done)
   -- substitute (set to one that never matches: Neovim can't forget it).
   vim.o.ignorecase, vim.o.smartcase, vim.o.wrapscan, vim.o.hlsearch = false, false, true, true
   vim.o.tabstop, vim.o.shiftwidth = 8, 8
+  vim.wo.breakindent = false
   vim.cmd([[silent! s/\%^\%$//e]])
   vim.fn.setreg("/", "")
   vim.fn.histdel(":")
