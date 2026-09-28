@@ -16,6 +16,8 @@ use crate::wrap;
 mod addsub;
 #[path = "ex.rs"]
 mod ex;
+#[path = "format.rs"]
+mod format;
 #[path = "marks.rs"]
 mod marks;
 #[path = "scroll.rs"]
@@ -158,6 +160,9 @@ enum Op {
     Lower,
     Upper,
     Toggle,
+    /// `gq`, and `gw` (which keeps the cursor where it was).
+    Format,
+    FormatKeep,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -379,6 +384,9 @@ pub struct Vim {
     normal_depth: usize,
     /// `:s///c` is asking about a match.
     confirm: Option<ex::Confirm>,
+    /// Where the cursor was when the command being run was typed (Vim's
+    /// oap->cursor_start).
+    cmd_start: Pos,
     /// The register `""` is: the one last written (Vim's y_previous).
     unnamed: Option<char>,
     /// The register given with `"` for the command being run.
@@ -473,6 +481,7 @@ impl Vim {
             buffer_empty: false,
             normal_depth: 0,
             confirm: None,
+            cmd_start: 0,
             unnamed: None,
             reg_name: None,
             reg_one: false,
@@ -984,7 +993,10 @@ impl Vim {
             Some(Key::Char('d' | 'c' | 'y' | '<' | '>'))
         ) || matches!(
             (self.pending.get(i), self.pending.get(i + 1)),
-            (Some(Key::Char('g')), Some(Key::Char('u' | 'U' | '~')))
+            (
+                Some(Key::Char('g')),
+                Some(Key::Char('u' | 'U' | '~' | 'q' | 'w'))
+            )
         )
     }
 
@@ -1132,6 +1144,7 @@ impl Vim {
     // ── Running commands ─────────────────────────────────────────────────
 
     fn run(&mut self, t: &mut dyn TextModel, cmd: Command, keys: Vec<Key>) -> R {
+        self.cmd_start = self.cursor;
         let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
         let changes = is_change(cmd.action, visual);
         let register = cmd.register.filter(|&r| r != '"');
@@ -1922,6 +1935,7 @@ impl Vim {
         };
         let (sl, _) = text::line_col(t, start);
         let (mut el, ec) = text::line_col(t, end);
+        let motion_end_line = el;
 
         // An exclusive motion ending in column 0 of a later line ends at the end
         // of the line before, or becomes linewise (Vim's `:help exclusive`).
@@ -1940,6 +1954,13 @@ impl Vim {
                     kind = Kind::Inclusive;
                 }
             }
+        }
+        // `gq` works on the lines the motion covers (and knows if its end
+        // was moved back a line, as Vim's end_adjusted).
+        if matches!(op, Op::Format | Op::FormatKeep) {
+            let adjusted = el < motion_end_line;
+            self.format(t, sl, el - sl + 1, op == Op::FormatKeep, adjusted);
+            return Ok(());
         }
         // `d` over several lines with only blanks around becomes linewise.
         if op == Op::Delete && kind != Kind::Linewise && el > sl {
@@ -2197,7 +2218,8 @@ impl Vim {
                 self.marks.op_end = Some(self.mk(t, (last, last_col(t, last))));
                 self.marks.last_change = Some((first, 0));
             }
-            Op::Change => {}
+            // (These set their own.)
+            Op::Change | Op::Format | Op::FormatKeep => {}
         }
         result
     }
@@ -2210,6 +2232,10 @@ impl Vim {
         last: usize,
         vcol: usize,
     ) -> R {
+        if matches!(op, Op::Format | Op::FormatKeep) {
+            self.format(t, first, last - first + 1, op == Op::FormatKeep, false);
+            return Ok(());
+        }
         let start = t.line_to_char(first);
         let end = text::pos(t, last, line_len(t, last));
         let mut yanked = t.slice(start..end);
@@ -2219,6 +2245,7 @@ impl Vim {
             s.cursor = text::pos(t, line, col.min(line_len(t, line).saturating_sub(1)));
         };
         match op {
+            Op::Format | Op::FormatKeep => unreachable!(),
             Op::Yank => {
                 self.store(yanked, true, false);
                 let (line, _) = self.lc(t);
@@ -2325,6 +2352,19 @@ impl Vim {
     ) -> R {
         let yanked = t.slice(range.clone());
         match op {
+            Op::Format | Op::FormatKeep => {
+                // On the lines the chars are on.
+                let first = t.char_to_line(range.start.min(t.len_chars()));
+                let last = t.char_to_line(
+                    range
+                        .end
+                        .saturating_sub(1)
+                        .max(range.start)
+                        .min(t.len_chars()),
+                );
+                self.format(t, first, last - first + 1, op == Op::FormatKeep, false);
+                Ok(())
+            }
             Op::Yank => {
                 self.store(yanked, false, false);
                 self.cursor = range.start;
@@ -2336,18 +2376,7 @@ impl Vim {
                     // Vim still saves the line for undo (u_save_cursor): an
                     // undo step that changes nothing.
                     self.want = None;
-                    self.begin_group();
-                    let line = t.char_to_line(range.start.min(t.len_chars()));
-                    if let Some(g) = self.group.as_mut() {
-                        g.edits.push(Edit {
-                            at: range.start,
-                            removed: String::new(),
-                            inserted: String::new(),
-                            line,
-                            spanned: true,
-                            empty_buf: false,
-                        });
-                    }
+                    self.noop_undo_step(t, range.start);
                     return Ok(());
                 }
                 // Undo comes back to where the deleted text began.
@@ -2459,27 +2488,7 @@ impl Vim {
         let mut join_col = 0;
         let first_len = line_len(t, line);
         for _ in 1..n {
-            let cur_len = line_len(t, line);
-            let cur = line_text(t, line);
-            let next = line_text(t, line + 1);
-            let lead = if spaces {
-                next.chars().take_while(|&c| is_blank(c)).count()
-            } else {
-                0
-            };
-            let rest: String = next.chars().skip(lead).collect();
-            let last = cur.chars().last();
-            let space = spaces
-                && !rest.is_empty()
-                && !rest.starts_with(')')
-                && cur_len > 0
-                && last != Some('\t')
-                && last != Some(' ');
-            let from = text::pos(t, line, cur_len);
-            let to = t.line_to_char(line + 1) + lead;
-            self.edit_hint = Some(EditHint::Join);
-            self.edit(t, from..to, if space { " " } else { "" });
-            join_col = cur_len;
+            join_col = self.join_next(t, line, spaces);
         }
         // As Vim's do_join: '[ at the first line's end, '] at the joined
         // line's, '. on the line after (where the lines were deleted).
@@ -2489,6 +2498,33 @@ impl Vim {
         self.cursor = text::pos(t, line, join_col);
         self.clamp(t);
         self.want = None;
+    }
+
+    /// Join the line after `line` onto it (with `spaces`, as `J`: its
+    /// leading blanks go, and a space goes between, unless...): where it
+    /// joined.
+    fn join_next(&mut self, t: &mut dyn TextModel, line: usize, spaces: bool) -> usize {
+        let cur_len = line_len(t, line);
+        let cur = line_text(t, line);
+        let next = line_text(t, line + 1);
+        let lead = if spaces {
+            next.chars().take_while(|&c| is_blank(c)).count()
+        } else {
+            0
+        };
+        let rest: String = next.chars().skip(lead).collect();
+        let last = cur.chars().last();
+        let space = spaces
+            && !rest.is_empty()
+            && !rest.starts_with(')')
+            && cur_len > 0
+            && last != Some('\t')
+            && last != Some(' ');
+        let from = text::pos(t, line, cur_len);
+        let to = t.line_to_char(line + 1) + lead;
+        self.edit_hint = Some(EditHint::Join);
+        self.edit(t, from..to, if space { " " } else { "" });
+        cur_len
     }
 
     fn put(&mut self, t: &mut dyn TextModel, before: bool, count: usize) -> R {
@@ -3237,6 +3273,23 @@ impl Vim {
 
     /// Where undoing the change under way puts the cursor, if not where
     /// it was before it.
+    /// An undo step that changes nothing (Vim saved the line for undo, and
+    /// nothing changed), at `at`.
+    fn noop_undo_step(&mut self, t: &dyn TextModel, at: Pos) {
+        self.begin_group();
+        let line = t.char_to_line(at.min(t.len_chars()));
+        if let Some(g) = self.group.as_mut() {
+            g.edits.push(Edit {
+                at,
+                removed: String::new(),
+                inserted: String::new(),
+                line,
+                spanned: true,
+                empty_buf: false,
+            });
+        }
+    }
+
     fn set_undo_cursor(&mut self, pos: Pos) {
         if let Some(g) = self.group.as_mut()
             && g.edits.is_empty()
@@ -3718,7 +3771,7 @@ fn search_start(keys: &[Key]) -> Option<usize> {
     let mut i = keys.len() - rest.len();
     match (keys.get(i), keys.get(i + 1)) {
         (Some(Key::Char('d' | 'c' | 'y' | '<' | '>')), _) => i += 1,
-        (Some(Key::Char('g')), Some(Key::Char('u' | 'U' | '~'))) => i += 2,
+        (Some(Key::Char('g')), Some(Key::Char('u' | 'U' | '~' | 'q' | 'w'))) => i += 2,
         _ => {}
     }
     let rest = take_count(&keys[i..]).1;
@@ -3930,6 +3983,8 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                 Some(Key::Char('u')) => Some(Some(Op::Lower)),
                 Some(Key::Char('U')) => Some(Some(Op::Upper)),
                 Some(Key::Char('~')) => Some(Some(Op::Toggle)),
+                Some(Key::Char('q')) => Some(Some(Op::Format)),
+                Some(Key::Char('w')) => Some(Some(Op::FormatKeep)),
                 _ => None,
             },
             _ => None,
@@ -3984,6 +4039,12 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                 return done(Action::Operate(Op::Upper, Some(Motion::Right)));
             }
             (Key::Char('g'), Some(Key::Char('~'))) => return done(Action::ToggleCase),
+            (Key::Char('g'), Some(Key::Char('q'))) => {
+                return done(Action::Operate(Op::Format, None));
+            }
+            (Key::Char('g'), Some(Key::Char('w'))) => {
+                return done(Action::Operate(Op::FormatKeep, None));
+            }
             (Key::Char('g'), Some(Key::Ctrl(c @ ('a' | 'x')))) => {
                 return done(Action::AddSub {
                     sub: *c == 'x',

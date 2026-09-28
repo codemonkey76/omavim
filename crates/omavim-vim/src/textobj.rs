@@ -4,7 +4,7 @@
 
 use crate::TextModel;
 use crate::motion::{Cur, bck_word, bckend_word, dec, end_word, fwd_word, inc};
-use crate::text::{char_at, class, is_blank, last_line, line_len, line_text};
+use crate::text::{self, char_at, class, is_blank, last_line, line_len, line_text};
 
 /// A visual selection a text object starts from, or extends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -208,7 +208,7 @@ pub fn word(
 // ── Sentences ────────────────────────────────────────────────────────────
 
 fn start_ps(t: &dyn TextModel, line: usize) -> bool {
-    line_empty(t, line)
+    text::start_ps(t, line)
 }
 
 /// The start of the next (`forward`) or current/previous sentence (Vim's

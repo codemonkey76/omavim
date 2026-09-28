@@ -3,7 +3,7 @@
 //! (line, col) where col may be the line's length: Vim's NUL at the end.
 
 use crate::TextModel;
-use crate::text::{char_at, class, last_line, line_len};
+use crate::text::{self, char_at, class, last_line, line_len};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Cur {
@@ -242,7 +242,7 @@ pub fn paragraph(
             if !empty_line(t, curr as usize) {
                 did_skip = true;
             }
-            if !first && did_skip && empty_line(t, curr as usize) {
+            if !first && did_skip && text::start_ps(t, curr as usize) {
                 break;
             }
             curr += dir;

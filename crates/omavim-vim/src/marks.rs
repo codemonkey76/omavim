@@ -42,6 +42,9 @@ pub(super) struct Marks {
     /// The lines `:g` has still to run its command on (Vim marks them in
     /// its memline: they go with their lines, and go when they do).
     pub global: Vec<usize>,
+    /// Where `gw` puts the cursor back (Vim's saved_cursor): kept on its
+    /// text as `gw` formats.
+    pub saved: Option<Mark>,
 }
 
 /// What kind of edit is coming, when the text alone can't tell (Vim's
@@ -61,6 +64,16 @@ pub(super) enum EditHint {
     Spanned,
     /// `J`: as Spanned (and it moves marks as a join).
     Join,
+    /// Chars taken from the start of line `.0` (a comment leader, by `gq`):
+    /// its marks move back `.1` bytes (Vim's mark_col_adjust).
+    ColShift(usize, usize),
+    /// Line `line` split by `gq`: its marks from byte `col` on go to the new
+    /// line after it, `delta` bytes along (OPENLINE_MARKFIX).
+    Split {
+        line: usize,
+        col: usize,
+        delta: isize,
+    },
 }
 
 /// How an edit changed the lines: what Neovim's mark_adjust and
@@ -85,6 +98,19 @@ enum LineChange {
         to: usize,
         shift: isize,
         spaces_removed: isize,
+    },
+    /// Marks on `line` from `col` on move by `amount` (not before 0).
+    ColShift {
+        line: usize,
+        col: usize,
+        amount: isize,
+    },
+    /// Marks on `line` from `col` on go to the next line, moved by `delta`;
+    /// the lines after move down.
+    Split {
+        line: usize,
+        col: usize,
+        delta: isize,
     },
 }
 
@@ -140,6 +166,7 @@ impl Marks {
         for l in &mut self.global {
             *l = f(*l);
         }
+        g(&mut self.saved);
     }
 
     /// Every mark that moves with the text, for adjusting: named, the
@@ -167,6 +194,7 @@ impl Marks {
         one(&mut self.prev_pc, false);
         one(&mut self.last_change, false);
         one(&mut self.last_insert, false);
+        one(&mut self.saved, true);
         if let Some((a, b, m, w)) = self.visual {
             let a = adjust_one(a, change, true).unwrap_or(a);
             let b = adjust_one(b, change, true).unwrap_or(b);
@@ -189,7 +217,26 @@ impl Marks {
 /// One mark after a change; None if its line went. `keep`: don't lose it,
 /// put it on the first line deleted instead (Vim's ONE_ADJUST_NODEL).
 fn adjust_one((l, c): Mark, change: &LineChange, keep: bool) -> Option<Mark> {
+    let moved = |c: usize, by: isize| {
+        if c == usize::MAX {
+            c
+        } else {
+            (c as isize + by).max(0) as usize
+        }
+    };
     match *change {
+        LineChange::ColShift { line, col, amount } => Some(if l == line && c >= col {
+            (l, moved(c, amount))
+        } else {
+            (l, c)
+        }),
+        LineChange::Split { line, col, delta } => Some(if l == line && c >= col {
+            (l + 1, moved(c, delta))
+        } else if l > line {
+            (l + 1, c)
+        } else {
+            (l, c)
+        }),
         LineChange::Deleted { first, last } => {
             let n = last - first + 1;
             if l >= first && l <= last {
@@ -289,6 +336,14 @@ impl Vim {
                 last: l2,
             }),
             Some(EditHint::Above) => Some(LineChange::Inserted { at: l1, count: k }),
+            Some(EditHint::ColShift(line, n)) => Some(LineChange::ColShift {
+                line,
+                col: 0,
+                amount: -(n as isize),
+            }),
+            Some(EditHint::Split { line, col, delta }) => {
+                Some(LineChange::Split { line, col, delta })
+            }
             Some(EditHint::Substitute) if d > 0 && k == 0 => Some(LineChange::Deleted {
                 first: l1 + 1,
                 last: l2,

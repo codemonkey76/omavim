@@ -195,6 +195,36 @@ CONFIRM = [
     ":%s/e/E/gc<CR>yx<Esc>",
 ]
 
+# gq and gw, on every text and on one made for them.
+FORMAT = [
+    "gqq", "gqj", "gqip", "gqap", "gq}", "gqgq", "gww", "gwip", "Vjgq", "vjgq", "gqG", "gggqG", "gqqu",
+    "gqip.", "gwap`[", "gqip`]", "magqip`a", "3gqq", "gqk", "gqip<C-o>", "gwj", "gqqj", "Vgw",
+]
+FORMAT_TEXT = (
+    "This is a paragraph with enough words that it will need to be wrapped at the text width.\n"
+    "And a second line of it.\n"
+    "\n"
+    "    An indented paragraph that is also long enough to be broken into lines.\n"
+    "// A comment line that is long enough to wrap, with its leader repeated.\n"
+    "// And another comment line.\n"
+    "# A hash comment that goes on and on past the width.\n"
+    "> A quoted line that runs past the width of the window here.\n"
+    "> > Nested quote that is long as well, to see the leaders.\n"
+    "- A list item that is long enough to wrap onto the next line.\n"
+    "/* A block comment that starts here and runs on past the width */\n"
+    "/* A block comment that runs past the width\n"
+    " * with a middle line\n"
+    " */\n"
+    ".PP\n"
+    "Troff paragraph after a macro line.\n"
+    "supercalifragilisticexpialidocious_and_more_words_without_breaks okay\n"
+    "\tTab indented line that is long enough to wrap at the width.\n"
+    "        Eight spaces of indent on a line that wraps.\n"
+    "x"
+)
+FORMAT_CURSORS = [(0, 5), (1, 3), (3, 8), (4, 10), (5, 0), (6, 4), (7, 3), (8, 5), (9, 2), (10, 3),
+                  (11, 6), (12, 2), (14, 0), (15, 3), (16, 10), (17, 2), (18, 9), (19, 0)]
+
 # CTRL-A and CTRL-X, on a text of numbers, from several places.
 NUMBERS_TEXT = (
     "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n"
@@ -237,7 +267,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL + CONFIRM
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL + CONFIRM + FORMAT
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]
@@ -252,6 +282,11 @@ def cases():
     for case in out:
         if case["keys"] in MARKS:
             case["all_marks"] = True
+    for (line, col), k in itertools.product(FORMAT_CURSORS, FORMAT):
+        case = {"name": f"format@{line},{col}: {k}", "text": FORMAT_TEXT, "cursor": [line, col], "keys": k}
+        if "`" in k:
+            case["all_marks"] = True
+        out.append(case)
     for (line, col), k in itertools.product(NUMBER_CURSORS, NUMBERS):
         case = {"name": f"numbers@{line},{col}: {k}", "text": NUMBERS_TEXT, "cursor": [line, col], "keys": k}
         if "`" in k:

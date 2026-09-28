@@ -32,7 +32,9 @@ match), `:&`, `:&&`, `&`,
 `:w`, `:q`, `:wq`, `:x`, `|` between commands, editing with the cursor keys,
 `CTRL-W`, `CTRL-R`, `CTRL-V`, and history on Up/Down for commands and searches. Lines
 wrap at word breaks and the view scrolls exactly as Neovim's does with
-'linebreak' and 'smoothscroll'. `gq` and block visual mode are next.
+'linebreak' and 'smoothscroll'. `gq` and `gw` format paragraphs to the window's width
+(at most 79), keeping comment leaders (`//`, `#`, `>`, ` * `) on each line.
+Block visual mode is next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a

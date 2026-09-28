@@ -121,6 +121,41 @@ pub fn col_at_vcol(t: &dyn TextModel, line: usize, vcol: usize, tabstop: usize) 
     len
 }
 
+/// Neovim's default 'paragraphs' and 'sections': nroff macros that start
+/// one.
+const PARAGRAPHS: &str = "IPLPPPQPP TPHPLIPpLpItpplpipbp";
+const SECTIONS: &str = "SHNHH HUnhsh";
+
+/// A line that starts a paragraph or section (Vim's startPS): an empty one,
+/// a form feed, or an nroff macro (`.PP`, `.SH`, ...).
+pub fn starts_paragraph(line: &[char]) -> bool {
+    let inmacro = |opt: &str, s: &[char]| {
+        let m: Vec<char> = opt.chars().collect();
+        let at = |i: usize| s.get(i).copied().unwrap_or('\0');
+        m.chunks(2).any(|pair| {
+            let (a, b) = (pair[0], pair.get(1).copied().unwrap_or('\0'));
+            (a == at(0) || (a == ' ' && (at(0) == '\0' || at(0) == ' ')))
+                && (b == at(1)
+                    || ((b == '\0' || b == ' ')
+                        && (at(0) == '\0' || at(1) == '\0' || at(1) == ' ')))
+        })
+    };
+    match line.first() {
+        None | Some('\x0c') => true,
+        Some('.') => inmacro(SECTIONS, &line[1..]) || inmacro(PARAGRAPHS, &line[1..]),
+        _ => false,
+    }
+}
+
+/// [`starts_paragraph`] for a line of the text.
+pub fn start_ps(t: &dyn TextModel, line: usize) -> bool {
+    let start = t.line_to_char(line);
+    let len = line_len(t, line);
+    // (Only its first chars matter.)
+    let head: Vec<char> = (0..len.min(3)).map(|i| t.char(start + i)).collect();
+    starts_paragraph(&head)
+}
+
 /// Vim's 'iskeyword' default: letters, digits, '_' and chars 192-255.
 pub fn is_word_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_' || (c as u32 >= 192 && c as u32 <= 255)

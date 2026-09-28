@@ -427,7 +427,7 @@ impl Vim {
     }
 
     /// The cursor to a line's first non-blank.
-    fn go_line(&mut self, t: &dyn TextModel, line: usize) {
+    pub(super) fn go_line(&mut self, t: &dyn TextModel, line: usize) {
         let line = line.min(last_line(t));
         self.cursor = text::pos(
             t,
