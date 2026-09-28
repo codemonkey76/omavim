@@ -21,8 +21,6 @@ use omavim_vim::{Mode, Pos, wrap};
 use ropey::Rope;
 use std::cell::Cell;
 
-/// Cells in the text column (Omawrite's measure, roughly).
-const COLUMN: f32 = 72.0;
 /// Line height, relative to the text size.
 const LINE_HEIGHT: f32 = 1.6;
 /// Space above the first row and below the last.
@@ -63,6 +61,8 @@ pub struct Editor<'a, Message> {
     view: View<'a>,
     font: Font,
     size: f32,
+    /// Cells in the text column, at most (0: as wide as the window).
+    column: usize,
     on_key: Box<dyn Fn(KeyPress) -> Message + 'a>,
     /// The text area changed size: cells in a row, and rows.
     on_resize: Box<dyn Fn(usize, usize) -> Message + 'a>,
@@ -93,10 +93,17 @@ impl<'a, Message> Editor<'a, Message> {
             view,
             font,
             size,
+            column: crate::config::COLUMN,
             on_key: Box::new(on_key),
             on_resize: Box::new(on_resize),
             on_scroll: Box::new(on_scroll),
         }
+    }
+
+    /// The text column's width in cells, at most (0: the window's).
+    pub fn column(mut self, cells: usize) -> Self {
+        self.column = cells;
+        self
     }
 }
 
@@ -147,9 +154,12 @@ impl<Message> Editor<'_, Message> {
     fn geometry(&self, state: &State, bounds: Rectangle) -> (f32, usize, usize) {
         let cell = self.cell_width(state);
         let row_h = self.size * LINE_HEIGHT;
-        let column_w = (cell * COLUMN)
-            .min(bounds.width - 2.0 * PADDING)
-            .max(cell * 10.0);
+        let room = bounds.width - 2.0 * PADDING;
+        let column_w = match self.column {
+            0 => room,
+            n => (cell * n as f32).min(room),
+        }
+        .max(cell * 10.0);
         let cells = (column_w / cell).floor() as usize;
         let left = bounds.x + ((bounds.width - cells as f32 * cell) / 2.0).max(0.0);
         let rows = (((bounds.height - 2.0 * PADDING) / row_h).floor() as usize).max(1);

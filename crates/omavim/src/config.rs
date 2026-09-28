@@ -3,6 +3,7 @@
 //!
 //! ```toml
 //! leader = "space"   # or one character, such as ","
+//! column = 120       # the text column's width in characters (0: the window's)
 //!
 //! [keys]             # the key after the leader, for each action
 //! save = "w"
@@ -94,9 +95,14 @@ impl Action {
     }
 }
 
+/// The text column's width, in characters, unless the config says.
+pub const COLUMN: usize = 120;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Config {
     pub leader: char,
+    /// The text column's width in characters (0: as wide as the window).
+    pub column: usize,
     keys: HashMap<char, Action>,
 }
 
@@ -104,6 +110,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             leader: ' ',
+            column: COLUMN,
             keys: Action::ALL.iter().map(|&a| (a.default_key(), a)).collect(),
         }
     }
@@ -114,6 +121,7 @@ impl Default for Config {
 #[serde(deny_unknown_fields)]
 struct File {
     leader: Option<String>,
+    column: Option<usize>,
     #[serde(default)]
     keys: HashMap<Action, String>,
 }
@@ -146,6 +154,9 @@ impl Config {
         let mut config = Config::default();
         if let Some(leader) = file.leader {
             config.leader = key(&leader).ok_or(format!("leader: {leader:?} isn't one key"))?;
+        }
+        if let Some(column) = file.column {
+            config.column = column;
         }
         for (action, k) in file.keys {
             let k = key(&k).ok_or(format!("keys.{action:?}: {k:?} isn't one key"))?;
@@ -210,6 +221,8 @@ mod tests {
         assert_eq!(c.action('B'), Some(Action::Bold));
         assert_eq!(c.action('o'), Some(Action::Open), "the rest stay");
         assert_eq!(Config::parse("leader = \"space\"").unwrap().leader, ' ');
+        assert_eq!(Config::parse("column = 0").unwrap().column, 0);
+        assert_eq!(Config::default().column, 120);
     }
 
     #[test]

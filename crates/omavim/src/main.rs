@@ -1135,7 +1135,8 @@ impl App {
             Message::Key,
             Message::Resized,
             Message::Scroll,
-        );
+        )
+        .column(self.config.column);
         let main: Element<'_, Message> = if self.help {
             // Over the editor, which keeps the keys (Esc or q closes it).
             iced::widget::stack![editor, self.help_view()].into()

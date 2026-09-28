@@ -79,6 +79,7 @@ The leader and the keys after it can be changed in
 
 ```toml
 leader = "space"   # or one character, such as ","
+column = 120       # the text column's width in characters (0: the window's)
 
 [keys]             # save, save_as, open, new_window, print, fullscreen,
 save = "w"         # bold, italic, link, help, close
