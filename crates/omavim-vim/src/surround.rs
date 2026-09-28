@@ -99,3 +99,34 @@ impl Vim {
         self.start_insert(t, Insert::Before, 1)
     }
 }
+
+impl Vim {
+    /// The file changed outside Omavim: make the text `new`, as one undo
+    /// step, changing only what differs (so marks and the cursor stay put
+    /// where the text around them did).
+    pub fn reload(&mut self, t: &mut dyn TextModel, new: &str) {
+        let old: Vec<char> = t.slice(0..t.len_chars()).chars().collect();
+        let new: Vec<char> = new.chars().collect();
+        let prefix = old.iter().zip(&new).take_while(|(a, b)| a == b).count();
+        let suffix = old[prefix..]
+            .iter()
+            .rev()
+            .zip(new[prefix..].iter().rev())
+            .take_while(|(a, b)| a == b)
+            .count();
+        if prefix == old.len() && prefix == new.len() {
+            return;
+        }
+        let with: String = new[prefix..new.len() - suffix].iter().collect();
+        self.mode = Mode::Normal;
+        self.begin_group();
+        self.edit(t, prefix..old.len() - suffix, &with);
+        self.close_group();
+        self.cursor = self.cursor.min(t.len_chars().saturating_sub(1));
+        let (line, col) = text::line_col(t, self.cursor);
+        let len = line_len(t, line);
+        if col >= len && len > 0 {
+            self.cursor = text::pos(t, line, len - 1);
+        }
+    }
+}

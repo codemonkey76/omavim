@@ -19,6 +19,18 @@ pub struct Document {
     pub final_newline: bool,
     /// Its syntax tree, for a language Omavim knows.
     pub syntax: Option<Syntax>,
+    /// The file on disk when it was last read or written: to see when
+    /// something else changes it.
+    pub disk: Option<Stamp>,
+}
+
+/// When a file was last changed, and its size.
+pub type Stamp = (std::time::SystemTime, u64);
+
+/// A file's [`Stamp`] now (None if it isn't there).
+pub fn disk_stamp(path: &std::path::Path) -> Option<Stamp> {
+    let m = std::fs::metadata(path).ok()?;
+    Some((m.modified().ok()?, m.len()))
 }
 
 impl Default for Document {
@@ -30,18 +42,17 @@ impl Default for Document {
             dirty: false,
             final_newline: true,
             syntax: None,
+            disk: None,
         }
     }
 }
 
 impl Document {
     pub fn open(path: PathBuf, contents: &str) -> Self {
-        let (body, final_newline) = match contents.strip_suffix('\n') {
-            Some(body) => (body, true),
-            None => (contents, contents.is_empty()),
-        };
+        let (body, final_newline) = split_final_newline(contents);
         let mut doc = Self {
             text: Rope::from_str(body),
+            disk: disk_stamp(&path),
             path: Some(path),
             dirty: false,
             final_newline,
@@ -90,6 +101,15 @@ impl Document {
             .and_then(|p| p.file_name())
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| "Untitled".into())
+    }
+}
+
+/// A file's text as Omavim holds it: without its final line break, and
+/// whether it had one.
+pub fn split_final_newline(contents: &str) -> (&str, bool) {
+    match contents.strip_suffix('\n') {
+        Some(body) => (body, true),
+        None => (contents, contents.is_empty()),
     }
 }
 

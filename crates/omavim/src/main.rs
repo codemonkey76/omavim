@@ -48,8 +48,10 @@ struct App {
     status: Option<String>,
     /// What to do once a save finishes (`:wq` quits after it, say).
     after_save: Option<Then>,
-    /// Asking whether to save unsaved changes before doing this.
-    confirm: Option<Then>,
+    /// A question in the footer, waiting for its answer.
+    prompt: Option<Prompt>,
+    /// A save is being written.
+    writing: bool,
     /// A parse is running on another thread.
     parsing: bool,
     config: Config,
@@ -88,12 +90,23 @@ enum Message {
     Resized(usize, usize),
     /// The mouse wheel: rows to scroll, down if positive.
     Scroll(isize),
-    /// Time to see if the Omarchy theme changed.
-    CheckTheme,
+    /// Time to see if the Omarchy theme, or the file, changed.
+    Tick,
     /// The syntax tree, parsed again off the main thread.
     Parsed(Handoff<omavim_syntax::Parsed>),
     /// The window's close button (or the desktop's close key).
     CloseRequested,
+}
+
+/// A question for a key's answer.
+#[derive(Debug, Clone, PartialEq)]
+enum Prompt {
+    /// Save the unsaved changes before this?
+    Save(Then),
+    /// The file changed on disk, and here too: keep this, or load that?
+    Changed(String),
+    /// The file changed on disk since it was read: write over it anyway?
+    Overwrite(PathBuf),
 }
 
 /// What to do after dealing with unsaved changes.
@@ -162,7 +175,8 @@ impl App {
             colors: Colors::current(Scheme::default()),
             status,
             after_save: None,
-            confirm: None,
+            prompt: None,
+            writing: false,
             parsing: false,
             config,
             leader_pending: false,
@@ -194,7 +208,7 @@ impl App {
         Subscription::batch([
             Subscription::run(portal::color_scheme).map(Message::Scheme),
             // (A new Omarchy theme swaps its colours file in: cheap to check.)
-            iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::CheckTheme),
+            iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::Tick),
             iced::event::listen_with(|event, _, _| match event {
                 iced::Event::Window(iced::window::Event::Focused) => Some(Message::Focused),
                 iced::Event::Window(iced::window::Event::CloseRequested) => {
@@ -220,10 +234,11 @@ impl App {
                 // Edited while it parsed: again.
                 return self.parse_later();
             }
-            Message::CheckTheme => {
+            Message::Tick => {
                 if Colors::omarchy_stamp() != self.colors.source {
                     self.set_colors(Colors::current(self.scheme));
                 }
+                return self.check_disk();
             }
             Message::Opened(Ok(Some((path, contents)))) => {
                 self.doc = Document::open(path, &contents);
@@ -234,7 +249,7 @@ impl App {
                 self.vim.set_filetype(self.doc.filetype());
                 self.status = None;
             }
-            Message::Focused => return read_clipboards(),
+            Message::Focused => return Task::batch([read_clipboards(), self.check_disk()]),
             Message::Clipboard(register, text) => {
                 self.vim
                     .set_clipboard(register, text.as_deref().unwrap_or(""));
@@ -245,6 +260,8 @@ impl App {
             Message::SaveTo(Ok(None)) => self.after_save = None,
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
             Message::Saved(Ok(path)) => {
+                self.writing = false;
+                self.doc.disk = document::disk_stamp(&path);
                 self.status = Some(format!("Saved {}", path.display()));
                 self.vim.set_file_name(path.to_str());
                 self.doc.path = Some(path);
@@ -257,6 +274,7 @@ impl App {
                 }
             }
             Message::Opened(Err(e)) | Message::SaveTo(Err(e)) | Message::Saved(Err(e)) => {
+                self.writing = false;
                 self.after_save = None;
                 self.status = Some(e)
             }
@@ -277,8 +295,8 @@ impl App {
             return self.save();
         }
         let keys = vim_keys(&press);
-        if self.confirm.is_some() {
-            return self.confirm_key(&keys);
+        if self.prompt.is_some() {
+            return self.prompt_key(&keys);
         }
         if self.help {
             return self.help_key(&keys);
@@ -515,9 +533,15 @@ impl App {
                 self.edit(arg, name.ends_with('!'));
                 Task::none()
             }
-            "w" | "w!" | "write" => match arg {
+            "w" | "write" => match arg {
                 Some(file) => self.write(self.resolve(file)),
                 None => self.save(),
+            },
+            // (Over a file changed on disk without asking.)
+            "w!" | "write!" => match (arg, self.doc.path.clone()) {
+                (Some(file), _) => self.write_now(self.resolve(file)),
+                (None, Some(path)) => self.write_now(path),
+                (None, None) => self.save_as(),
             },
             "sav" | "saveas" => match arg {
                 Some(file) => self.write(self.resolve(file)),
@@ -638,8 +662,73 @@ impl App {
         Task::perform(portal::save_as(name, folder), Message::SaveTo)
     }
 
+    /// Write the file, asking first if that's over changes made to it
+    /// outside since it was read.
     fn write(&mut self, path: PathBuf) -> Task<Message> {
+        if self.doc.path.as_ref() == Some(&path)
+            && self.doc.disk.is_some()
+            && document::disk_stamp(&path) != self.doc.disk
+            && std::fs::read_to_string(&path).is_ok_and(|c| c != self.doc.contents())
+        {
+            self.prompt = Some(Prompt::Overwrite(path));
+            return Task::none();
+        }
+        self.write_now(path)
+    }
+
+    fn write_now(&mut self, path: PathBuf) -> Task<Message> {
+        self.writing = true;
         Task::perform(portal::write(path, self.doc.contents()), Message::Saved)
+    }
+
+    /// Has the file changed on disk? Load it if there's nothing here to
+    /// lose, else ask (as Vim does when it gets focus back).
+    fn check_disk(&mut self) -> Task<Message> {
+        if self.prompt.is_some() || self.writing {
+            return Task::none();
+        }
+        let Some(path) = self.doc.path.clone() else {
+            return Task::none();
+        };
+        let now = document::disk_stamp(&path);
+        if now == self.doc.disk {
+            return Task::none();
+        }
+        let before = std::mem::replace(&mut self.doc.disk, now);
+        if now.is_none() {
+            if before.is_some() {
+                self.status = Some(format!(
+                    "E211: File \"{}\" no longer available",
+                    self.doc.name()
+                ));
+            }
+            return Task::none();
+        }
+        let Ok(contents) = std::fs::read_to_string(&path) else {
+            return Task::none();
+        };
+        if contents == self.doc.contents() {
+            return Task::none();
+        }
+        if self.doc.dirty {
+            self.prompt = Some(Prompt::Changed(contents));
+            return Task::none();
+        }
+        self.status = Some(format!(
+            "\"{}\" changed on disk: loaded again",
+            self.doc.name()
+        ));
+        self.load(&contents)
+    }
+
+    /// The file's text from disk in place of this, as one undo step.
+    fn load(&mut self, contents: &str) -> Task<Message> {
+        let (body, final_newline) = document::split_final_newline(contents);
+        let mut text = Recorder::new(&mut self.doc);
+        self.vim.reload(&mut text, body);
+        self.doc.final_newline = final_newline;
+        self.doc.dirty = false;
+        self.parse_later()
     }
 
     fn open(&mut self) -> Task<Message> {
@@ -650,7 +739,7 @@ impl App {
     /// asking about unsaved changes.
     fn leave(&mut self, then: Then) -> Task<Message> {
         if self.doc.dirty {
-            self.confirm = Some(then);
+            self.prompt = Some(Prompt::Save(then));
             return Task::none();
         }
         self.go(then)
@@ -667,24 +756,51 @@ impl App {
         }
     }
 
-    /// The answer to "Save changes?": yes, no, or cancel (Enter is yes, as
-    /// in Vim).
-    fn confirm_key(&mut self, keys: &[Key]) -> Task<Message> {
-        let Some(then) = self.confirm.clone() else {
-            return Task::none();
+    /// The answer to a prompt (Enter is the first choice, as in Vim).
+    fn prompt_key(&mut self, keys: &[Key]) -> Task<Message> {
+        let then = match self.prompt.clone() {
+            Some(Prompt::Save(then)) => then,
+            Some(Prompt::Changed(contents)) => {
+                return match keys {
+                    [Key::Char('l' | 'L')] => {
+                        self.prompt = None;
+                        self.load(&contents)
+                    }
+                    [Key::Char('o' | 'O') | Key::Enter | Key::Esc] => {
+                        self.prompt = None;
+                        Task::none()
+                    }
+                    _ => Task::none(),
+                };
+            }
+            Some(Prompt::Overwrite(path)) => {
+                return match keys {
+                    [Key::Char('y' | 'Y')] => {
+                        self.prompt = None;
+                        self.write_now(path)
+                    }
+                    [Key::Char('n' | 'N') | Key::Enter | Key::Esc] => {
+                        self.prompt = None;
+                        self.after_save = None;
+                        Task::none()
+                    }
+                    _ => Task::none(),
+                };
+            }
+            None => return Task::none(),
         };
         match keys {
             [Key::Char('y' | 'Y') | Key::Enter] => {
-                self.confirm = None;
+                self.prompt = None;
                 self.after_save = Some(then);
                 self.save()
             }
             [Key::Char('n' | 'N')] => {
-                self.confirm = None;
+                self.prompt = None;
                 self.go(then)
             }
             [Key::Char('c' | 'C') | Key::Esc | Key::Ctrl('c')] => {
-                self.confirm = None;
+                self.prompt = None;
                 Task::none()
             }
             _ => Task::none(),
@@ -727,12 +843,21 @@ impl App {
                     format!("{before}▏{after}")
                 }
             }
-            None => match &self.confirm {
-                // As Vim's `:confirm` asks.
-                Some(_) => format!(
+            // (Vim's words for each.)
+            None => match &self.prompt {
+                Some(Prompt::Save(_)) => format!(
                     "Save changes to \"{}\"?  [Y]es, (N)o, (C)ancel",
                     self.doc.name()
                 ),
+                Some(Prompt::Changed(_)) => format!(
+                    "W12: Warning: File \"{}\" has changed and the buffer was changed \
+                     in Omavim as well  [O]K, (L)oad File",
+                    self.doc.name()
+                ),
+                Some(Prompt::Overwrite(_)) => "WARNING: The file has been changed since \
+                                               reading it!!! Do you really want to write \
+                                               to it (y/n)?"
+                    .into(),
                 None => self.status.clone().unwrap_or_default(),
             },
         };
@@ -764,7 +889,7 @@ impl App {
             .size(13)
             .color(dim),
             space::horizontal(),
-            text(status).size(13).color(if self.confirm.is_some() {
+            text(status).size(13).color(if self.prompt.is_some() {
                 palette.primary
             } else {
                 dim
@@ -966,7 +1091,8 @@ mod tests {
             colors: Colors::builtin(Scheme::default()),
             status: None,
             after_save: None,
-            confirm: None,
+            prompt: None,
+            writing: false,
             parsing: false,
             config: Config::default(),
             leader_pending: false,
@@ -1084,17 +1210,21 @@ mod tests {
         assert_eq!(a.doc.text.to_string(), "bee");
         typed(&mut a, "x");
         typed(&mut a, " q");
-        assert_eq!(a.confirm, Some(Then::Quit));
+        assert_eq!(a.prompt, Some(Prompt::Save(Then::Quit)));
         typed(&mut a, "z");
-        assert_eq!(a.confirm, Some(Then::Quit), "only an answer ends it");
+        assert_eq!(
+            a.prompt,
+            Some(Prompt::Save(Then::Quit)),
+            "only an answer ends it"
+        );
         typed(&mut a, "c");
-        assert_eq!(a.confirm, None);
+        assert_eq!(a.prompt, None);
         assert_eq!(a.doc.text.to_string(), "ee", "cancel changes nothing");
         // No: the other file, dropping the change.
         typed(&mut a, &format!(":confirm e {}<CR>", a_md.display()));
         assert_eq!(
-            a.confirm,
-            Some(Then::Edit(Some(a_md.display().to_string())))
+            a.prompt,
+            Some(Prompt::Save(Then::Edit(Some(a_md.display().to_string()))))
         );
         typed(&mut a, "n");
         assert_eq!(a.doc.path.as_deref(), Some(a_md.as_path()));
@@ -1102,12 +1232,85 @@ mod tests {
         // Yes: saves (the file is written in a task), then goes on.
         typed(&mut a, "iy<Esc> q");
         typed(&mut a, "y");
-        assert_eq!(a.confirm, None);
+        assert_eq!(a.prompt, None);
         assert_eq!(a.after_save, Some(Then::Quit));
         // Vim's own :q still refuses.
         typed(&mut a, ":q<CR>");
         assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E37")));
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// A file of its own, in a folder of its own.
+    fn scratch(name: &str, contents: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("omavim-{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("notes.md");
+        std::fs::write(&path, contents).unwrap();
+        path
+    }
+
+    #[test]
+    fn an_outside_change_loads_when_nothing_here_is_lost() {
+        let path = scratch("reload", "one\ntwo\n");
+        let mut a = app(Document::open(path.clone(), "one\ntwo\n"));
+        typed(&mut a, "j");
+        let _ = a.check_disk();
+        assert_eq!(a.doc.text.to_string(), "one\ntwo", "nothing changed yet");
+        std::fs::write(&path, "one\ntwo\nthree\n").unwrap();
+        let _ = a.check_disk();
+        assert_eq!(a.doc.text.to_string(), "one\ntwo\nthree");
+        assert!(!a.doc.dirty);
+        assert_eq!(a.vim.cursor(), 4, "still on two");
+        // And `u` has the old text back.
+        typed(&mut a, "u");
+        assert_eq!(a.doc.text.to_string(), "one\ntwo");
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn an_outside_change_over_changes_here_asks() {
+        let path = scratch("changed", "one\n");
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        typed(&mut a, "Aa<Esc>");
+        std::fs::write(&path, "one two\n").unwrap();
+        let _ = a.check_disk();
+        assert_eq!(a.prompt, Some(Prompt::Changed("one two\n".into())));
+        typed(&mut a, "o");
+        assert_eq!(a.doc.text.to_string(), "onea", "OK keeps this");
+        let _ = a.check_disk();
+        assert_eq!(a.prompt, None, "and doesn't ask again for the same change");
+        std::fs::write(&path, "one two three\n").unwrap();
+        let _ = a.check_disk();
+        typed(&mut a, "l");
+        assert_eq!(a.doc.text.to_string(), "one two three");
+        assert!(!a.doc.dirty);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn saving_over_an_outside_change_asks() {
+        let path = scratch("overwrite", "one\n");
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        typed(&mut a, "Aa<Esc>");
+        std::fs::write(&path, "theirs\n").unwrap();
+        typed(&mut a, ":w<CR>");
+        assert_eq!(a.prompt, Some(Prompt::Overwrite(path.clone())));
+        typed(&mut a, "n");
+        assert_eq!(a.prompt, None);
+        assert!(!a.writing, "nothing written");
+        typed(&mut a, ":w<CR>y");
+        assert!(a.writing);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn a_file_gone_from_disk_says_so() {
+        let path = scratch("gone", "one\n");
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+        let _ = a.check_disk();
+        assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E211")));
+        assert_eq!(a.doc.text.to_string(), "one");
     }
 
     #[test]

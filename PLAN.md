@@ -186,7 +186,7 @@ over `ropey`. `unicode-segmentation` handles graphemes and words.
   for hundreds of languages) is a later step if it's ever wanted.
 - A language with no grammar opens as plain text, with Vim working as usual.
 
-**Files:** a file watcher (`notify`) for outside changes; drafts written to
+**Files:** outside changes found by checking the file's time and size every two seconds and when the window gets focus (not a watcher: an editor that saves by renaming a new file into place leaves a watch on the old one), loaded at once when there's nothing here to lose, else asked about with Vim's W12, and a save over them asked about as Vim does; drafts written to
 `~/.local/share/omavim/drafts/` a second or two after typing stops and when the
 window loses focus, removed on save or a clean close, offered back at start after a
 crash. Settings in `~/.config/omavim/config.toml`.

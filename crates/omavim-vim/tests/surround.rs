@@ -78,3 +78,19 @@ fn a_link_types_the_address() {
     });
     assert_eq!(text, "see the docs");
 }
+
+#[test]
+fn a_reload_is_one_undo_and_keeps_the_cursor() {
+    let (text, vim) = run("one\ntwo\nthree\n", 9, "", |v, r| {
+        v.reload(r, "one\nTWO\nthree\nfour\n");
+    });
+    assert_eq!(text, "one\nTWO\nthree\nfour\n");
+    assert_eq!(vim.cursor(), 9, "still on three");
+    let (text, _) = run("one\ntwo\n", 0, "", |v, r| {
+        v.reload(r, "one\nTWO\nthree\n");
+        for k in parse("u") {
+            let _ = v.key(r, k);
+        }
+    });
+    assert_eq!(text, "one\ntwo\n");
+}
