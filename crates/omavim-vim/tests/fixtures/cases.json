@@ -293412,6 +293412,5836 @@
 "keys": "vlaw"
 },
 {
+"name": "numbers@0,0: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,0: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,0: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,0: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,0: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,0: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,0: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,0: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,0: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,0: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,0: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,0: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,0: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,0: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,0: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,0: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,0: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,0: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,0: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,0: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,0: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,0: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,0: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,0: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,0: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,0: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,0: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,0: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,0: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+0
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,3: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,3: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,3: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,3: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,3: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,3: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,3: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,3: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,3: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,3: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,3: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,3: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,3: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,3: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,3: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,3: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,3: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,3: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,3: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,3: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,3: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,3: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,3: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,3: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,3: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,3: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,3: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,3: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,3: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+3
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,6: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,6: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,6: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,6: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,6: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,6: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,6: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,6: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,6: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,6: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,6: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,6: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,6: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,6: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,6: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,6: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,6: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,6: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,6: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,6: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,6: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,6: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,6: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,6: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,6: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,6: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,6: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,6: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,6: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+6
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,11: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,11: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,11: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,11: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,11: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,11: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,11: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,11: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,11: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,11: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,11: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,11: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,11: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,11: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,11: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,11: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,11: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,11: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,11: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,11: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,11: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,11: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,11: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,11: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,11: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,11: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,11: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,11: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,11: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+11
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,15: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,15: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,15: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,15: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,15: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,15: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,15: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,15: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,15: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,15: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,15: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,15: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,15: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,15: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,15: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,15: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,15: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,15: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,15: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,15: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,15: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,15: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,15: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,15: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,15: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,15: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,15: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,15: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,15: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+15
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,21: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,21: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,21: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,21: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,21: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,21: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,21: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,21: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,21: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,21: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,21: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,21: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,21: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,21: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,21: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,21: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,21: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,21: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,21: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,21: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,21: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,21: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,21: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,21: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,21: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,21: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,21: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,21: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,21: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+21
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,26: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,26: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,26: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,26: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,26: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,26: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,26: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,26: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,26: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,26: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,26: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,26: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,26: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,26: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,26: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,26: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,26: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,26: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,26: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,26: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,26: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,26: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,26: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,26: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,26: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,26: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,26: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,26: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,26: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+26
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@0,33: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@0,33: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@0,33: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@0,33: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@0,33: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@0,33: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@0,33: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@0,33: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@0,33: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@0,33: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,33: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,33: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@0,33: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@0,33: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@0,33: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@0,33: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@0,33: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@0,33: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@0,33: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@0,33: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@0,33: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@0,33: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@0,33: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@0,33: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@0,33: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@0,33: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@0,33: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@0,33: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@0,33: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+0,
+33
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@1,0: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@1,0: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@1,0: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@1,0: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@1,0: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@1,0: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@1,0: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@1,0: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@1,0: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@1,0: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,0: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,0: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@1,0: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@1,0: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@1,0: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@1,0: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@1,0: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@1,0: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@1,0: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@1,0: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@1,0: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@1,0: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@1,0: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@1,0: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@1,0: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@1,0: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@1,0: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,0: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,0: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+0
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@1,21: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@1,21: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@1,21: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@1,21: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@1,21: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@1,21: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@1,21: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@1,21: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@1,21: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@1,21: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,21: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,21: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@1,21: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@1,21: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@1,21: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@1,21: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@1,21: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@1,21: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@1,21: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@1,21: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@1,21: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@1,21: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@1,21: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@1,21: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@1,21: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@1,21: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@1,21: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,21: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,21: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+21
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@1,45: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@1,45: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@1,45: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@1,45: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@1,45: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@1,45: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@1,45: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@1,45: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@1,45: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@1,45: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,45: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,45: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@1,45: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@1,45: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@1,45: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@1,45: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@1,45: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@1,45: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@1,45: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@1,45: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@1,45: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@1,45: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@1,45: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@1,45: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@1,45: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@1,45: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@1,45: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,45: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,45: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+45
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@1,51: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@1,51: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@1,51: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@1,51: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@1,51: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@1,51: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@1,51: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@1,51: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@1,51: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@1,51: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,51: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,51: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@1,51: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@1,51: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@1,51: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@1,51: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@1,51: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@1,51: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@1,51: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@1,51: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@1,51: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@1,51: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@1,51: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@1,51: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@1,51: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@1,51: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@1,51: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@1,51: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@1,51: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+1,
+51
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@2,3: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@2,3: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@2,3: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@2,3: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@2,3: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@2,3: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@2,3: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@2,3: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@2,3: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@2,3: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@2,3: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@2,3: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@2,3: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@2,3: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@2,3: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@2,3: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@2,3: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@2,3: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@2,3: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@2,3: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@2,3: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@2,3: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@2,3: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@2,3: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@2,3: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@2,3: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@2,3: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@2,3: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@2,3: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+2,
+3
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@3,0: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@3,0: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@3,0: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@3,0: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@3,0: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@3,0: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@3,0: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@3,0: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@3,0: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@3,0: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@3,0: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@3,0: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@3,0: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@3,0: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@3,0: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@3,0: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@3,0: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@3,0: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@3,0: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@3,0: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@3,0: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@3,0: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@3,0: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@3,0: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@3,0: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@3,0: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@3,0: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@3,0: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@3,0: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+3,
+0
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,0: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,0: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,0: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,0: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,0: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,0: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,0: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,0: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,0: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,0: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,0: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,0: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,0: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,0: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,0: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,0: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,0: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,0: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,0: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,0: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,0: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,0: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,0: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,0: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,0: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,0: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,0: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,0: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,0: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+0
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,7: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,7: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,7: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,7: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,7: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,7: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,7: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,7: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,7: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,7: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,7: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,7: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,7: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,7: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,7: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,7: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,7: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,7: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,7: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,7: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,7: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,7: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,7: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,7: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,7: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,7: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,7: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,7: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,7: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+7
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,13: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,13: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,13: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,13: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,13: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,13: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,13: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,13: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,13: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,13: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,13: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,13: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,13: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,13: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,13: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,13: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,13: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,13: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,13: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,13: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,13: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,13: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,13: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,13: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,13: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,13: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,13: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,13: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,13: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+13
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,16: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,16: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,16: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,16: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,16: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,16: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,16: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,16: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,16: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,16: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,16: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,16: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,16: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,16: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,16: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,16: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,16: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,16: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,16: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,16: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,16: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,16: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,16: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,16: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,16: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,16: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,16: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,16: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,16: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+16
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,21: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,21: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,21: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,21: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,21: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,21: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,21: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,21: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,21: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,21: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,21: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,21: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,21: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,21: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,21: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,21: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,21: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,21: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,21: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,21: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,21: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,21: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,21: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,21: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,21: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,21: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,21: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,21: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,21: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+21
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@4,27: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@4,27: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@4,27: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@4,27: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@4,27: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@4,27: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@4,27: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@4,27: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@4,27: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@4,27: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,27: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,27: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@4,27: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@4,27: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@4,27: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@4,27: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@4,27: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@4,27: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@4,27: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@4,27: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@4,27: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@4,27: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@4,27: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@4,27: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@4,27: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@4,27: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@4,27: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@4,27: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@4,27: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+4,
+27
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@5,0: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@5,0: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@5,0: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@5,0: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@5,0: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@5,0: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@5,0: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@5,0: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@5,0: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@5,0: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@5,0: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@5,0: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@5,0: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@5,0: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@5,0: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@5,0: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@5,0: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@5,0: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@5,0: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@5,0: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@5,0: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@5,0: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@5,0: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@5,0: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@5,0: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@5,0: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@5,0: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@5,0: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@5,0: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+5,
+0
+],
+"keys": "v3l<C-a>"
+},
+{
+"name": "numbers@6,3: <C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>"
+},
+{
+"name": "numbers@6,3: <C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-x>"
+},
+{
+"name": "numbers@6,3: 5<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "5<C-a>"
+},
+{
+"name": "numbers@6,3: 5<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "5<C-x>"
+},
+{
+"name": "numbers@6,3: 100<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "100<C-x>"
+},
+{
+"name": "numbers@6,3: <C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>."
+},
+{
+"name": "numbers@6,3: <C-x>3.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-x>3."
+},
+{
+"name": "numbers@6,3: <C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>u"
+},
+{
+"name": "numbers@6,3: <C-a>w<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>w<C-a>"
+},
+{
+"name": "numbers@6,3: <C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@6,3: <C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@6,3: <C-a>j",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "<C-a>j"
+},
+{
+"name": "numbers@6,3: 10<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "10<C-a>"
+},
+{
+"name": "numbers@6,3: 11<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "11<C-x>"
+},
+{
+"name": "numbers@6,3: v<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "v<C-a>"
+},
+{
+"name": "numbers@6,3: vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "vj<C-a>"
+},
+{
+"name": "numbers@6,3: Vj<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vj<C-a>"
+},
+{
+"name": "numbers@6,3: Vjj<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vjj<C-x>"
+},
+{
+"name": "numbers@6,3: vjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "vjjg<C-a>"
+},
+{
+"name": "numbers@6,3: Vjjjg<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vjjjg<C-a>"
+},
+{
+"name": "numbers@6,3: Vjjj2g<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vjjj2g<C-x>"
+},
+{
+"name": "numbers@6,3: v$<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "v$<C-a>"
+},
+{
+"name": "numbers@6,3: ve<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "ve<C-a>"
+},
+{
+"name": "numbers@6,3: vl<C-x>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "vl<C-x>"
+},
+{
+"name": "numbers@6,3: Vj<C-a>.",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vj<C-a>."
+},
+{
+"name": "numbers@6,3: vjg<C-a>u",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "vjg<C-a>u"
+},
+{
+"name": "numbers@6,3: Vjj<C-a>`[",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vjj<C-a>`[",
+"all_marks": true
+},
+{
+"name": "numbers@6,3: Vjj<C-a>`]",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "Vjj<C-a>`]",
+"all_marks": true
+},
+{
+"name": "numbers@6,3: v3l<C-a>",
+"text": "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\nno numbers here\n\nv1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n  10\n20 30\n40",
+"cursor": [
+6,
+3
+],
+"keys": "v3l<C-a>"
+},
+{
 "name": "long@0,0^None: gj",
 "text": "the.\n    quick brown fox jumps over a lazy dog.\nbrown fox jumps over a lazy dog while it was bright and cold in april.\n\njumps over a lazy dog while.\nover a lazy dog while it was bright and cold in april and.\n    a lazy dog while it was bright and cold in april and the clocks were striking thirteen the quick brown.\nlazy dog while it.\ndog while it was bright and cold in april and the.\nwhile it was bright and cold in april and the clocks were striking thirteen the quick brown fox.\n\n    was bright and cold in april and the clocks.\n\tbright and cold in april and the clocks were striking thirteen the quick brown fox jumps.\nand cold in april and the clocks were striking thirteen the quick brown fox jumps over a lazy dog while it was bright.\ncold in april and the clocks were.\nin april and the clocks were striking thirteen the quick brown fox jumps over.\nthe over it in were brown lazy bright and thirteen jumps while cold clocks quick a was april striking fox dog and the the over it in were brown lazy bright and thirteen jumps while cold clocks quick a was april striking fox dog and the the over it in were brown lazy bright and thirteen jumps while cold clocks\n\nthe clocks were striking thirteen the quick brown fox jumps over a.\nclocks were striking thirteen the quick brown fox jumps over a lazy dog while it was bright and cold.\nwere striking thirteen.\n    striking thirteen the quick brown fox jumps over a lazy.\nthirteen the quick brown fox jumps over a lazy dog while it was bright and cold in.\nthe.\n\nbrown fox jumps over a lazy dog while it was bright and cold in april.\n    fox jumps over a lazy dog while it was bright and cold in april and the clocks were striking thirteen the quick.\njumps over a lazy dog while.\nover a lazy dog while it was bright and cold in april and.\na lazy dog while it was bright and cold in april and the clocks were striking thirteen the quick brown.\nlazy dog while it.\n\nwhile it was bright and cold in april and the clocks were striking thirteen the quick brown fox.\nit was.\nwas bright and cold in april and the clocks.\nbright and cold in april and the clocks were striking thirteen the quick brown fox jumps.\n    and cold in april and the clocks were striking thirteen the quick brown fox jumps over a lazy dog while it was bright.\ncold in april and the clocks were.\n\napril and the clocks were striking thirteen the quick brown fox jumps over a lazy dog while it was bright and.",
 "cursor": [

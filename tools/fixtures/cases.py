@@ -172,6 +172,27 @@ VIEW_STARTS = [  # (cursor, top) in "long"
 
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
+# CTRL-A and CTRL-X, on a text of numbers, from several places.
+NUMBERS_TEXT = (
+    "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n"
+    "18446744073709551615 -18446744073709551615 9 -1 0 0b0 a-3\n"
+    "no numbers here\n"
+    "\n"
+    "v1.2.3 0x 0b2 --7 x-1 0xfF 0x0FF 0b0011\n"
+    "  10\n"
+    "20 30\n"
+    "40"
+)
+NUMBER_CURSORS = [(0, 0), (0, 3), (0, 6), (0, 11), (0, 15), (0, 21), (0, 26), (0, 33), (1, 0), (1, 21),
+                  (1, 45), (1, 51), (2, 3), (3, 0), (4, 0), (4, 7), (4, 13), (4, 16), (4, 21), (4, 27),
+                  (5, 0), (6, 3)]
+NUMBERS = [
+    "<C-a>", "<C-x>", "5<C-a>", "5<C-x>", "100<C-x>", "<C-a>.", "<C-x>3.", "<C-a>u", "<C-a>w<C-a>",
+    "<C-a>`[", "<C-a>`]", "<C-a>j", "10<C-a>", "11<C-x>",
+    "v<C-a>", "vj<C-a>", "Vj<C-a>", "Vjj<C-x>", "vjjg<C-a>", "Vjjjg<C-a>", "Vjjj2g<C-x>", "v$<C-a>",
+    "ve<C-a>", "vl<C-x>", "Vj<C-a>.", "vjg<C-a>u", "Vjj<C-a>`[", "Vjj<C-a>`]", "v3l<C-a>",
+]
+
 # Macros: recording (what the register holds) and running them.
 MACROS = [
     "qaxjq@a", "qaxjq2@a", "qaxjq@au", "qaxxq@a@@u", "qadwjq@a", "qa0xjq5@a", "qaxfZxq@a",
@@ -208,6 +229,11 @@ def cases():
     for case in out:
         if case["keys"] in MARKS:
             case["all_marks"] = True
+    for (line, col), k in itertools.product(NUMBER_CURSORS, NUMBERS):
+        case = {"name": f"numbers@{line},{col}: {k}", "text": NUMBERS_TEXT, "cursor": [line, col], "keys": k}
+        if "`" in k:
+            case["all_marks"] = True
+        out.append(case)
     for ((line, col), top), k in itertools.product(VIEW_STARTS, VIEW):
         case = {"name": f"long@{line},{col}^{top}: {k}", "text": TEXTS["long"], "cursor": [line, col], "keys": k}
         if top:

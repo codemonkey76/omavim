@@ -12,6 +12,8 @@ use crate::motion::{self, Cur, Find};
 use crate::search::{self, Haystack};
 use crate::wrap;
 
+#[path = "addsub.rs"]
+mod addsub;
 #[path = "ex.rs"]
 mod ex;
 #[path = "marks.rs"]
@@ -203,6 +205,11 @@ enum Action {
     Record(char),
     /// `@{reg}`, `@@` (`'@'`) and `Q` (None: the register last recorded).
     Execute(Option<char>),
+    /// CTRL-A and CTRL-X (`sub`), in visual mode with `g` (`progressive`).
+    AddSub {
+        sub: bool,
+        progressive: bool,
+    },
 }
 
 /// Where a search puts the cursor relative to its match (`/foo/e+1`).
@@ -304,6 +311,9 @@ struct Group {
     /// The named marks before the change: undo puts back the ones that were
     /// set then (as Vim's uh_namedm).
     marks_before: std::collections::HashMap<char, (usize, usize)>,
+    /// The first line saved for undo when it's above the first changed (a
+    /// visual CTRL-A saves the selection's lines): where undo's cursor goes.
+    top: Option<usize>,
 }
 
 /// The insert session under way.
@@ -353,6 +363,8 @@ pub struct Vim {
     /// The register `@@` runs, and the one `Q` runs.
     last_macro: Option<char>,
     last_recorded: Option<char>,
+    /// The case of the last hex number CTRL-A changed (Vim keeps it).
+    hexupper: bool,
     /// The register `""` is: the one last written (Vim's y_previous).
     unnamed: Option<char>,
     /// The register given with `"` for the command being run.
@@ -441,6 +453,7 @@ impl Vim {
             macro_depth: 0,
             last_macro: None,
             last_recorded: None,
+            hexupper: false,
             unnamed: None,
             reg_name: None,
             reg_one: false,
@@ -1276,6 +1289,7 @@ impl Vim {
             }
             Action::Record(c) => self.start_recording(c),
             Action::Execute(reg) => self.execute(t, reg, count),
+            Action::AddSub { sub, .. } => self.add_sub(t, sub, count),
             Action::ExRepeat => {
                 let Some(line) = self.cmd_history.last().cloned() else {
                     self.message = Some("E30: No previous command line".into());
@@ -2929,6 +2943,30 @@ impl Vim {
         match cmd.action {
             Action::Scroll(s) => self.scroll(t, s, cmd.count),
             Action::Z(c) => self.z(t, c, cmd.count),
+            Action::AddSub { sub, progressive } => {
+                let to_end = self.want == Some(usize::MAX);
+                let (ac, bc) = (text::line_col(t, a).1, text::line_col(t, b).1);
+                // The cursor goes to the selection's start (a line
+                // selection's first column), as for other operators.
+                let start = if linewise { t.line_to_char(al) } else { a };
+                exit(self);
+                // (Undo comes back there too.)
+                self.cursor = start;
+                let result = self.add_sub_visual(
+                    t,
+                    sub,
+                    count,
+                    progressive,
+                    (al, ac),
+                    (bl, bc),
+                    linewise,
+                    to_end,
+                );
+                self.cursor = start;
+                self.clamp(t);
+                self.want = None;
+                result
+            }
             Action::Reselect => {
                 // Swap with the last selection (Vim's nv_gv_cmd).
                 let Some((a, b, mode, want)) = self.marks.visual else {
@@ -3179,6 +3217,7 @@ impl Vim {
                 edits: Vec::new(),
                 cursor_before: self.cursor,
                 marks_before: self.marks.named.clone(),
+                top: None,
             });
         }
     }
@@ -3338,6 +3377,7 @@ impl Vim {
                 .edits
                 .iter()
                 .map(|e| e.line)
+                .chain(g.top)
                 .min()
                 .unwrap_or(0)
                 .min(last_line(t));
@@ -3525,7 +3565,7 @@ fn is_operator_key(k: Key) -> bool {
                 | 'S'
                 | 'Y'
                 | 'R'
-        )
+        ) | Key::Ctrl('a' | 'x')
     )
 }
 
@@ -3863,6 +3903,14 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             Key::Char('v') => Some(Action::Visual(false)),
             Key::Char('V') => Some(Action::Visual(true)),
             Key::Esc | Key::Ctrl('c') => Some(Action::Cancel),
+            Key::Ctrl('a') => Some(Action::AddSub {
+                sub: false,
+                progressive: false,
+            }),
+            Key::Ctrl('x') => Some(Action::AddSub {
+                sub: true,
+                progressive: false,
+            }),
             _ => None,
         };
         if let Some(a) = act {
@@ -3882,6 +3930,12 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
                 return done(Action::Operate(Op::Upper, Some(Motion::Right)));
             }
             (Key::Char('g'), Some(Key::Char('~'))) => return done(Action::ToggleCase),
+            (Key::Char('g'), Some(Key::Ctrl(c @ ('a' | 'x')))) => {
+                return done(Action::AddSub {
+                    sub: *c == 'x',
+                    progressive: true,
+                });
+            }
             _ => {}
         }
         return match parse_motion(rest) {
@@ -3961,6 +4015,14 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Key::Ctrl('r') => Some(Action::Redo),
         Key::Char('.') => Some(Action::Repeat),
         Key::Char('Q') => Some(Action::Execute(None)),
+        Key::Ctrl('a') => Some(Action::AddSub {
+            sub: false,
+            progressive: false,
+        }),
+        Key::Ctrl('x') => Some(Action::AddSub {
+            sub: true,
+            progressive: false,
+        }),
         Key::Esc => Some(Action::Cancel),
         _ => None,
     };
