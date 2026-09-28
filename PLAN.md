@@ -119,8 +119,8 @@ key, `Space`**, in normal mode, as in many Vim setups, so nothing clashes:
 | `Space w` | save (picker if it's never been saved) | `:w`, and `Ctrl+S` in every mode |
 | `Space W` | save as | `:saveas` |
 | `Space o` | open | `:e` (picker), `:e name` |
-| `Space n` | new window | `:new` |
-| `Space p` | print | `:print` |
+| `Space n` | new window (another Omavim) | `:new` |
+| `Space p` | print | `:hardcopy` (Vim's; `:print` is Vim's too, and lists lines) |
 | `Space f` | fullscreen | `:fullscreen` |
 | `Space b` / `Space i` / `Space l` | bold / italic / link: on the word, or around the selection in visual mode | |
 | `Space ?` | the key reference | `:help` |

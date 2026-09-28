@@ -55,12 +55,27 @@ registers, view, marks and jump list for each.
 cargo run -p omavim -- notes.md     # or no file, for a new one
 ```
 
-| Keys (for now) | |
+| Keys | |
 | --- | --- |
 | Vim's | as in Vim |
-| `Ctrl+S` | save (asks where, the first time) |
-| `Ctrl+Shift+S` | save as |
-| `Ctrl+Shift+O` | open |
+| `Space w` / `Space W` | save (asks where, the first time) / save as; `Ctrl+S` saves in every mode |
+| `Space o` | open |
+| `Space n` | new window |
+| `Space f` | fullscreen, or back |
+| `Space b` / `Space i` / `Space l` | bold / italic / link: the word, or the selection in visual mode |
+| `Space ?` | the key reference (`:help`) |
+| `Space q` | close |
+
+The leader and the keys after it can be changed in
+`~/.config/omavim/config.toml`:
+
+```toml
+leader = "space"   # or one character, such as ","
+
+[keys]             # save, save_as, open, new_window, print, fullscreen,
+save = "w"         # bold, italic, link, help, close
+bold = "b"
+```
 
 ## Install
 

@@ -24,6 +24,8 @@ mod format;
 mod marks;
 #[path = "scroll.rs"]
 mod scroll;
+#[path = "surround.rs"]
+mod surround;
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };

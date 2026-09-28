@@ -1,11 +1,14 @@
 //! Omavim: a dead-simple writing app with Vim motions. See PLAN.md.
 
 mod colors;
+mod config;
 mod document;
 mod editor;
+mod help;
 mod portal;
 
 use colors::Colors;
+use config::{Action, Config};
 use document::{Document, Recorder};
 use editor::{Editor, KeyPress, View};
 use iced::keyboard::{Key as IcedKey, key::Named};
@@ -45,6 +48,11 @@ struct App {
     quit_after_save: bool,
     /// A parse is running on another thread.
     parsing: bool,
+    config: Config,
+    /// The leader key was typed: the next key is Omavim's.
+    leader_pending: bool,
+    /// The key reference is showing.
+    help: bool,
     /// The last highlights worked out, and what for (the text's changes
     /// count, the first line, how many), so a redraw that changed none of
     /// that doesn't work them out again.
@@ -124,6 +132,8 @@ impl App {
             },
             None => (Document::default(), None),
         };
+        let (config, config_error) = Config::load();
+        let status = config_error.or(status);
         let mut vim = Vim::new();
         // For writing: j and k go by screen line, as gj and gk.
         vim.display_lines = true;
@@ -137,6 +147,9 @@ impl App {
             status,
             quit_after_save: false,
             parsing: false,
+            config,
+            leader_pending: false,
+            help: false,
             highlight_cache: Default::default(),
         }
     }
@@ -230,28 +243,121 @@ impl App {
         Task::none()
     }
 
-    /// Keys go to Vim, except the app's own: Ctrl+S, Ctrl+Shift+S,
-    /// Ctrl+Shift+O (for now: the leader keys replace them in a later
-    /// milestone). Ctrl+O is Vim's, back through the jump list.
+    /// Keys go to Vim, except the app's own: Ctrl+S in every mode, and the
+    /// leader and the key after it.
     fn key(&mut self, press: KeyPress) -> Task<Message> {
         let m = press.modifiers;
         if m.control()
+            && !m.shift()
             && let IcedKey::Character(c) = press.key.as_ref()
+            && c.eq_ignore_ascii_case("s")
         {
-            match c.to_ascii_lowercase().as_str() {
-                "s" if m.shift() => return self.save_as(),
-                "s" => return self.save(),
-                "o" if m.shift() => return self.open(),
-                _ => {}
-            }
+            return self.save();
+        }
+        let keys = vim_keys(&press);
+        if self.help {
+            return self.help_key(&keys);
+        }
+        if std::mem::take(&mut self.leader_pending) {
+            // (Anything that isn't a leader key, Esc too, just cancels.)
+            return match keys[..] {
+                [Key::Char(c)] => match self.config.action(c) {
+                    Some(action) => self.leader(action),
+                    None => Task::none(),
+                },
+                _ => Task::none(),
+            };
+        }
+        if keys[..] == [Key::Char(self.config.leader)] && self.leader_ready() {
+            self.leader_pending = true;
+            return Task::none();
         }
         let before = self.vim.changes();
         let mut text = Recorder::new(&mut self.doc);
-        for key in vim_keys(&press) {
+        for key in keys {
             if self.vim.key(&mut text, key).is_err() {
                 // Vim beeps; the keys after it still count, as typed keys do.
             }
         }
+        self.after_vim(before)
+    }
+
+    /// Keys while the key reference shows: close it, or scroll.
+    fn help_key(&mut self, keys: &[Key]) -> Task<Message> {
+        use iced::widget::operation::{AbsoluteOffset, RelativeOffset, scroll_by, snap_to};
+        let by = |y: f32| scroll_by(help::ID, AbsoluteOffset { x: 0.0, y });
+        match keys {
+            [Key::Esc | Key::Enter | Key::Char('q' | '?')] => {
+                self.help = false;
+                Task::none()
+            }
+            [Key::Char('j') | Key::Down | Key::Ctrl('e')] => by(40.0),
+            [Key::Char('k') | Key::Up | Key::Ctrl('y')] => by(-40.0),
+            [Key::Ctrl('d' | 'f') | Key::PageDown | Key::Char(' ')] => by(400.0),
+            [Key::Ctrl('u' | 'b') | Key::PageUp] => by(-400.0),
+            [Key::Char('g')] => snap_to(help::ID, RelativeOffset::START),
+            [Key::Char('G')] => snap_to(help::ID, RelativeOffset::END),
+            _ => Task::none(),
+        }
+    }
+
+    /// The leader key starts one of Omavim's own in normal and visual mode,
+    /// when no count, register or operator has been typed.
+    fn leader_ready(&self) -> bool {
+        matches!(
+            self.vim.mode(),
+            Mode::Normal | Mode::Visual | Mode::VisualLine
+        ) && self.vim.pending().is_empty()
+            && self.vim.command_line_cursor().is_none()
+    }
+
+    /// One of Omavim's own actions.
+    fn leader(&mut self, action: Action) -> Task<Message> {
+        match action {
+            Action::Save => self.save(),
+            Action::SaveAs => self.save_as(),
+            Action::Open => self.open(),
+            Action::NewWindow => self.new_window(),
+            Action::Print => self.print(),
+            Action::Fullscreen => toggle_fullscreen(),
+            Action::Bold | Action::Italic | Action::Link => {
+                let before = self.vim.changes();
+                let mut text = Recorder::new(&mut self.doc);
+                let _ = match action {
+                    Action::Bold => self.vim.surround(&mut text, "**"),
+                    Action::Italic => self.vim.surround(&mut text, "_"),
+                    _ => self.vim.link(&mut text),
+                };
+                self.after_vim(before)
+            }
+            Action::Help => {
+                self.help = true;
+                Task::none()
+            }
+            Action::Close => self.command("q"),
+        }
+    }
+
+    /// Another window, as another Omavim.
+    fn new_window(&mut self) -> Task<Message> {
+        match std::env::current_exe().and_then(|exe| std::process::Command::new(exe).spawn()) {
+            Ok(mut child) => {
+                // (Reaped when it closes.)
+                std::thread::spawn(move || child.wait());
+            }
+            Err(e) => self.status = Some(format!("New window: {e}")),
+        }
+        Task::none()
+    }
+
+    fn print(&mut self) -> Task<Message> {
+        self.status = Some("Printing isn't ready yet".into());
+        Task::none()
+    }
+
+    /// After keys went to Vim: what they changed, and what Vim handed over
+    /// for the app to do.
+    fn after_vim(&mut self, before: u64) -> Task<Message> {
         // `:set filetype=`: highlight as that language (plain text for one
         // Omavim doesn't know, as Vim keeps the name).
         if let Some(filetype) = self.vim.take_filetype() {
@@ -388,6 +494,17 @@ impl App {
                 Some(file) => self.write(self.resolve(file)),
                 None => self.save(),
             },
+            "sav" | "saveas" => match arg {
+                Some(file) => self.write(self.resolve(file)),
+                None => self.save_as(),
+            },
+            "new" | "vne" | "vnew" | "tabnew" | "tabe" | "tabedit" => self.new_window(),
+            "ha" | "hardcopy" => self.print(),
+            "fullscreen" => toggle_fullscreen(),
+            "h" | "help" => {
+                self.help = true;
+                Task::none()
+            }
             "q" | "quit" | "clo" | "close" if self.doc.dirty => {
                 self.status = Some("E37: No write since last change (add ! to override)".into());
                 Task::none()
@@ -517,6 +634,7 @@ impl App {
         let command_line = self.vim.command_line_cursor();
         let pending: String = match command_line {
             Some(_) => String::new(),
+            None if self.leader_pending => self.config.leader_name(),
             None => self.vim.pending().iter().map(key_label).collect(),
         };
         let status = match command_line {
@@ -580,24 +698,88 @@ impl App {
             top: self.vim.top(),
             highlights: self.highlights(),
         };
+        let editor = Editor::new(
+            view,
+            FONT,
+            TEXT_SIZE,
+            Message::Key,
+            Message::Resized,
+            Message::Scroll,
+        );
+        let main: Element<'_, Message> = if self.help {
+            // Over the editor, which keeps the keys (Esc or q closes it).
+            iced::widget::stack![editor, self.help_view()].into()
+        } else {
+            editor.into()
+        };
         column![
-            container(Editor::new(
-                view,
-                FONT,
-                TEXT_SIZE,
-                Message::Key,
-                Message::Resized,
-                Message::Scroll
-            ))
-            .width(Length::Fill)
-            .height(Length::Fill),
+            container(main).width(Length::Fill).height(Length::Fill),
             footer,
         ]
         .into()
     }
+
+    /// The key reference.
+    fn help_view(&self) -> Element<'_, Message> {
+        let palette = self.colors.palette();
+        let dim = Color {
+            a: 0.6,
+            ..palette.text
+        };
+        let mut body = column![
+            text("Keys").size(TEXT_SIZE * 1.4).color(palette.primary),
+            text("Esc or q to close").size(13).color(dim),
+        ]
+        .spacing(6);
+        for (title, rows) in help::sections(&self.config) {
+            body = body.push(space::vertical().height(12));
+            body = body.push(text(title).size(TEXT_SIZE).color(palette.primary));
+            for (keys, does) in rows {
+                body = body.push(
+                    row![
+                        text(keys).size(14).width(Length::Fixed(260.0)),
+                        text(does).size(14).color(dim),
+                    ]
+                    .spacing(16),
+                );
+            }
+        }
+        let panel = container(
+            iced::widget::scrollable(container(body).padding([24, 32]).max_width(900))
+                .id(help::ID)
+                .height(Length::Fill),
+        )
+        .style(move |_| container::Style {
+            background: Some(palette.background.into()),
+            ..container::Style::default()
+        })
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x(Length::Fill);
+        panel.into()
+    }
 }
 
-/// An iced key press as Vim keys: named keys, Ctrl+letter, or typed text.
+/// Fullscreen, or back to a window.
+fn toggle_fullscreen() -> Task<Message> {
+    use iced::window;
+    window::latest().then(|id| {
+        let Some(id) = id else {
+            return Task::none();
+        };
+        window::mode(id).then(move |mode| {
+            window::set_mode(
+                id,
+                if mode == window::Mode::Fullscreen {
+                    window::Mode::Windowed
+                } else {
+                    window::Mode::Fullscreen
+                },
+            )
+        })
+    })
+}
+
 /// Read the clipboard and primary selection into `"+` and `"*`.
 fn read_clipboards() -> Task<Message> {
     Task::batch([
@@ -606,6 +788,7 @@ fn read_clipboards() -> Task<Message> {
     ])
 }
 
+/// An iced key press as Vim keys: named keys, Ctrl+letter, or typed text.
 fn vim_keys(press: &KeyPress) -> Vec<Key> {
     let m = press.modifiers;
     let named = match press.key.as_ref() {
@@ -694,6 +877,9 @@ mod tests {
             status: None,
             quit_after_save: false,
             parsing: false,
+            config: Config::default(),
+            leader_pending: false,
+            help: false,
             highlight_cache: Default::default(),
         }
     }
@@ -748,6 +934,51 @@ mod tests {
         // `fn z` has nothing inside: the next function's.
         typed(&mut a, "ggcifzero<Esc>");
         assert_eq!(a.doc.text.to_string(), "fn z() {}\nfn a() {\n    zero\n}\n");
+    }
+
+    #[test]
+    fn leader_keys() {
+        let mut a = app(Document::open("/tmp/a.md".into(), "some words"));
+        typed(&mut a, "w b");
+        assert_eq!(a.doc.text.to_string(), "some **words**");
+        assert!(a.doc.dirty);
+        typed(&mut a, "u");
+        assert_eq!(a.doc.text.to_string(), "some words");
+        // In visual mode, around the selection.
+        typed(&mut a, "0ve i");
+        assert_eq!(a.doc.text.to_string(), "_some_ words");
+        assert_eq!(a.vim.mode(), Mode::Normal);
+        typed(&mut a, " ?");
+        assert!(a.help);
+        typed(&mut a, "x");
+        assert!(a.help, "other keys don't close it");
+        typed(&mut a, "q");
+        assert!(!a.help);
+        assert_eq!(a.doc.text.to_string(), "_some_ words");
+    }
+
+    #[test]
+    fn space_is_vims_after_a_count_or_an_operator() {
+        let mut a = app(Document::open("/tmp/a.md".into(), "abcdef"));
+        typed(&mut a, "2 ");
+        assert_eq!(a.vim.cursor(), 2);
+        typed(&mut a, "d ");
+        assert_eq!(a.doc.text.to_string(), "abdef");
+        // A leader then a key that isn't one: nothing, and the key's gone.
+        typed(&mut a, " zx");
+        assert_eq!(a.doc.text.to_string(), "abef");
+        assert!(!a.leader_pending);
+        // In insert mode it's a space.
+        typed(&mut a, "i <Esc>");
+        assert_eq!(a.doc.text.to_string(), "ab ef");
+    }
+
+    #[test]
+    fn the_config_moves_the_leader() {
+        let mut a = app(Document::open("/tmp/a.md".into(), "word"));
+        a.config = Config::parse("leader = \",\"\n[keys]\nbold = \"s\"").unwrap();
+        typed(&mut a, ",s");
+        assert_eq!(a.doc.text.to_string(), "**word**");
     }
 
     #[test]
