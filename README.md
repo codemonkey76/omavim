@@ -61,6 +61,7 @@ cargo run -p omavim -- notes.md     # or no file, for a new one
 | `Space w` / `Space W` | save (asks where, the first time) / save as; `Ctrl+S` saves in every mode |
 | `Space o` | open |
 | `Space n` | new window |
+| `Space p` | print (`:hardcopy`): 12pt on the paper the dialog picks |
 | `Space f` | fullscreen, or back |
 | `Space b` / `Space i` / `Space l` | bold / italic / link: the word, or the selection in visual mode |
 | `Space ?` | the key reference (`:help`) |

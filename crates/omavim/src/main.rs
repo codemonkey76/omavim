@@ -7,6 +7,7 @@ mod drafts;
 mod editor;
 mod help;
 mod portal;
+mod print;
 
 use colors::Colors;
 use config::{Action, Config};
@@ -110,6 +111,10 @@ enum Message {
     Parsed(Handoff<omavim_syntax::Parsed>),
     /// The window's close button (or the desktop's close key).
     CloseRequested,
+    /// The print dialog's paper, and its token (None: cancelled).
+    PrintSetup(Result<Option<(print::Paper, u32)>, String>),
+    /// Handed to the printer.
+    Printed(Result<(), String>),
     /// The window went to the back.
     Unfocused,
     /// Time to see if typing's stopped, to write a draft.
@@ -314,6 +319,12 @@ impl App {
                 self.status = Some(e)
             }
             Message::CloseRequested => return self.leave(Then::Quit),
+            Message::PrintSetup(Ok(Some((paper, token)))) => return self.print_on(paper, token),
+            Message::PrintSetup(Ok(None)) => {}
+            Message::Printed(Ok(())) => self.status = Some("Sent to the printer".into()),
+            Message::PrintSetup(Err(e)) | Message::Printed(Err(e)) => {
+                self.status = Some(format!("Printing: {e}"))
+            }
             Message::Unfocused => {
                 if self.draft_due.is_some() {
                     self.write_draft();
@@ -441,9 +452,50 @@ impl App {
         Task::none()
     }
 
+    /// The print dialog; then the document laid out on its paper.
     fn print(&mut self) -> Task<Message> {
-        self.status = Some("Printing isn't ready yet".into());
-        Task::none()
+        Task::perform(portal::prepare_print(self.doc.name()), Message::PrintSetup)
+    }
+
+    /// Lay the document out on the paper, make the PDF (off the main
+    /// thread) and print it.
+    fn print_on(&mut self, paper: print::Paper, token: u32) -> Task<Message> {
+        let t = &self.doc.text;
+        let faces: Vec<(std::ops::Range<usize>, print::Face)> = match &self.doc.syntax {
+            Some(syntax) => syntax
+                .highlights(t, 0..t.len_bytes())
+                .into_iter()
+                .map(|s| (s.range, self.colors.style(s.name)))
+                .filter(|(_, style)| style.bold || style.italic)
+                .map(|(r, style)| {
+                    (
+                        t.byte_to_char(r.start)..t.byte_to_char(r.end),
+                        print::Face {
+                            bold: style.bold,
+                            italic: style.italic,
+                        },
+                    )
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        let pages = print::layout(t, &faces, &paper, self.vim.tabstop);
+        let title = self.doc.name();
+        self.status = Some(format!(
+            "Printing {} page{}",
+            pages.len(),
+            if pages.len() == 1 { "" } else { "s" }
+        ));
+        Task::perform(
+            async move {
+                let name = title.clone();
+                let pdf = tokio::task::spawn_blocking(move || print::pdf(&pages, &paper, &name))
+                    .await
+                    .map_err(|e| e.to_string())??;
+                portal::print(title, pdf, token).await
+            },
+            Message::Printed,
+        )
     }
 
     /// After keys went to Vim: what they changed, and what Vim handed over

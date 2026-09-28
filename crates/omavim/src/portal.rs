@@ -1,5 +1,5 @@
-//! The desktop through xdg-desktop-portal: file pickers and the dark/light
-//! setting. What a full toolkit would give for free, Omavim asks the portal
+//! The desktop through xdg-desktop-portal: file pickers, printing, and the
+//! dark/light and text size settings. What a full toolkit would give for free, Omavim asks the portal
 //! for (the same portals Omawrite relies on).
 
 use ashpd::desktop::file_chooser::{FileFilter, SelectedFiles};
@@ -136,6 +136,74 @@ fn sibling(path: &Path, suffix: &str) -> PathBuf {
 }
 
 /// The picked file as a local path. Cancelling isn't an error.
+/// The print dialog: which printer, and the paper and its margins. `Ok(None)`
+/// if it was cancelled; else the paper and a token for [`print`].
+pub async fn prepare_print(title: String) -> Result<Option<(crate::print::Paper, u32)>, String> {
+    use ashpd::desktop::print::{Orientation, PreparePrintOptions, PrintProxy};
+    let proxy = PrintProxy::new().await.map_err(|e| e.to_string())?;
+    let request = proxy
+        .prepare_print(
+            None,
+            &title,
+            Default::default(),
+            Default::default(),
+            PreparePrintOptions::default().set_modal(true),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    let setup = match request.response() {
+        Ok(setup) => setup,
+        Err(ashpd::Error::Response(ashpd::desktop::ResponseError::Cancelled)) => return Ok(None),
+        Err(e) => return Err(e.to_string()),
+    };
+    let p = setup.page_setup;
+    let (mut width, mut height) = (p.width.unwrap_or(210.0), p.height.unwrap_or(297.0));
+    let mut margins =
+        [p.margin_top, p.margin_right, p.margin_bottom, p.margin_left].map(|m| m.unwrap_or(0.0));
+    // (The paper's size is given upright: turned for landscape.)
+    if matches!(
+        p.orientation,
+        Some(Orientation::Landscape | Orientation::ReverseLandscape)
+    ) {
+        std::mem::swap(&mut width, &mut height);
+        margins.rotate_right(1);
+    }
+    Ok(Some((
+        crate::print::Paper::from_mm(width, height, margins),
+        setup.token,
+    )))
+}
+
+/// Print a PDF, with the dialog's token.
+pub async fn print(title: String, pdf: Vec<u8>, token: u32) -> Result<(), String> {
+    use ashpd::desktop::print::{PrintOptions, PrintProxy};
+    use std::os::fd::AsFd;
+    let dir = std::env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let path = dir.join(format!("omavim-print-{}.pdf", std::process::id()));
+    tokio::fs::write(&path, &pdf)
+        .await
+        .map_err(|e| format!("{}: {e}", path.display()))?;
+    let file = std::fs::File::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    // (Open, it can go from the folder: the portal reads it through the fd.)
+    let _ = std::fs::remove_file(&path);
+    let proxy = PrintProxy::new().await.map_err(|e| e.to_string())?;
+    let request = proxy
+        .print(
+            None,
+            &title,
+            &file.as_fd(),
+            PrintOptions::default().set_token(token).set_modal(true),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    match request.response() {
+        Ok(()) | Err(ashpd::Error::Response(ashpd::desktop::ResponseError::Cancelled)) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 fn chosen(response: Result<SelectedFiles, ashpd::Error>) -> Result<Option<PathBuf>, String> {
     match response {
         Ok(files) => Ok(files.uris().first().and_then(|u| file_path(u.as_str()))),
