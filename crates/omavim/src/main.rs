@@ -378,6 +378,15 @@ impl App {
                 } else {
                     palette.primary
                 }),
+            // As Neovim shows it while `q{reg}` records.
+            text(
+                self.vim
+                    .macro_register()
+                    .map(|r| format!("  recording @{r}"))
+                    .unwrap_or_default()
+            )
+            .size(13)
+            .color(palette.primary),
             text(format!(
                 "  {}{}",
                 self.doc.name(),

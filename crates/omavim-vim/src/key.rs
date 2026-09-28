@@ -69,9 +69,92 @@ fn named(name: &str) -> Option<Key> {
     })
 }
 
+/// Vim's codes for the special keys in a register (after its K_SPECIAL
+/// byte, kept here as U+0080).
+const SPECIAL: [(Key, &str); 10] = [
+    (Key::Backspace, "kb"),
+    (Key::Delete, "kD"),
+    (Key::Up, "ku"),
+    (Key::Down, "kd"),
+    (Key::Left, "kl"),
+    (Key::Right, "kr"),
+    (Key::Home, "kh"),
+    (Key::End, "@7"),
+    (Key::PageUp, "kP"),
+    (Key::PageDown, "kN"),
+];
+
+/// Keys as Vim keeps them in a register (a recorded macro): chars as they
+/// are, Esc, Enter, Tab and Ctrl keys as their control chars, and the others
+/// as Vim's special key codes (`"\u{80}kb"` for Backspace).
+pub fn to_register(keys: &[Key]) -> String {
+    let mut s = String::new();
+    for &k in keys {
+        match k {
+            Key::Char(c) => s.push(c),
+            Key::Esc => s.push('\x1b'),
+            Key::Enter => s.push('\r'),
+            Key::Tab => s.push('\t'),
+            Key::Ctrl(c) => match c {
+                'a'..='z' => s.push((c as u8 - b'a' + 1) as char),
+                '@' | '[' | '\\' | ']' | '^' | '_' => s.push((c as u8 - b'@') as char),
+                _ => s.push(c),
+            },
+            k => {
+                if let Some((_, code)) = SPECIAL.iter().find(|(s, _)| *s == k) {
+                    s.push('\u{80}');
+                    s.push_str(code);
+                }
+            }
+        }
+    }
+    s
+}
+
+/// Back: a register's text as the keys it types (`@a`).
+pub fn from_register(text: &str) -> Vec<Key> {
+    let mut keys = Vec::new();
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        keys.push(match c {
+            '\x1b' => Key::Esc,
+            '\r' => Key::Enter,
+            '\t' => Key::Tab,
+            '\n' => Key::Ctrl('j'),
+            '\u{80}' => {
+                let code: String = chars.by_ref().take(2).collect();
+                match SPECIAL.iter().find(|(_, s)| *s == code) {
+                    Some((k, _)) => *k,
+                    None => continue,
+                }
+            }
+            c if (c as u32) < 0x20 => {
+                let b = c as u8;
+                Key::Ctrl(if (1..=26).contains(&b) {
+                    (b - 1 + b'a') as char
+                } else {
+                    (b + b'@') as char
+                })
+            }
+            c => Key::Char(c),
+        });
+    }
+    keys
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{Key, parse};
+    use super::{Key, from_register, parse, to_register};
+
+    #[test]
+    fn keys_go_into_registers_as_vim_keeps_them() {
+        let keys = parse("ix<BS>y<Esc>:s/a/b/<CR><C-a><C-[>");
+        let text = to_register(&keys);
+        assert_eq!(text, "ix\u{80}kby\x1b:s/a/b/\r\x01\x1b");
+        let mut back = keys.clone();
+        *back.last_mut().unwrap() = Key::Esc;
+        assert_eq!(from_register(&text), back);
+    }
 
     #[test]
     fn reads_vim_notation() {

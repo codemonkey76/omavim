@@ -39,6 +39,24 @@ local function pos(p) -- getpos() result -> {line, col} 0-based chars
   return { p[2] - 1, char_col(line, p[3] - 1) }
 end
 
+-- A register's text as UTF-8: a recorded special key is Vim's K_SPECIAL
+-- byte (0x80) and two more, and that byte alone isn't UTF-8. It's written
+-- as U+0080, as the engine keeps it. (And <Ignore>, which Neovim records
+-- when the harness's timer runs in the middle of a command, goes.)
+local function utf8(s)
+  s = s:gsub("\128\253\53", "")
+  local out, i = {}, 1
+  while i <= #s do
+    if s:byte(i) == 0x80 and vim.str_utf_start(s, i) == 0 then
+      table.insert(out, "\194\128")
+    else
+      table.insert(out, s:sub(i, i))
+    end
+    i = i + 1
+  end
+  return table.concat(out)
+end
+
 -- Registers recorded after each case (when not empty), besides "".
 local REGISTERS = "0123456789abcdefghijklmnopqrstuvwxyz-"
 
@@ -105,7 +123,8 @@ local function split_keys(s)
 end
 
 -- Keys Neovim has taken from its input, when it took the last, and how
--- many it had taken when it was last idle.
+-- many it had taken when it was last idle (SafeState: nothing pending, in
+-- normal, insert, visual or command-line mode).
 local taken, taken_at, idle = 0, 0, -1
 vim.on_key(function()
   taken = taken + 1
@@ -176,7 +195,7 @@ local function start(case, done)
       text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"),
       cursor = { cur[1] - 1, char_col(line, cur[2]) },
       mode = mode,
-      register = vim.fn.getreg('"'),
+      register = utf8(vim.fn.getreg('"')),
       register_type = vim.fn.getregtype('"'),
       start_top = start_top,
       top = top(),
@@ -184,7 +203,7 @@ local function start(case, done)
     }
     for r in (REGISTERS .. "/"):gmatch(".") do
       local text = vim.fn.getreg(r)
-      if text ~= "" then result.registers[r] = { text, vim.fn.getregtype(r) } end
+      if text ~= "" then result.registers[r] = { utf8(text), vim.fn.getregtype(r) } end
     end
     if mode == "v" or mode == "V" then
       result.visual_start = pos(vim.fn.getpos("v"))
@@ -229,10 +248,11 @@ local function start(case, done)
   -- Type the next key once Neovim has taken the last and waits for more.
   -- Having taken it isn't enough: a key typed while the last is still being
   -- handled is typeahead, and insert mode takes typeahead chars together.
-  -- SafeState says Neovim is idle; where it doesn't come (an operator
-  -- pending, the command line), give the key a few ms.
+  -- Neovim is waiting when it's idle, or when it's "blocking" for the rest
+  -- of a command (after d, f, ", q); failing both for 50ms, type anyway.
   timer:start(0, 1, function()
-    local ready = taken - base >= fed and (idle == taken or vim.uv.now() - taken_at >= 3)
+    local ready = taken - base >= fed
+      and (idle == taken or vim.api.nvim_get_mode().blocking or vim.uv.now() - taken_at >= 50)
     if result and fed == #keys and taken - base >= fed then
       finish(result)
     elseif vim.uv.now() - began > 10000 then

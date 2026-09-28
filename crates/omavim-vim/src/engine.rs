@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use crate::key::Key;
+use crate::key::{self, Key};
 use crate::motion::{self, Cur, Find};
 use crate::search::{self, Haystack};
 use crate::wrap;
@@ -199,6 +199,10 @@ enum Action {
     Jump(bool),
     /// `gv`: the last visual selection again.
     Reselect,
+    /// `q{reg}`: record the keys typed into a register.
+    Record(char),
+    /// `@{reg}`, `@@` (`'@'`) and `Q` (None: the register last recorded).
+    Execute(Option<char>),
 }
 
 /// Where a search puts the cursor relative to its match (`/foo/e+1`).
@@ -342,6 +346,13 @@ pub struct Vim {
     anchor: Pos,
     pending: Vec<Key>,
     registers: HashMap<char, Register>,
+    /// Recording a macro (`q{reg}`): the register, and the keys typed.
+    macro_rec: Option<(char, Vec<Key>)>,
+    /// Macros running (`@b` run by `@a` makes 2).
+    macro_depth: usize,
+    /// The register `@@` runs, and the one `Q` runs.
+    last_macro: Option<char>,
+    last_recorded: Option<char>,
     /// The register `""` is: the one last written (Vim's y_previous).
     unnamed: Option<char>,
     /// The register given with `"` for the command being run.
@@ -426,6 +437,10 @@ impl Vim {
             anchor: 0,
             pending: Vec::new(),
             registers: HashMap::new(),
+            macro_rec: None,
+            macro_depth: 0,
+            last_macro: None,
+            last_recorded: None,
             unnamed: None,
             reg_name: None,
             reg_one: false,
@@ -828,6 +843,89 @@ impl Vim {
         Ok(reg.clone())
     }
 
+    // ── Macros ───────────────────────────────────────────────────────────
+
+    /// `q{reg}`: `a`–`z` (`A`–`Z` to append) or `0`–`9`.
+    fn start_recording(&mut self, c: char) -> R {
+        if !c.is_ascii_alphanumeric() || self.macro_depth > 0 {
+            return Err(Beep);
+        }
+        self.macro_rec = Some((c, Vec::new()));
+        Ok(())
+    }
+
+    /// `q` again: the keys typed go in the register, less that `q` (a count
+    /// or register typed before it stays). `""` stays as it was.
+    fn stop_recording(&mut self) {
+        let Some((c, mut keys)) = self.macro_rec.take() else {
+            return;
+        };
+        keys.pop();
+        let text = key::to_register(&keys);
+        let lower = c.to_ascii_lowercase();
+        let reg = match self.registers.get(&lower) {
+            // Appended to the last line of what's there.
+            Some(r) if c.is_ascii_uppercase() && r.linewise => Register {
+                text: format!("{}{text}\n", r.text.strip_suffix('\n').unwrap_or(&r.text)),
+                linewise: true,
+            },
+            Some(r) if c.is_ascii_uppercase() => Register {
+                text: format!("{}{text}", r.text),
+                linewise: false,
+            },
+            _ => Register {
+                text,
+                linewise: false,
+            },
+        };
+        self.registers.insert(lower, reg);
+        self.last_recorded = Some(lower);
+    }
+
+    /// The register a macro is being recorded into, if one is.
+    pub fn macro_register(&self) -> Option<char> {
+        self.macro_rec.as_ref().map(|(c, _)| *c)
+    }
+
+    /// `@{reg}` (`@@` the last one run, `Q` the last recorded), `count`
+    /// times: its text typed as keys. A command that fails stops it (and
+    /// the macros that ran it), as Vim flushes what's left to type.
+    fn execute(&mut self, t: &mut dyn TextModel, reg: Option<char>, count: usize) -> R {
+        let c = match reg {
+            None => self.last_recorded,
+            Some('@') => self.last_macro,
+            Some(c) => Some(c.to_ascii_lowercase()),
+        }
+        .ok_or_else(|| {
+            self.message = Some("E748: No previously used register".into());
+            Beep
+        })?;
+        if !(c.is_ascii_alphanumeric() || "\"-.*+".contains(c)) || self.macro_depth >= 100 {
+            return Err(Beep);
+        }
+        let text = self.get_register(c).text.clone();
+        if text.is_empty() {
+            return Err(Beep);
+        }
+        if reg.is_some() {
+            self.last_macro = Some(c);
+        }
+        let keys = key::from_register(&text);
+        self.begin_group();
+        self.macro_depth += 1;
+        let mut result = Ok(());
+        'run: for _ in 0..count {
+            for &k in &keys {
+                result = self.key(t, k);
+                if result.is_err() {
+                    break 'run;
+                }
+            }
+        }
+        self.macro_depth -= 1;
+        result
+    }
+
     /// The keys of a command still being typed ("d2", "g"), for showing.
     pub fn pending(&self) -> &[Key] {
         &self.pending
@@ -858,6 +956,14 @@ impl Vim {
         // it inserts is (see insert_key).
         let inserting = matches!(self.mode, Mode::Insert | Mode::Replace);
         let ctrl_r = inserting && (self.ctrl_r || key == Key::Ctrl('r'));
+        // A macro being recorded takes the keys typed, not the ones a macro
+        // or `.` runs.
+        if self.macro_depth == 0
+            && !self.replaying
+            && let Some((_, keys)) = self.macro_rec.as_mut()
+        {
+            keys.push(key);
+        }
         if !self.replaying
             && !ctrl_r
             && let Some(rec) = self.recording.as_mut()
@@ -943,6 +1049,15 @@ impl Vim {
 
     fn command_key(&mut self, t: &mut dyn TextModel, key: Key) -> R {
         self.pending.push(key);
+        // `q` while recording ends it (after a count or register too).
+        if self.macro_rec.is_some()
+            && self.macro_depth == 0
+            && let Ok((_, _, [Key::Char('q')])) = take_prefix(&self.pending)
+        {
+            self.pending.clear();
+            self.stop_recording();
+            return Ok(());
+        }
         let visual = matches!(self.mode, Mode::Visual | Mode::VisualLine);
         match parse(&self.pending, visual) {
             Parse::Incomplete => Ok(()),
@@ -1159,6 +1274,8 @@ impl Vim {
                 visual(self);
                 Ok(())
             }
+            Action::Record(c) => self.start_recording(c),
+            Action::Execute(reg) => self.execute(t, reg, count),
             Action::ExRepeat => {
                 let Some(line) = self.cmd_history.last().cloned() else {
                     self.message = Some("E30: No previous command line".into());
@@ -1958,6 +2075,12 @@ impl Vim {
             to += 1;
         }
         let to = to.max(from).min(t.len_chars());
+        if to == from && inclusive && op == Op::Change {
+            // An object on a line's end (`iw` on an empty line) isn't empty
+            // to Vim: a change deletes nothing, into "- (an empty string).
+            // (A delete on an empty line stops before that.)
+            self.store(String::new(), false, true);
+        }
         if to == from && op != Op::Change {
             // Nothing inside (as `di(` on `()`): just go there.
             self.cursor = from;
@@ -2005,6 +2128,8 @@ impl Vim {
         let start = self.mk(t, start);
         let result = self.apply_lines_inner(t, op, first, last, vcol);
         self.no_lbr = saved;
+        // After any operator the column aimed for is the cursor's again.
+        self.want = None;
         let last_col =
             |t: &dyn TextModel, l: usize| line_len(t, l.min(last_line(t))).saturating_sub(1);
         match op {
@@ -2129,6 +2254,7 @@ impl Vim {
         let empty = range.is_empty();
         let result = self.apply_chars_inner(t, op, range);
         self.no_lbr = saved;
+        self.want = None;
         match op {
             Op::Delete if empty => {}
             Op::Yank | Op::Lower | Op::Upper | Op::Toggle => {
@@ -2162,6 +2288,7 @@ impl Vim {
                 if range.is_empty() {
                     // Vim still saves the line for undo (u_save_cursor): an
                     // undo step that changes nothing.
+                    self.want = None;
                     self.begin_group();
                     let line = t.char_to_line(range.start.min(t.len_chars()));
                     if let Some(g) = self.group.as_mut() {
@@ -2826,7 +2953,10 @@ impl Vim {
                 self.want = Some(want);
                 Ok(())
             }
-            Action::SubRepeat(_) | Action::ExRepeat | Action::Jump(_) => Err(Beep),
+            Action::Record(c) => self.start_recording(c),
+            Action::SubRepeat(_) | Action::ExRepeat | Action::Jump(_) | Action::Execute(_) => {
+                Err(Beep)
+            }
             Action::SetMark(c) => {
                 if self.set_mark(t, c) {
                     Ok(())
@@ -2880,6 +3010,14 @@ impl Vim {
                     let (l, c) = text::line_col(t, self.cursor);
                     self.vcol(t, l, c)
                 });
+                // Vim's start: the anchor (in its line's first column for a
+                // line selection), or the cursor if that's before it.
+                let anchor = if linewise {
+                    t.line_to_char(t.char_to_line(self.anchor.min(t.len_chars())))
+                } else {
+                    self.anchor
+                };
+                let start = anchor.min(self.cursor);
                 exit(self);
                 self.cursor = a;
                 if lines {
@@ -2904,8 +3042,8 @@ impl Vim {
                     }
                 }
                 if op == Op::Yank {
-                    // A visual yank leaves the cursor at the selection's start.
-                    self.cursor = a;
+                    // A visual yank leaves the cursor at the start.
+                    self.cursor = start;
                 }
                 Ok(())
             }
@@ -3046,6 +3184,11 @@ impl Vim {
     }
 
     fn close_group(&mut self) {
+        // A macro's changes are one undo step (Vim doesn't sync undo for
+        // keys that weren't typed).
+        if self.macro_depth > 0 {
+            return;
+        }
         if let Some(g) = self.group.take()
             && !g.edits.is_empty()
         {
@@ -3397,7 +3540,9 @@ fn is_change(action: Action, visual: bool) -> bool {
         | Action::Cancel
         | Action::SwapEnds
         | Action::Scroll(_)
-        | Action::Z(_) => false,
+        | Action::Z(_)
+        | Action::Record(_)
+        | Action::Execute(_) => false,
         Action::Put(_) if visual => true,
         _ => true,
     }
@@ -3672,6 +3817,12 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             Some(_) => Parse::Invalid,
         };
     }
+    match (first, rest.get(1)) {
+        (Key::Char('q'), None) => return Parse::Incomplete,
+        (Key::Char('q'), Some(Key::Char(c))) => return done(Action::Record(*c)),
+        (Key::Char('q'), Some(_)) => return Parse::Invalid,
+        _ => {}
+    }
     let op = |k: Key, second: Option<&Key>| -> Option<Option<Op>> {
         // Some(Some(op)): an operator; Some(None): needs another key.
         match k {
@@ -3809,6 +3960,7 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Key::Char('u') => Some(Action::Undo),
         Key::Ctrl('r') => Some(Action::Redo),
         Key::Char('.') => Some(Action::Repeat),
+        Key::Char('Q') => Some(Action::Execute(None)),
         Key::Esc => Some(Action::Cancel),
         _ => None,
     };
@@ -3827,6 +3979,8 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         (Key::Char('g'), Some(Key::Char('v'))) => return done(Action::Reselect),
         (Key::Char('@'), None) => return Parse::Incomplete,
         (Key::Char('@'), Some(Key::Char(':'))) => return done(Action::ExRepeat),
+        (Key::Char('@'), Some(Key::Char(c))) => return done(Action::Execute(Some(*c))),
+        (Key::Char('@'), Some(_)) => return Parse::Invalid,
         (Key::Char('g'), Some(Key::Char('J'))) => return done(Action::Join(false)),
         _ => {}
     }

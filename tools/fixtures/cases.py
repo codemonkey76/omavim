@@ -172,6 +172,18 @@ VIEW_STARTS = [  # (cursor, top) in "long"
 
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
+# Macros: recording (what the register holds) and running them.
+MACROS = [
+    "qaxjq@a", "qaxjq2@a", "qaxjq@au", "qaxxq@a@@u", "qadwjq@a", "qa0xjq5@a", "qaxfZxq@a",
+    "qa<Esc>xjq@a", "qaiab<Esc>jq@a", "qaq", "qbyyq", "qAxq", "qaxqqAjq@a", "qaxq\"ap",
+    "qa:s/e/E/<CR>jq@a", "qaxq@b", "qaxqQ", "qaxq2Q", "qa3xq", "qa/o<CR>q@a", "qaix<BS>y<Esc>q@a",
+    "qaxqu@a", "qaxj.q@a", "qaxjq@a.", "qaxjq@au<C-r>", "qaA!<Esc>jq3@a", "qawq@a", "qadwq\"ap",
+    "qa3jq@a", "qaddq2@a", "qaGq@a", "qaxq@A", "qajq100@a", "qbxqqa@bjq@a", "qaxjq@@", "@@",
+    "Q", "qa\"byyq\"bp", "qqxjq@q", "yyq1xq@1", "qavjdq@a", "qaVjyq@a", "qa3q@a", "qa\"aq",
+    "qa<C-d>q@a", "qa}q@a", "qa>>jq@a", "qaciwX<Esc>wq@a", "qaxjq@au@a",
+    "Vy", "Vjy", "Vky", "vjy", "Vjyu",
+]
+
 
 def cases():
     out = []
@@ -181,7 +193,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

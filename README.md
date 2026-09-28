@@ -20,15 +20,16 @@ and `j`/`k` without a count go by screen line too), `H M L`, scrolling
 (`CTRL-E CTRL-Y CTRL-D CTRL-U CTRL-F CTRL-B`, PageUp/PageDown, the mouse
 wheel, `zt zz zb z<CR> z. z-`), marks (`m{a-z}` `m{A-Z}`, `'` and `` ` ``,
 `'' '. '^ '[ '] '< '>`, kept on their text as it's edited), the jump list
-(`CTRL-O`, `CTRL-I`/Tab), `gv`, `N%`, undo/redo, `.`, and the command line: ranges
+(`CTRL-O`, `CTRL-I`/Tab), `gv`, `N%`, macros (`q{reg}`, `q{A-Z}` to append,
+`@{reg}`, `@@`, `Q`, with a count), undo/redo, `.`, and the command line: ranges
 (`N . $ % /pat/ ?pat? 'x '<,'>` with `+`/`-` offsets, `;`, `3:` and visual `:`),
 `:s` and `:%s` with Vim's replacement syntax and flags, `:&`, `:&&`, `&`,
 `g&`, `@:`, `:d :y :j :> :< :m :t`, `:set` (`ic scs ws hls ts sw`), `:e`,
 `:w`, `:q`, `:wq`, `:x`, `|` between commands, editing with the cursor keys,
 `CTRL-W`, `CTRL-R`, and history on Up/Down for commands and searches. Lines
 wrap at word breaks and the view scrolls exactly as Neovim's does with
-'linebreak' and 'smoothscroll'. Macros, `CTRL-A`/`CTRL-X`, `:g`, `:s///c`, `gq` and
-block visual mode are next.
+'linebreak' and 'smoothscroll'. `CTRL-A`/`CTRL-X`, `:g`, `:s///c`, `gq` and block
+visual mode are next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a
