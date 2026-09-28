@@ -41,6 +41,9 @@ jobs:
           install -Dm644 data/omavim.svg $d/share/icons/hicolor/scalable/apps/omavim.svg
           install -Dm644 LICENSE $d/share/licenses/omavim/LICENSE
           install -Dm644 fonts/OFL.txt $d/share/licenses/omavim/OFL.txt
+          install -Dm644 crates/omavim-syntax/NOTICE.md $d/share/licenses/omavim/NOTICE.md
+          install -Dm644 crates/omavim-syntax/queries/LICENSE-nvim-treesitter-textobjects \
+            $d/share/licenses/omavim/LICENSE-nvim-treesitter-textobjects
           tar -czf omavim-x86_64-linux.tar.gz $d
           sha256sum omavim-x86_64-linux.tar.gz > omavim-x86_64-linux.tar.gz.sha256
 

@@ -94,8 +94,9 @@ curl -fsSL https://github.com/codemonkey76/omavim/releases/latest/download/omavi
 ```
 
 That puts `omavim` in `~/.local/bin` and adds it to your app launcher. It needs
-`xdg-desktop-portal` (for the file pickers and dark/light), which Omarchy and most
-desktops already have. To remove it:
+`xdg-desktop-portal` and a backend such as `xdg-desktop-portal-gtk` (for the file
+pickers, printing, and following dark/light and the text size), which Omarchy and
+most desktops already have. To remove it:
 `rm ~/.local/bin/omavim ~/.local/share/applications/omavim.desktop ~/.local/share/icons/hicolor/scalable/apps/omavim.svg`.
 
 From source on Arch/Omarchy: `cd pkgbuild && makepkg -si`.
@@ -104,4 +105,6 @@ To release: bump `version` in Cargo.toml, commit, then
 `git tag vX.Y.Z && git push origin vX.Y.Z`.
 
 iA Writer Mono is © Information Architects Inc., under the SIL Open Font
-License 1.1 (`fonts/OFL.txt`). Omavim itself is MIT.
+License 1.1 (`fonts/OFL.txt`). The tree-sitter grammars are MIT and the text
+object queries, from nvim-treesitter-textobjects, Apache-2.0
+(`crates/omavim-syntax/NOTICE.md`). Omavim itself is MIT.

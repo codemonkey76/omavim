@@ -1,13 +1,18 @@
 # Builds Omavim from the checkout this file sits in: cd pkgbuild && makepkg -si
 pkgname=omavim
-pkgver=0.1.0
+pkgver=0.5.0
 pkgrel=1
 pkgdesc="A dead-simple writing app with Vim motions"
 arch=('x86_64')
-license=('MIT' 'OFL-1.1')
+license=('MIT' 'OFL-1.1' 'Apache-2.0')
 depends=('xdg-desktop-portal' 'vulkan-icd-loader' 'libxkbcommon' 'wayland')
 makedepends=('cargo')
 options=('!lto')
+
+# The version Cargo.toml has.
+pkgver() {
+  sed -n 's/^version = "\(.*\)"/\1/p' "$startdir/../Cargo.toml" | head -1
+}
 
 build() {
   cd "$startdir/.."
@@ -26,4 +31,8 @@ package() {
   install -Dm644 data/omavim.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omavim.svg"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 fonts/OFL.txt "$pkgdir/usr/share/licenses/$pkgname/OFL.txt"
+  # The grammars' notices, and the text object queries' licence.
+  install -Dm644 crates/omavim-syntax/NOTICE.md "$pkgdir/usr/share/licenses/$pkgname/NOTICE.md"
+  install -Dm644 crates/omavim-syntax/queries/LICENSE-nvim-treesitter-textobjects \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE-nvim-treesitter-textobjects"
 }
