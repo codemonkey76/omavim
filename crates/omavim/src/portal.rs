@@ -46,6 +46,36 @@ pub fn color_scheme() -> impl Stream<Item = Scheme> {
     })
 }
 
+/// The desktop's text size, as a factor (1.0 is the design size), now and
+/// every time it changes. `omarchy display text size` and GNOME's Text Size
+/// both set it (GNOME's `text-scaling-factor`). Nothing if the portal can't
+/// be reached or doesn't have it: the app stays at 1.0.
+pub fn text_scale() -> impl Stream<Item = f32> {
+    const NAMESPACE: &str = "org.gnome.desktop.interface";
+    const KEY: &str = "text-scaling-factor";
+    iced::stream::channel(4, async |mut out| {
+        let Ok(settings) = Settings::new().await else {
+            return;
+        };
+        if let Ok(now) = settings.read::<f64>(NAMESPACE, KEY).await {
+            let _ = out.send(now as f32).await;
+        }
+        let Ok(mut changes) = settings
+            .receive_setting_changed_with_args::<f64>(NAMESPACE, KEY)
+            .await
+        else {
+            return;
+        };
+        while let Some(scale) = changes.next().await {
+            if let Ok(scale) = scale
+                && out.send(scale as f32).await.is_err()
+            {
+                return;
+            }
+        }
+    })
+}
+
 fn text_files() -> FileFilter {
     FileFilter::new("Text")
         .mimetype("text/plain")

@@ -143,7 +143,7 @@ Omavim adds through **xdg-desktop-portal**, using the `ashpd` crate:
 | Open and save pickers | the FileChooser portal |
 | Printing | lay pages out ourselves into a PDF (in points, at the page's size), then hand it to the Print portal, which shows the system dialog |
 | Dark/light, live | the Settings portal's `color-scheme`, watched |
-| Text size, live | the Settings portal's `text-scaling-factor`, watched. **To check early:** what `omarchy display text size` actually changes |
+| Text size, live | the Settings portal's `text-scaling-factor` (`org.gnome.desktop.interface`), watched: `omarchy display text size` sets it (12px is 1.0), with the shell's base size and the terminals' font size |
 | Clipboard (`"+`) | iced's clipboard, which speaks Wayland |
 
 **The editor is Omavim's own widget.** iced's built-in `text_editor` is for plain
@@ -256,9 +256,7 @@ editor to lean on, so the editor and Vim are built together from the start.)
 ## Open questions
 
 - Normal or insert mode when a document opens? (Setting either way; which default?)
-- `Space` as leader: fine, or another key?
-- What does `omarchy display text size` change, and can the Settings portal see it?
+- `Space` as leader: fine, or another key? (It can be changed in the config file.)
 - Which languages to bundle, beyond the list above?
-- Public from the start (GitHub, MIT like Omawrite), or private until it's usable?
 - Name: *omavim* is taken from the brief; check nothing in the Omarchy world already
   uses it.

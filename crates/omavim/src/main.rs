@@ -20,8 +20,11 @@ use portal::Scheme;
 use std::path::PathBuf;
 
 const FONT: Font = Font::with_name("iA Writer Mono S");
-/// The text size Omavim is designed around (Omawrite's is 12px at its scale).
+/// The text size Omavim is designed around (Omawrite's is 12px at its scale),
+/// at the desktop's text size of 1.0 (12px in `omarchy display text size`).
 const TEXT_SIZE: f32 = 17.0;
+/// The footer's.
+const SMALL_SIZE: f32 = 13.0;
 
 fn main() -> iced::Result {
     iced::application(App::boot, App::update, App::view)
@@ -43,6 +46,8 @@ struct App {
     doc: Document,
     vim: Vim,
     scheme: Scheme,
+    /// The desktop's text size, as a factor.
+    scale: f32,
     /// The colours: the Omarchy theme's, or Omavim's for `scheme`.
     colors: Colors,
     /// A short message in the footer: an error, or what just happened.
@@ -85,6 +90,8 @@ struct HighlightCache {
 enum Message {
     Key(KeyPress),
     Scheme(Scheme),
+    /// The desktop's text size changed.
+    TextScale(f32),
     Opened(Result<Option<(PathBuf, String)>, String>),
     /// Where Save As chose to write (None: cancelled).
     SaveTo(Result<Option<PathBuf>, String>),
@@ -186,6 +193,7 @@ impl App {
             doc,
             vim,
             scheme: Scheme::default(),
+            scale: 1.0,
             colors: Colors::current(Scheme::default()),
             status,
             after_save: None,
@@ -234,6 +242,7 @@ impl App {
         Subscription::batch([
             drafting,
             Subscription::run(portal::color_scheme).map(Message::Scheme),
+            Subscription::run(portal::text_scale).map(Message::TextScale),
             // (A new Omarchy theme swaps its colours file in: cheap to check.)
             iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::Tick),
             iced::event::listen_with(|event, _, _| match event {
@@ -250,6 +259,8 @@ impl App {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Key(press) => return self.key(press),
+            // (Kept to something readable, whatever's set.)
+            Message::TextScale(scale) => self.scale = scale.clamp(0.5, 3.0),
             Message::Scheme(scheme) => {
                 self.scheme = scheme;
                 self.set_colors(Colors::current(scheme));
@@ -720,8 +731,8 @@ impl App {
         let Some((_, draft)) = found.into_iter().next() else {
             return;
         };
-        let same = self.doc.text == draft.text.as_str()
-            && draft.final_newline == self.doc.final_newline;
+        let same =
+            self.doc.text == draft.text.as_str() && draft.final_newline == self.doc.final_newline;
         if same {
             for f in files {
                 let _ = std::fs::remove_file(f);
@@ -1002,7 +1013,7 @@ impl App {
         let near = line.saturating_sub(200)..line + 200;
         let footer = row![
             text(mode_label(mode))
-                .size(13)
+                .size(SMALL_SIZE * self.scale)
                 .color(if mode == Mode::Normal {
                     dim
                 } else {
@@ -1015,25 +1026,27 @@ impl App {
                     .map(|r| format!("  recording @{r}"))
                     .unwrap_or_default()
             )
-            .size(13)
+            .size(SMALL_SIZE * self.scale)
             .color(palette.primary),
             text(format!(
                 "  {}{}",
                 self.doc.name(),
                 if self.doc.dirty { " •" } else { "" }
             ))
-            .size(13)
+            .size(SMALL_SIZE * self.scale)
             .color(dim),
             space::horizontal(),
-            text(status).size(13).color(if self.prompt.is_some() {
-                palette.primary
-            } else {
-                dim
-            }),
+            text(status)
+                .size(SMALL_SIZE * self.scale)
+                .color(if self.prompt.is_some() {
+                    palette.primary
+                } else {
+                    dim
+                }),
             space::horizontal(),
-            text(pending).size(13).color(dim),
+            text(pending).size(SMALL_SIZE * self.scale).color(dim),
             text(format!("   {}:{}", line + 1, col + 1))
-                .size(13)
+                .size(SMALL_SIZE * self.scale)
                 .color(dim),
         ]
         .padding([8, 16]);
@@ -1052,7 +1065,7 @@ impl App {
         let editor = Editor::new(
             view,
             FONT,
-            TEXT_SIZE,
+            TEXT_SIZE * self.scale,
             Message::Key,
             Message::Resized,
             Message::Scroll,
@@ -1078,18 +1091,28 @@ impl App {
             ..palette.text
         };
         let mut body = column![
-            text("Keys").size(TEXT_SIZE * 1.4).color(palette.primary),
-            text("Esc or q to close").size(13).color(dim),
+            text("Keys")
+                .size(TEXT_SIZE * 1.4 * self.scale)
+                .color(palette.primary),
+            text("Esc or q to close")
+                .size(SMALL_SIZE * self.scale)
+                .color(dim),
         ]
         .spacing(6);
         for (title, rows) in help::sections(&self.config) {
             body = body.push(space::vertical().height(12));
-            body = body.push(text(title).size(TEXT_SIZE).color(palette.primary));
+            body = body.push(
+                text(title)
+                    .size(TEXT_SIZE * self.scale)
+                    .color(palette.primary),
+            );
             for (keys, does) in rows {
                 body = body.push(
                     row![
-                        text(keys).size(14).width(Length::Fixed(260.0)),
-                        text(does).size(14).color(dim),
+                        text(keys)
+                            .size(14.0 * self.scale)
+                            .width(Length::Fixed(260.0 * self.scale)),
+                        text(does).size(14.0 * self.scale).color(dim),
                     ]
                     .spacing(16),
                 );
@@ -1236,6 +1259,7 @@ mod tests {
             doc,
             vim: Vim::new(),
             scheme: Scheme::default(),
+            scale: 1.0,
             colors: Colors::builtin(Scheme::default()),
             status: None,
             after_save: None,
@@ -1518,6 +1542,15 @@ mod tests {
         assert_eq!(a.prompt, None);
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
         let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn follows_the_desktops_text_size() {
+        let mut a = app(Document::default());
+        let _ = a.update(Message::TextScale(1.3636));
+        assert_eq!(a.scale, 1.3636);
+        let _ = a.update(Message::TextScale(40.0));
+        assert_eq!(a.scale, 3.0, "kept readable");
     }
 
     #[test]
