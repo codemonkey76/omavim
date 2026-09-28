@@ -240,6 +240,10 @@ omavim/
 4. **Tree-sitter.** The syntax crate, incremental parsing, highlighting with the
    dark and light schemes, Markdown styling, code blocks in Markdown, the bundled
    languages, the Markdown and code text objects and `]f`-style moves, indentation.
+   Then parsing off the keystroke: re-parsing Markdown grows with the document
+   (5ms a key at 10,000 lines, 36ms at 50,000), so a key updates the text and
+   draws at once with the colours it had, and a background thread re-parses and
+   swaps in the new ones, as Helix does. Typing should feel the same at any size.
 5. **Omawrite's features.** Text size, print, new window, fullscreen, key
    reference, the leader keys, draft recovery, outside-change watching, the
    unsaved-changes prompt.

@@ -144,3 +144,88 @@ fn timing_rust() {
     s.parse(&r2);
     eprintln!("rust reparse after a keystroke {:?}", t.elapsed());
 }
+
+#[test]
+#[ignore]
+fn timing_window() {
+    let mut text = String::new();
+    for i in 0..500 {
+        text.push_str(&format!(
+            "## Section {i}\n\nSome *prose* with a [link](https://x.y) and `code`, and **more** words to fill the line out.\n\n```rust\nfn f{i}(a: u32) -> u32 {{ a + {i} }}\n```\n\n"
+        ));
+    }
+    let rope = Rope::from_str(&text);
+    let mut s = Syntax::new(Lang::Markdown);
+    s.parse(&rope);
+    for lines in [200, 60] {
+        let from = rope.line_to_byte(2000);
+        let to = rope.line_to_byte(2000 + lines);
+        let mut best = std::time::Duration::MAX;
+        for _ in 0..20 {
+            let t = std::time::Instant::now();
+            let _ = s.highlights(&rope, from..to);
+            best = best.min(t.elapsed());
+        }
+        eprintln!("{lines} lines: best of 20 {best:?}");
+    }
+}
+
+#[test]
+#[ignore]
+fn timing_big() {
+    let md = |sections: usize| {
+        let mut text = String::new();
+        for i in 0..sections {
+            text.push_str(&format!(
+                "## Section {i}\n\nSome *prose* with a [link](https://x.y) and `code`, and **more** words to fill the line out.\n\n```rust\nfn f{i}(a: u32) -> u32 {{ a + {i} }}\n```\n\n"
+            ));
+        }
+        text
+    };
+    let rust = |fns: usize| {
+        let mut text = String::new();
+        for i in 0..fns {
+            text.push_str(&format!("/// Doc {i}\nfn f{i}(a: u32) -> u32 {{\n    a + {i}\n}}\n"));
+        }
+        text
+    };
+    for (name, lang, text) in [
+        ("markdown 10k", Lang::Markdown, md(1250)),
+        ("markdown 50k", Lang::Markdown, md(6250)),
+        ("rust 10k", Lang::Rust, rust(2500)),
+    ] {
+        let rope = Rope::from_str(&text);
+        let mut s = Syntax::new(lang);
+        let t = std::time::Instant::now();
+        s.parse(&rope);
+        let full = t.elapsed();
+        let mid = rope.len_lines() / 2;
+        let from = rope.line_to_byte(mid);
+        let to = rope.line_to_byte(mid + 60);
+        let mut screen = std::time::Duration::MAX;
+        for _ in 0..10 {
+            let t = std::time::Instant::now();
+            let _ = s.highlights(&rope, from..to);
+            screen = screen.min(t.elapsed());
+        }
+        let mut key = std::time::Duration::MAX;
+        let mut r = rope.clone();
+        for k in 0..5 {
+            let at = from + k;
+            r.insert(r.byte_to_char(at), "x");
+            let p = omavim_syntax::Point::new(mid, k);
+            let t = std::time::Instant::now();
+            s.edit(&omavim_syntax::InputEdit {
+                start_byte: at,
+                old_end_byte: at,
+                new_end_byte: at + 1,
+                start_position: p,
+                old_end_position: p,
+                new_end_position: omavim_syntax::Point::new(mid, k + 1),
+            });
+            s.parse(&r);
+            key = key.min(t.elapsed());
+        }
+        eprintln!("{name} ({} lines): full parse {full:?}, keystroke reparse {key:?}, screen {screen:?}", rope.len_lines());
+    }
+}
