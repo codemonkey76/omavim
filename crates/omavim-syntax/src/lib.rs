@@ -25,10 +25,55 @@ pub struct Span {
 }
 
 /// The syntax tree of a document, kept up to date as it's edited.
+///
+/// An edit moves the tree's nodes at once, so it can be drawn from straight
+/// away; parsing again can happen here ([`Syntax::parse`]) or, for a big
+/// document, on another thread ([`Syntax::parse_job`], then
+/// [`Syntax::finish`]), the edits made meanwhile applied to what it made.
 pub struct Syntax {
+    /// Which it is, so a parse job's tree goes to the one it was for.
+    id: u64,
     lang: Lang,
     parser: Parser,
     tree: Option<Tree>,
+    /// Edits so far, and the one the tree was last parsed after.
+    version: u64,
+    parsed: u64,
+    /// The edits since then.
+    pending: Vec<(u64, InputEdit)>,
+    /// Bumped each time the tree's parsed again, to redraw.
+    revision: u64,
+}
+
+/// Parsing to do off the main thread: [`ParseJob::run`] it anywhere.
+pub struct ParseJob {
+    id: u64,
+    lang: Lang,
+    text: Rope,
+    tree: Option<Tree>,
+    version: u64,
+}
+
+/// A parse done by a [`ParseJob`].
+pub struct Parsed {
+    id: u64,
+    tree: Option<Tree>,
+    version: u64,
+}
+
+impl ParseJob {
+    pub fn run(self) -> Parsed {
+        let mut parser = Parser::new();
+        let tree = parser
+            .set_language(&self.lang.config().language)
+            .ok()
+            .and_then(|()| parse_rope(&mut parser, &self.text, self.tree.as_ref()));
+        Parsed {
+            id: self.id,
+            tree,
+            version: self.version,
+        }
+    }
 }
 
 impl Syntax {
@@ -37,10 +82,16 @@ impl Syntax {
         parser
             .set_language(&lang.config().language)
             .expect("a bundled grammar loads");
+        static IDS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         Self {
+            id: IDS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             lang,
             parser,
             tree: None,
+            version: 0,
+            parsed: 0,
+            pending: Vec::new(),
+            revision: 0,
         }
     }
 
@@ -58,6 +109,48 @@ impl Syntax {
         if let Some(tree) = &mut self.tree {
             tree.edit(edit);
         }
+        self.version += 1;
+        self.pending.push((self.version, *edit));
+    }
+
+    /// Edited since it was last parsed.
+    pub fn stale(&self) -> bool {
+        self.version != self.parsed
+    }
+
+    /// Changes each time the tree's parsed again.
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Parsing to bring the tree up to date, to run on another thread.
+    pub fn parse_job(&self, text: &Rope) -> Option<ParseJob> {
+        self.stale().then(|| ParseJob {
+            id: self.id,
+            lang: self.lang,
+            text: text.clone(),
+            tree: self.tree.clone(),
+            version: self.version,
+        })
+    }
+
+    /// A parse job's tree, with the edits made since it started (still
+    /// stale after them). False when it's no use: the tree is newer.
+    pub fn finish(&mut self, parsed: Parsed) -> bool {
+        let Some(mut tree) = parsed.tree else {
+            return false;
+        };
+        if parsed.id != self.id || !self.stale() || parsed.version <= self.parsed {
+            return false;
+        }
+        self.pending.retain(|(v, _)| *v > parsed.version);
+        for (_, e) in &self.pending {
+            tree.edit(e);
+        }
+        self.tree = Some(tree);
+        self.parsed = parsed.version;
+        self.revision += 1;
+        true
     }
 
     /// Every `kind` of text object (`function`, `class`, `parameter`,
@@ -115,6 +208,9 @@ impl Syntax {
     /// Parse the text (again, after edits).
     pub fn parse(&mut self, text: &Rope) {
         self.tree = parse_rope(&mut self.parser, text, self.tree.as_ref());
+        self.parsed = self.version;
+        self.pending.clear();
+        self.revision += 1;
     }
 
     /// The highlights over `range` (bytes): sorted, not overlapping. Code

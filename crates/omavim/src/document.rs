@@ -4,7 +4,7 @@
 use omavim_syntax::{InputEdit, Lang, Point, Syntax};
 use omavim_vim::{Indenting, SyntaxObject};
 use ropey::Rope;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::ops::Range;
 use std::path::PathBuf;
 
@@ -94,12 +94,11 @@ impl Document {
 }
 
 /// The text, for the Vim engine to edit: each edit goes to the syntax tree
-/// too, which is parsed again when it's next wanted (for a text object, or
-/// once the keys are done).
+/// too, which is parsed again here when a text object needs it (else on
+/// another thread, after the keys: see `App::parse_later`).
 pub struct Recorder<'a> {
     text: &'a mut Rope,
     syntax: RefCell<Option<&'a mut Syntax>>,
-    stale: Cell<bool>,
 }
 
 impl<'a> Recorder<'a> {
@@ -107,23 +106,17 @@ impl<'a> Recorder<'a> {
         Self {
             text: &mut doc.text,
             syntax: RefCell::new(doc.syntax.as_mut()),
-            stale: Cell::new(false),
         }
     }
 
-    /// Bring the syntax tree up to date with the edits.
+    /// Bring the syntax tree up to date with the edits, now: for what
+    /// needs it exact (a text object, `%`).
     fn parse(&self) {
-        if self.stale.replace(false)
-            && let Some(s) = self.syntax.borrow_mut().as_mut()
+        if let Some(s) = self.syntax.borrow_mut().as_mut()
+            && s.stale()
         {
             s.parse(self.text);
         }
-    }
-}
-
-impl Drop for Recorder<'_> {
-    fn drop(&mut self) {
-        self.parse();
     }
 }
 
@@ -213,7 +206,6 @@ impl omavim_vim::TextModel for Recorder<'_> {
         };
         if let Some(s) = self.syntax.get_mut().as_mut() {
             s.edit(&edit);
-            self.stale.set(true);
         }
     }
 

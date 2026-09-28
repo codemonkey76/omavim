@@ -43,6 +43,8 @@ struct App {
     status: Option<String>,
     /// `:wq` / `:x` waiting for its save to finish before quitting.
     quit_after_save: bool,
+    /// A parse is running on another thread.
+    parsing: bool,
     /// The last highlights worked out, and what for (the text's changes
     /// count, the first line, how many), so a redraw that changed none of
     /// that doesn't work them out again.
@@ -54,7 +56,7 @@ type Highlights = Vec<(std::ops::Range<usize>, colors::Style)>;
 #[derive(Default)]
 struct HighlightCache {
     /// The text's version, its language, and the lines.
-    key: Option<(u64, omavim_syntax::Lang, usize, usize)>,
+    key: Option<(u64, omavim_syntax::Lang, u64, usize, usize)>,
     highlights: std::rc::Rc<Highlights>,
 }
 
@@ -76,6 +78,34 @@ enum Message {
     Scroll(isize),
     /// Time to see if the Omarchy theme changed.
     CheckTheme,
+    /// The syntax tree, parsed again off the main thread.
+    Parsed(Handoff<omavim_syntax::Parsed>),
+}
+
+/// Something made on another thread, handed over in a message (which has
+/// to be cloneable): the first to take it has it.
+struct Handoff<T>(std::sync::Arc<std::sync::Mutex<Option<T>>>);
+
+impl<T> Clone for Handoff<T> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl<T> Handoff<T> {
+    fn new(value: T) -> Self {
+        Self(std::sync::Arc::new(std::sync::Mutex::new(Some(value))))
+    }
+
+    fn take(&self) -> Option<T> {
+        self.0.lock().ok()?.take()
+    }
+}
+
+impl<T> std::fmt::Debug for Handoff<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Handoff")
+    }
 }
 
 impl App {
@@ -106,6 +136,7 @@ impl App {
             colors: Colors::current(Scheme::default()),
             status,
             quit_after_save: false,
+            parsing: false,
             highlight_cache: Default::default(),
         }
     }
@@ -147,6 +178,14 @@ impl App {
             Message::Scheme(scheme) => {
                 self.scheme = scheme;
                 self.set_colors(Colors::current(scheme));
+            }
+            Message::Parsed(parsed) => {
+                self.parsing = false;
+                if let (Some(parsed), Some(syntax)) = (parsed.take(), self.doc.syntax.as_mut()) {
+                    syntax.finish(parsed);
+                }
+                // Edited while it parsed: again.
+                return self.parse_later();
             }
             Message::CheckTheme => {
                 if Colors::omarchy_stamp() != self.colors.source {
@@ -213,7 +252,6 @@ impl App {
                 // Vim beeps; the keys after it still count, as typed keys do.
             }
         }
-        drop(text);
         // `:set filetype=`: highlight as that language (plain text for one
         // Omavim doesn't know, as Vim keeps the name).
         if let Some(filetype) = self.vim.take_filetype() {
@@ -228,7 +266,7 @@ impl App {
         if let Some(message) = self.vim.take_message() {
             self.status = Some(message);
         }
-        let mut tasks = Vec::new();
+        let mut tasks = vec![self.parse_later()];
         // `"+y` / `"*y`: onto the clipboard or primary selection.
         if let Some((register, text)) = self.vim.take_clipboard() {
             tasks.push(if register == '*' {
@@ -248,6 +286,30 @@ impl App {
         Task::batch(tasks)
     }
 
+    /// Bring the syntax tree up to date with the edits, on another thread
+    /// (drawing meanwhile from the old one, moved to fit the edits).
+    fn parse_later(&mut self) -> Task<Message> {
+        if self.parsing {
+            return Task::none();
+        }
+        let Some(job) = self
+            .doc
+            .syntax
+            .as_ref()
+            .and_then(|s| s.parse_job(&self.doc.text))
+        else {
+            return Task::none();
+        };
+        self.parsing = true;
+        Task::perform(
+            async move {
+                let parsed = tokio::task::spawn_blocking(move || job.run()).await;
+                parsed.ok().map(Handoff::new)
+            },
+            |parsed| Message::Parsed(parsed.unwrap_or_else(|| Handoff(Default::default()))),
+        )
+    }
+
     /// The syntax highlights for the lines on screen, as char ranges and
     /// how to draw them.
     fn highlights(&self) -> std::rc::Rc<Highlights> {
@@ -259,7 +321,13 @@ impl App {
         let first = self.vim.top().0.min(last);
         // (A line takes a row at least.)
         let count = self.vim.screen_height().max(1);
-        let key = (self.vim.changes(), syntax.lang(), first, count);
+        let key = (
+            self.vim.changes(),
+            syntax.lang(),
+            syntax.revision(),
+            first,
+            count,
+        );
         if let Ok(cache) = self.highlight_cache.try_borrow()
             && cache.key == Some(key)
         {
@@ -625,6 +693,7 @@ mod tests {
             colors: Colors::builtin(Scheme::default()),
             status: None,
             quit_after_save: false,
+            parsing: false,
             highlight_cache: Default::default(),
         }
     }

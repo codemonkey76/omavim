@@ -72,6 +72,60 @@ fn an_edit_reparses_as_a_fresh_parse_would() {
     );
 }
 
+/// Insert text at a byte on the first line, telling the tree.
+fn type_at(rope: &mut Rope, s: &mut Syntax, byte: usize, what: &str) {
+    rope.insert(rope.byte_to_char(byte), what);
+    let at = omavim_syntax::Point::new(0, byte);
+    s.edit(&omavim_syntax::InputEdit {
+        start_byte: byte,
+        old_end_byte: byte,
+        new_end_byte: byte + what.len(),
+        start_position: at,
+        old_end_position: at,
+        new_end_position: omavim_syntax::Point::new(0, byte + what.len()),
+    });
+}
+
+fn sexp(s: &Syntax) -> String {
+    s.tree().unwrap().root_node().to_sexp()
+}
+
+#[test]
+fn a_parse_elsewhere_catches_up_with_the_edits_made_meanwhile() {
+    let mut rope = Rope::from_str("fn a() {}\nfn b() {}\n");
+    let mut s = Syntax::new(Lang::Rust);
+    s.parse(&rope);
+    type_at(&mut rope, &mut s, 8, " let x = 1; ");
+    let job = s.parse_job(&rope).unwrap();
+    // Typed while it parses.
+    type_at(&mut rope, &mut s, 0, "pub ");
+    assert!(s.finish(job.run()));
+    assert!(s.stale(), "the second edit isn't parsed yet");
+    let job = s.parse_job(&rope).unwrap();
+    assert!(s.finish(job.run()));
+    assert!(!s.stale());
+    let mut fresh = Syntax::new(Lang::Rust);
+    fresh.parse(&rope);
+    assert_eq!(sexp(&s), sexp(&fresh));
+    assert!(s.parse_job(&rope).is_none());
+}
+
+#[test]
+fn a_parse_elsewhere_older_than_the_tree_is_dropped() {
+    let mut rope = Rope::from_str("fn a() {}\n");
+    let mut s = Syntax::new(Lang::Rust);
+    s.parse(&rope);
+    type_at(&mut rope, &mut s, 8, "1");
+    let job = s.parse_job(&rope).unwrap();
+    s.parse(&rope);
+    type_at(&mut rope, &mut s, 8, "2");
+    assert!(!s.finish(job.run()));
+    s.parse(&rope);
+    let mut fresh = Syntax::new(Lang::Rust);
+    fresh.parse(&rope);
+    assert_eq!(sexp(&s), sexp(&fresh));
+}
+
 // Timings, by hand: cargo test --release -p omavim-syntax -- --ignored --nocapture
 #[test]
 #[ignore]
@@ -228,8 +282,28 @@ fn timing_big() {
             s.parse(&r);
             key = key.min(t.elapsed());
         }
+        // What a key costs the app now: moving the tree, and drawing the
+        // screen from it, the parse left to another thread.
+        let mut drawn = std::time::Duration::MAX;
+        for k in 5..10 {
+            let at = from + k;
+            r.insert(r.byte_to_char(at), "x");
+            let p = omavim_syntax::Point::new(mid, k);
+            let t = std::time::Instant::now();
+            s.edit(&omavim_syntax::InputEdit {
+                start_byte: at,
+                old_end_byte: at,
+                new_end_byte: at + 1,
+                start_position: p,
+                old_end_position: p,
+                new_end_position: omavim_syntax::Point::new(mid, k + 1),
+            });
+            let _ = s.highlights(&r, from..to);
+            drawn = drawn.min(t.elapsed());
+        }
         eprintln!(
-            "{name} ({} lines): full parse {full:?}, keystroke reparse {key:?}, screen {screen:?}",
+            "{name} ({} lines): full parse {full:?}, keystroke reparse {key:?}, screen {screen:?}, \
+             keystroke with the parse elsewhere {drawn:?}",
             rope.len_lines()
         );
     }
