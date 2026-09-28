@@ -4,10 +4,10 @@ A dead-simple writing app with Vim motions, in the spirit of
 [Omawrite](https://github.com/omacom-io/omawrite), written in Rust with
 [iced](https://iced.rs). See [PLAN.md](PLAN.md) for where it's going.
 
-**Where it's up to (milestone 2):** a window in iA Writer Mono that follows the
+**Where it's up to (milestone 3):** a window in iA Writer Mono that follows the
 desktop's dark/light setting, soft-wrapped lines, open/save through the
 desktop's file picker, and Vim's core: normal, insert, replace and visual
-(`v`, `V`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
+(`v`, `V`, and `CTRL-V` blocks: `y d c I A r ~ u U > < p` and `$`, `o`, `O`) modes, counts, motions (`hjkl 0 ^ $ g_ | gg G w b e ge W B E gE
 f F t T ; , { } ( ) %`), operators (`d c y > < gu gU g~` and their doubled forms,
 `D C Y x X s S r J gJ ~ p P`), text objects (`iw aw iW aW is as ip ap`, the
 brackets `i( i{ i[ i<` and `a` forms, the quotes `i" i' i`` and `it at`, in
@@ -34,7 +34,7 @@ match), `:&`, `:&&`, `&`,
 wrap at word breaks and the view scrolls exactly as Neovim's does with
 'linebreak' and 'smoothscroll'. `gq` and `gw` format paragraphs to the window's width
 (at most 79), keeping comment leaders (`//`, `#`, `>`, ` * `) on each line.
-Block visual mode is next.
+Syntax highlighting with tree-sitter (milestone 4) is next.
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a

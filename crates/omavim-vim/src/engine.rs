@@ -402,6 +402,9 @@ pub struct Vim {
     /// `.` repeating a block: its width, from the start's screen column
     /// (Vim's redo_VIsual), whatever the end line's length.
     redo_block_width: Option<usize>,
+    /// The command left the cursor where Vim does, past a line's end: not
+    /// to be moved back after it.
+    keep_cursor: bool,
     /// `:s///c` is asking about a match.
     confirm: Option<ex::Confirm>,
     /// Where the cursor was when the command being run was typed (Vim's
@@ -502,6 +505,7 @@ impl Vim {
             normal_depth: 0,
             insert_extent: None,
             redo_block_width: None,
+            keep_cursor: false,
             confirm: None,
             cmd_start: 0,
             unnamed: None,
@@ -1122,8 +1126,14 @@ impl Vim {
                 // An operator on the selection: the cursor goes to its start
                 // (a line selection's first column).
                 let lines = self.mode == Mode::VisualLine;
+                let block = (self.mode == Mode::VisualBlock).then(|| self.block_area(t));
                 self.mode = Mode::Normal;
                 self.cursor = self.cursor.min(self.anchor);
+                if let Some(a) = block {
+                    // A block's top left.
+                    let col = self.col_at_vcol(t, a.top, a.start_vcol);
+                    self.cursor = text::pos(t, a.top, col);
+                }
                 if lines {
                     let (l, _) = self.lc(t);
                     self.cursor = t.line_to_char(l);
@@ -2606,6 +2616,17 @@ impl Vim {
 
     fn put(&mut self, t: &mut dyn TextModel, before: bool, count: usize) -> R {
         let reg = self.read_register()?;
+        self.put_register(t, &reg, before, count)
+    }
+
+    /// Put `reg` at the cursor (before it, or after), `count` times.
+    fn put_register(
+        &mut self,
+        t: &mut dyn TextModel,
+        reg: &Register,
+        before: bool,
+        count: usize,
+    ) -> R {
         if let Some(width) = reg.block {
             return self.put_block(t, &reg.text, width, before, count);
         }
@@ -3096,7 +3117,8 @@ impl Vim {
         if !matches!(
             self.mode,
             Mode::Visual | Mode::VisualLine | Mode::VisualBlock | Mode::Insert | Mode::Replace
-        ) {
+        ) && !std::mem::take(&mut self.keep_cursor)
+        {
             self.clamp(t);
         }
         result
@@ -3136,6 +3158,7 @@ impl Vim {
                     (bl, bc),
                     linewise,
                     to_end,
+                    None,
                 );
                 self.cursor = start;
                 self.clamp(t);
@@ -3302,7 +3325,7 @@ impl Vim {
                     self.apply_chars(t, Op::Toggle, a..end)
                 }
             }
-            Action::Put(_) => {
+            Action::Put(keep) => {
                 // Even an empty register replaces the selection (with nothing).
                 let reg = self.read_register().unwrap_or_default();
                 exit(self);
@@ -3323,14 +3346,25 @@ impl Vim {
                         .map(str::to_string)
                         .unwrap_or(reg.text.clone())
                 };
-                self.edit(t, start..end, &put.repeat(count));
+                let put = put.repeat(count);
+                if linewise {
+                    // (Marks go as the lines are deleted, then the new put.)
+                    if put == old {
+                        let n = put.matches('\n').count() + 1;
+                        self.marks.lines_replaced(al, bl, n);
+                    }
+                    self.edit_hint = Some(EditHint::ReplaceLines(al, bl));
+                }
+                self.edit(t, start..end, &put);
                 // The replaced text is deleted into the usual registers.
                 self.reg_name = None;
-                self.store(
-                    if linewise { format!("{old}\n") } else { old },
-                    linewise,
-                    true,
-                );
+                if !keep {
+                    self.store(
+                        if linewise { format!("{old}\n") } else { old },
+                        linewise,
+                        true,
+                    );
+                }
                 if reg.linewise {
                     let (sl, _) = text::line_col(t, start);
                     let line = if linewise { sl } else { sl + 1 };
@@ -3380,6 +3414,33 @@ impl Vim {
                 exit(self);
                 self.want = None;
                 Ok(())
+            }
+            // `I` and `A` (linewise, as Vim's v_visop makes them): before the
+            // first line, or after the selection's last char.
+            Action::Insert(kind @ (Insert::LineStart | Insert::LineEnd)) => {
+                // The end: the cursor, or the anchor's line start if that's
+                // after it (Vim zeroes the anchor's column for a line
+                // selection).
+                let anchor_start = t.line_to_char(t.char_to_line(self.anchor.min(t.len_chars())));
+                let end = if anchor_start < self.cursor {
+                    self.cursor
+                } else {
+                    anchor_start
+                };
+                exit(self);
+                if kind == Insert::LineStart {
+                    self.cursor = t.line_to_char(al);
+                } else {
+                    // After the end's char (unless it's a one-cell char at the
+                    // line's start, as the start's column).
+                    let (l, c) = text::line_col(t, end.min(t.len_chars()));
+                    let end_vcol = self.vcols(t, l, c).1;
+                    let len = line_len(t, l);
+                    let c = c.min(len.saturating_sub(1));
+                    self.cursor = text::pos(t, l, if len > 0 && end_vcol != 0 { c + 1 } else { c });
+                }
+                self.want = None;
+                self.start_insert(t, Insert::Before, count)
             }
             Action::Insert(_) | Action::Replace | Action::Undo | Action::Redo | Action::Repeat => {
                 exit(self);
@@ -4142,7 +4203,9 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
             Key::Char('u') => Some(Action::Operate(Op::Lower, Some(Motion::Right))),
             Key::Char('U') => Some(Action::Operate(Op::Upper, Some(Motion::Right))),
             Key::Char('J') => Some(Action::Join(true)),
-            Key::Char('p' | 'P') => Some(Action::Put(false)),
+            // (`P` keeps the registers: what it replaces goes nowhere.)
+            Key::Char('p') => Some(Action::Put(false)),
+            Key::Char('P') => Some(Action::Put(true)),
             Key::Char('o') => Some(Action::SwapEnds(false)),
             Key::Char('O') => Some(Action::SwapEnds(true)),
             Key::Char('v') => Some(Action::Visual(Mode::Visual)),

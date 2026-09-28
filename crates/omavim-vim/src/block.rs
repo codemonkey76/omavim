@@ -2,7 +2,7 @@
 //! screen columns, and the operators on it, as Neovim's block_prep() and
 //! the block parts of its operators and put.
 
-use super::{Action, Beep, Command, Op, R, Vim};
+use super::{Action, Command, Op, R, Vim};
 use crate::TextModel;
 use crate::text::{self, char_width, last_line, line_len, line_text};
 
@@ -33,6 +33,9 @@ pub(super) struct BlockDef {
     pub end_vcol: usize,
     pub start_char_vcols: usize,
     pub end_char_vcols: usize,
+    /// The blanks just before the block: their screen columns and chars.
+    pub pre_whitesp: usize,
+    pub pre_whitesp_c: usize,
 }
 
 /// Which operator block_prep() works for (it matters at the edges).
@@ -149,6 +152,13 @@ impl Vim {
         while vcol < a.start_vcol && i < len {
             incr = char_width(chars[i], vcol, ts);
             vcol += incr;
+            if chars[i] == ' ' || chars[i] == '\t' {
+                bd.pre_whitesp += incr;
+                bd.pre_whitesp_c += 1;
+            } else {
+                bd.pre_whitesp = 0;
+                bd.pre_whitesp_c = 0;
+            }
             prev_pstart = i;
             i += 1;
         }
@@ -275,9 +285,7 @@ impl Vim {
         // (Undo comes back to the top left: Vim saves the block's lines.)
         self.cursor = cursor;
         self.begin_group();
-        if let Some(g) = self.group.as_mut() {
-            g.top = Some(g.top.map_or(a.top, |l| l.min(a.top)));
-        }
+        self.block_undo_top(a);
         for l in a.top..=a.bottom {
             let bd = self.block_prep(t, a, l, true, Kind::Other);
             if bd.textlen == 0 {
@@ -428,11 +436,55 @@ impl Vim {
             Action::Operate(Op::Change, None) => return None,
             Action::Insert(super::Insert::LineStart) => self.block_insert_start(t, false),
             Action::Insert(super::Insert::LineEnd) => self.block_insert_start(t, true),
-            Action::Operate(..)
-            | Action::ReplaceChar(_)
-            | Action::ToggleCase
-            | Action::Put(_)
-            | Action::AddSub { .. } => Err(Beep),
+            Action::ReplaceChar(c) => {
+                let a = self.block_area(t);
+                exit(self);
+                self.replace_block(t, &a, c)
+            }
+            Action::ToggleCase => {
+                let a = self.block_area(t);
+                exit(self);
+                self.case_block(t, &a, Op::Toggle)
+            }
+            Action::Operate(op @ (Op::Lower | Op::Upper | Op::Toggle), _) => {
+                let a = self.block_area(t);
+                exit(self);
+                self.case_block(t, &a, op)
+            }
+            Action::Operate(op @ (Op::ShiftRight | Op::ShiftLeft), _) => {
+                let a = self.block_area(t);
+                exit(self);
+                self.shift_block(t, &a, op == Op::ShiftLeft, cmd.count.unwrap_or(1))
+            }
+            Action::Put(before) => {
+                let a = self.block_area(t);
+                let end_line = text::line_col(t, self.cursor.min(t.len_chars())).0;
+                exit(self);
+                self.put_over_block(t, &a, end_line, before, cmd.count.unwrap_or(1))
+            }
+            Action::AddSub { sub, progressive } => {
+                let a = self.block_area(t);
+                let start = self.block_corners(t, &a).0;
+                exit(self);
+                self.cursor = text::pos(t, start.0, start.1);
+                let r = self.add_sub_visual(
+                    t,
+                    sub,
+                    cmd.count.unwrap_or(1),
+                    progressive,
+                    (a.top, 0),
+                    (a.bottom, 0),
+                    false,
+                    a.to_end,
+                    Some(&a),
+                );
+                self.cursor = text::pos(t, start.0, start.1);
+                self.clamp(t);
+                self.want = None;
+                r
+            }
+            // `gq` and the others work on the lines.
+            Action::Operate(Op::Format | Op::FormatKeep, _) => return None,
             _ => return None,
         })
     }
@@ -720,6 +772,264 @@ impl Vim {
                 let end = offset + new.chars().count();
                 self.marks.op_end = Some(self.mk(t, (l, end)));
             }
+        }
+    }
+}
+
+/// Tabs and spaces from screen column `from` to `to` (Vim's
+/// tabstop_fromto, without 'vartabstop').
+fn tabs_spaces(from: usize, to: usize, ts: usize) -> (usize, usize) {
+    let mut spaces = to - from;
+    let mut tabs = 0;
+    let first = ts - from % ts;
+    if spaces >= first {
+        spaces -= first;
+        tabs += 1;
+    }
+    tabs += spaces / ts;
+    spaces %= ts;
+    (tabs, spaces)
+}
+
+impl Vim {
+    /// `r{c}` on a block: every char in it `c` (a tab it cuts becomes
+    /// spaces), as Vim's op_replace.
+    pub(super) fn replace_block(&mut self, t: &mut dyn TextModel, a: &Area, c: char) -> R {
+        let start = self.block_corners(t, a).0;
+        self.cursor = text::pos(t, start.0, start.1);
+        self.begin_group();
+        self.block_undo_top(a);
+        let wide = char_width(c, 0, self.tabstop) > 1;
+        for l in a.top..=a.bottom {
+            let mut bd = self.block_prep(t, a, l, true, Kind::Replace);
+            if bd.textlen == 0 {
+                continue;
+            }
+            let mut numc = a.end_vcol + 1 - a.start_vcol;
+            if bd.is_short {
+                numc -= a.end_vcol + 1 - bd.end_vcol;
+            }
+            if wide {
+                if numc % 2 == 1 && !bd.is_short {
+                    bd.endspaces += 1;
+                }
+                numc /= 2;
+            }
+            let mut new = " ".repeat(bd.startspaces);
+            new.extend(std::iter::repeat_n(c, numc));
+            if !bd.is_short {
+                new.push_str(&" ".repeat(bd.endspaces));
+            }
+            let from = t.line_to_char(l) + bd.textcol;
+            let to = if bd.is_short {
+                t.line_to_char(l) + line_len(t, l)
+            } else {
+                from + bd.textlen
+            };
+            self.edit(t, from..to, &new);
+        }
+        self.cursor = text::pos(t, start.0, start.1);
+        self.clamp(t);
+        self.want = None;
+        Ok(())
+    }
+
+    /// `~`, `u`, `U` on a block (Vim's op_tilde).
+    pub(super) fn case_block(&mut self, t: &mut dyn TextModel, a: &Area, op: Op) -> R {
+        let (start, end) = self.block_corners(t, a);
+        self.cursor = text::pos(t, start.0, start.1);
+        self.begin_group();
+        self.block_undo_top(a);
+        for l in a.top..=a.bottom {
+            let bd = self.block_prep(t, a, l, false, Kind::Other);
+            let from = t.line_to_char(l) + bd.textcol;
+            self.map_case(t, from..from + bd.textlen, op);
+        }
+        self.marks.op_start = Some(self.mk(t, start));
+        self.marks.op_end = Some(self.mk(t, end));
+        self.cursor = text::pos(t, start.0, start.1);
+        self.clamp(t);
+        self.want = None;
+        Ok(())
+    }
+
+    /// `>` and `<` on a block: blanks put in (taken out) where it starts,
+    /// `count` shiftwidths, as Vim's op_shift and shift_block.
+    pub(super) fn shift_block(
+        &mut self,
+        t: &mut dyn TextModel,
+        a: &Area,
+        left: bool,
+        count: usize,
+    ) -> R {
+        let start = self.block_corners(t, a).0;
+        self.cursor = text::pos(t, start.0, start.1);
+        self.begin_group();
+        self.block_undo_top(a);
+        let ts = self.tabstop;
+        let sw = if self.shiftwidth == 0 {
+            ts
+        } else {
+            self.shiftwidth
+        };
+        for l in a.top..=a.bottom {
+            if line_len(t, l) == 0 {
+                continue;
+            }
+            let mut bd =
+                self.block_prep(t, a, l, true, if left { Kind::LShift } else { Kind::Other });
+            if bd.is_short {
+                continue;
+            }
+            let old: Vec<char> = line_text(t, l).chars().collect();
+            let white = |i: usize| matches!(old.get(i), Some(' ' | '\t'));
+            let mut total = count * sw;
+            let new_line: String = if !left {
+                total += bd.pre_whitesp;
+                let mut ws_vcol = bd.start_vcol - bd.pre_whitesp;
+                let mut textstart = bd.textcol;
+                if bd.startspaces > 0 {
+                    if old.get(textstart).is_some_and(|c| c.len_utf8() == 1) {
+                        textstart += 1;
+                    } else {
+                        ws_vcol = 0;
+                        bd.startspaces = 0;
+                    }
+                }
+                let mut vcol = bd.start_vcol;
+                while white(textstart) {
+                    let incr = char_width(old[textstart], vcol, ts);
+                    textstart += 1;
+                    total += incr;
+                    vcol += incr;
+                }
+                let (tabs, spaces) = tabs_spaces(ws_vcol, ws_vcol + total, ts);
+                let col_pre = bd.pre_whitesp_c - usize::from(bd.startspaces != 0);
+                let textcol = bd.textcol - col_pre;
+                let mut s: String = old[..textcol].iter().collect();
+                s.push_str(&"\t".repeat(tabs));
+                s.push_str(&" ".repeat(spaces));
+                s.extend(&old[textstart..]);
+                s
+            } else {
+                let mut non_white = bd.textcol + usize::from(bd.startspaces > 0);
+                let mut non_white_col = bd.start_vcol;
+                while white(non_white) {
+                    non_white_col += char_width(old[non_white], non_white_col, ts);
+                    non_white += 1;
+                }
+                let block_space = non_white_col - a.start_vcol;
+                let destination = non_white_col - block_space.min(total);
+                let mut end = bd.textcol;
+                let mut width = bd.start_vcol;
+                if bd.startspaces > 0 {
+                    width -= bd.start_char_vcols;
+                }
+                while width < destination && end < old.len() {
+                    let incr = char_width(old[end], width, ts);
+                    if width + incr > destination {
+                        break;
+                    }
+                    width += incr;
+                    end += 1;
+                }
+                let fill = destination - width;
+                let mut s: String = old[..end].iter().collect();
+                s.push_str(&" ".repeat(fill));
+                s.extend(&old[non_white.min(old.len())..]);
+                s
+            };
+            if new_line != old.iter().collect::<String>() {
+                let from = t.line_to_char(l);
+                self.edit(t, from..from + old.len(), &new_line);
+            }
+        }
+        let last = a.bottom;
+        self.marks.op_start = Some(self.mk(t, start));
+        self.marks.op_end = Some(self.mk(t, (last, line_len(t, last).saturating_sub(1))));
+        // (Not moved back onto the line if it got shorter, as Vim.)
+        self.cursor = text::pos(t, start.0, start.1.min(line_len(t, start.0)));
+        self.keep_cursor = true;
+        self.want = None;
+        Ok(())
+    }
+
+    /// `p` (`P`: keeping the registers) over a block: the block goes, and
+    /// the register goes in its place (Vim's nv_put in visual mode).
+    pub(super) fn put_over_block(
+        &mut self,
+        t: &mut dyn TextModel,
+        a: &Area,
+        end_line: usize,
+        keep: bool,
+        count: usize,
+    ) -> R {
+        let reg = self.read_register().unwrap_or_default();
+        let name = self.reg_name;
+        // (Where the block starts, before it goes.)
+        let start_col = self.col_at_vcol(t, a.top, a.start_vcol);
+        self.reg_name = if keep { Some('_') } else { None };
+        self.delete_block(t, a)?;
+        self.reg_name = name;
+        let (line, col) = text::line_col(t, self.cursor);
+        // At a short line's end: after it.
+        let forward = col < start_col;
+        if let Some(width) = reg.block {
+            return self.put_block(t, &reg.text, width, !forward, count);
+        }
+        if reg.linewise {
+            // Lines: `p` after the line the selection ended on; `P` before
+            // the block's first (after it, if the cursor had to move back).
+            if keep {
+                return self.put_register(t, &reg, !forward, count);
+            }
+            self.cursor = text::pos(t, end_line.min(last_line(t)), 0);
+            return self.put_register(t, &reg, false, count);
+        }
+        if reg.text.contains('\n') {
+            return self.put_register(t, &reg, !forward, count);
+        }
+        // One line of text: into each line of the block.
+        let piece = reg.text.repeat(count);
+        let n = piece.chars().count();
+        if n == 0 {
+            return Ok(());
+        }
+        let col = col + usize::from(forward && line_len(t, line) > 0);
+        let vcol = self.vcols_shown(t, line, col).0;
+        let mut first_col = col;
+        for l in a.top..=a.bottom {
+            let c = if l == line {
+                col
+            } else {
+                let starts = self.shown_starts(t, l);
+                match starts.iter().position(|&v| v >= vcol) {
+                    Some(c) => c,
+                    None => continue,
+                }
+            };
+            if c > line_len(t, l) {
+                continue;
+            }
+            if l == line {
+                first_col = c;
+            }
+            let at = t.line_to_char(l) + c;
+            self.edit(t, at..at, &piece);
+        }
+        self.marks.op_start = Some(self.mk(t, (line, first_col)));
+        self.cursor = text::pos(t, line, first_col + n - 1);
+        self.marks.op_end = Some(self.mk(t, (line, first_col + n - 1)));
+        self.want = None;
+        Ok(())
+    }
+}
+
+impl Vim {
+    /// Vim saves a block's lines for undo: undo comes back to its top.
+    fn block_undo_top(&mut self, a: &Area) {
+        if let Some(g) = self.group.as_mut() {
+            g.top = Some(g.top.map_or(a.top, |l| l.min(a.top)));
         }
     }
 }

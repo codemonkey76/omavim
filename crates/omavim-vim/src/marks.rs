@@ -64,6 +64,9 @@ pub(super) enum EditHint {
     Spanned,
     /// `J`: as Spanned (and it moves marks as a join).
     Join,
+    /// Lines `.0..=.1` replaced by the text (a visual line put): marks on
+    /// them go.
+    ReplaceLines(usize, usize),
     /// Chars taken from the start of line `.0` (a comment leader, by `gq`):
     /// its marks move back `.1` bytes (Vim's mark_col_adjust).
     ColShift(usize, usize),
@@ -142,6 +145,16 @@ fn byte_to_col(t: &dyn TextModel, l: usize, b: usize) -> usize {
 }
 
 impl Marks {
+    /// Lines `first..=last` replaced by `count` others: marks on them go
+    /// (the jump list keeps them, on the first), and the ones after move.
+    pub fn lines_replaced(&mut self, first: usize, last: usize, count: usize) {
+        self.adjust(&LineChange::Replaced {
+            first,
+            last,
+            delta: count as isize - (last - first + 1) as isize,
+        });
+    }
+
     /// Move every mark's line by `f` (for `:m`, which moves lines as a
     /// block and their marks with them).
     pub fn map_lines(&mut self, f: impl Fn(usize) -> usize) {
@@ -336,6 +349,11 @@ impl Vim {
                 last: l2,
             }),
             Some(EditHint::Above) => Some(LineChange::Inserted { at: l1, count: k }),
+            Some(EditHint::ReplaceLines(first, last)) => Some(LineChange::Replaced {
+                first,
+                last,
+                delta: (k + 1) as isize - (last - first + 1) as isize,
+            }),
             Some(EditHint::ColShift(line, n)) => Some(LineChange::ColShift {
                 line,
                 col: 0,

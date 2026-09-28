@@ -237,6 +237,13 @@ BLOCK = [
     "<C-v>jjcX<Esc>", "<C-v>jjlcab<Esc>", "<C-v>jjCX<Esc>", "<C-v>jjlsX<Esc>", "<C-v>jjSX<Esc>", "<C-v>jjRX<Esc>",
     "<C-v>jjIX<Esc>`[", "<C-v>jjAX<Esc>`]", "<C-v>jjcX<Esc>`]", "<C-v>jjIa<CR>b<Esc>", "<C-v>jjIX<Esc>j.",
     "<C-v>jjAX<Esc>'^", "<C-v>jjI<BS>X<Esc>", "<C-v>jjlIX<Esc>", "<C-v>jjhIX<Esc>", "<C-v>jjhAX<Esc>",
+    "<C-v>jjlrx", "<C-v>jj$rx", "<C-v>jjl~", "<C-v>jjlU", "<C-v>jjlu", "<C-v>jjl>", "<C-v>jjl<", "<C-v>jjl2>",
+    "<C-v>jjl>u", "<C-v>jj$>", "<C-v>jjJ", "<C-v>jjgJ", "<C-v>jj:s/e/E/<CR>", "<C-v>jjl<C-a>", "<C-v>jjlg<C-a>",
+    "<C-v>jj$<C-x>", "<C-v>jjgq", "<C-v>jjlrx.", "<C-v>jjl>.", "yiw<C-v>jjlp", "yiw<C-v>jjlP", "yy<C-v>jjlp",
+    "yy<C-v>jjlP", "<C-v>jly<C-v>jjlp", "<C-v>jjl~u", "<C-v>jjlrxu", "y2l<C-v>jj$p", "<C-v>jjl>`]", "<C-v>jjlU`[",
+    # (Not vjA: Neovim's column for it there comes from an earlier command.)
+    "vjIX<Esc>", "VjIX<Esc>", "vIX<Esc>", "vlAX<Esc>", "vkAX<Esc>", "VkAX<Esc>", "vAX<Esc>",
+    "vjIX<Esc>j.", "vlPj", "vjP", "VP",
 ]
 
 # CTRL-A and CTRL-X, on a text of numbers, from several places.
@@ -258,6 +265,7 @@ NUMBERS = [
     "<C-a>`[", "<C-a>`]", "<C-a>j", "10<C-a>", "11<C-x>",
     "v<C-a>", "vj<C-a>", "Vj<C-a>", "Vjj<C-x>", "vjjg<C-a>", "Vjjjg<C-a>", "Vjjj2g<C-x>", "v$<C-a>",
     "ve<C-a>", "vl<C-x>", "Vj<C-a>.", "vjg<C-a>u", "Vjj<C-a>`[", "Vjj<C-a>`]", "v3l<C-a>",
+    "<C-v>jj<C-a>", "<C-v>jjlll<C-x>", "<C-v>jj$<C-a>", "<C-v>jjg<C-a>", "<C-v>jjll5<C-a>",
 ]
 
 # Macros: recording (what the register holds) and running them.

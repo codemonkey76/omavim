@@ -8,6 +8,14 @@ use super::{Beep, R, Vim};
 use crate::TextModel;
 use crate::text::{self, line_len, line_text};
 
+/// How far a visual CTRL-A reads a number.
+#[derive(Debug, Clone, Copy)]
+enum Read {
+    On,
+    ToEnd,
+    Selection,
+}
+
 /// A number changed on a line: `len` chars from `col` became `with`.
 struct Change {
     col: usize,
@@ -67,7 +75,7 @@ fn str2nr(s: &[char], maxlen: usize) -> (Option<char>, usize, u64, bool) {
 fn addsub_line(
     line: &[char],
     cursor: usize,
-    visual: Option<(usize, usize)>,
+    visual: Option<(usize, Read)>,
     sub: bool,
     amount: u64,
     hexupper: &mut bool,
@@ -131,11 +139,12 @@ fn addsub_line(
                 negative = true;
                 was_positive = false;
             }
-            // (Read no further than the selection, unless it's to the end.)
-            maxlen = if maxlen_v == usize::MAX {
-                usize::MAX
-            } else {
-                length
+            // How far the number may be read: on (a line selection), to the
+            // line's end (after `$`), or the selection's width.
+            maxlen = match maxlen_v {
+                Read::On => usize::MAX,
+                Read::ToEnd => linelen - col,
+                Read::Selection => length,
             };
         }
     }
@@ -266,6 +275,7 @@ impl Vim {
         (last, end_col): (usize, usize),
         lines: bool,
         to_end: bool,
+        block: Option<&super::block::Area>,
     ) -> R {
         self.begin_group();
         if let Some(g) = self.group.as_mut() {
@@ -276,7 +286,10 @@ impl Vim {
         let mut last_end = None;
         for line in first..=last {
             let len = line_len(t, line);
-            let (col, length) = if lines {
+            let (col, length) = if let Some(a) = block {
+                let bd = self.block_prep(t, a, line, false, super::block::Kind::Other);
+                (bd.textcol, bd.textlen)
+            } else if lines {
                 (0, len)
             } else {
                 let col = if line == first { start_col } else { 0 };
@@ -287,7 +300,13 @@ impl Vim {
                 };
                 (col, length.max(0) as usize)
             };
-            let maxlen = if lines || to_end { usize::MAX } else { length };
+            let maxlen = if lines {
+                Read::On
+            } else if to_end {
+                Read::ToEnd
+            } else {
+                Read::Selection
+            };
             let chars: Vec<char> = line_text(t, line).chars().collect();
             let mut upper = self.hexupper;
             // (A beep here doesn't stop the other lines.)
