@@ -73,6 +73,13 @@ pub trait TextModel {
         let _ = (kind, inner, near);
         Vec::new()
     }
+
+    /// The string or comment (or code, in prose) a position is in, from the
+    /// syntax tree: `%` matches a bracket only with one in the same place.
+    fn syntax_region(&self, pos: Pos) -> Option<Range<Pos>> {
+        let _ = pos;
+        None
+    }
 }
 
 /// The modes Omavim knows, as in Vim.

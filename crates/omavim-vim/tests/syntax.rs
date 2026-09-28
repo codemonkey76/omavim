@@ -10,6 +10,8 @@ struct Doc {
     rope: Rope,
     /// (kind, inner, range).
     objects: Vec<(SyntaxObject, bool, Range<Pos>)>,
+    /// Strings and comments.
+    regions: Vec<Range<Pos>>,
 }
 
 impl TextModel for Doc {
@@ -42,6 +44,9 @@ impl TextModel for Doc {
             .map(|o| o.2.clone())
             .collect()
     }
+    fn syntax_region(&self, pos: Pos) -> Option<Range<Pos>> {
+        self.regions.iter().find(|r| r.contains(&pos)).cloned()
+    }
 }
 
 /// The char range of the first `what` in `text`.
@@ -73,6 +78,7 @@ fn code() -> Doc {
             (Parameter, true, find(CODE, "b: u32")),
             (Parameter, false, find(CODE, ", b: u32")),
         ],
+        regions: Vec::new(),
     }
 }
 
@@ -142,7 +148,37 @@ fn visual_grows_to_the_next_one_out() {
             (SyntaxObject::Emphasis, false, outer.clone()),
             (SyntaxObject::Emphasis, false, inner.clone()),
         ],
+        regions: Vec::new(),
     };
     run(&mut doc, find(text, "c").start, "va*a*d");
     assert_eq!(doc.rope.to_string(), "a  e\n");
+}
+
+#[test]
+fn percent_skips_brackets_in_strings_and_comments() {
+    let text = "f(\")\", x) // (\ng(\"(\", \")\")\n";
+    let last = {
+        let b = text.rfind("\")\"").unwrap();
+        let start = text[..b].chars().count();
+        start..start + 3
+    };
+    let doc = || Doc {
+        rope: Rope::from_str(text),
+        objects: Vec::new(),
+        regions: vec![
+            find(text, "\")\""),
+            find(text, "// (\n"),
+            find(text, "\"(\""),
+            last.clone(),
+        ],
+    };
+    let vim = run(&mut doc(), 1, "%");
+    assert_eq!(vim.cursor(), find(text, ", x)").end - 1);
+    // In a string, only the string's own: there's none, so it stays.
+    let at = find(text, "\"(\"").start + 1;
+    let vim = run(&mut doc(), at, "%");
+    assert_eq!(vim.cursor(), at);
+    let g = find(text, "g(").start + 1;
+    let vim = run(&mut doc(), g, "%");
+    assert_eq!(vim.cursor(), text.chars().count() - 2);
 }

@@ -468,6 +468,9 @@ pub struct Vim {
     command: Option<String>,
     pub shiftwidth: usize,
     pub tabstop: usize,
+    /// 'filetype', and whether `:set` changed it since the app last looked.
+    filetype: String,
+    filetype_set: bool,
     /// The text area: cells in a row (0: unknown, no wrapping) and rows.
     width: usize,
     height: usize,
@@ -547,6 +550,8 @@ impl Vim {
             command: None,
             shiftwidth: 8,
             tabstop: 8,
+            filetype: String::new(),
+            filetype_set: false,
             width: 0,
             height: 0,
             top: (0, 0),
@@ -853,6 +858,16 @@ impl Vim {
     /// mode): the app refreshes `"+` and `"*` from the desktop then.
     pub fn naming_register(&self) -> bool {
         self.ctrl_r || self.pending.last() == Some(&Key::Char('"'))
+    }
+
+    /// 'filetype': the app sets it from the file's name.
+    pub fn set_filetype(&mut self, filetype: &str) {
+        self.filetype = filetype.to_string();
+    }
+
+    /// 'filetype', when `:set filetype=` changed it since the last call.
+    pub fn take_filetype(&mut self) -> Option<String> {
+        std::mem::take(&mut self.filetype_set).then(|| self.filetype.clone())
     }
 
     /// The file's name, for `"%`.

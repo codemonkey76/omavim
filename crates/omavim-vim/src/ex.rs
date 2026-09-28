@@ -856,6 +856,16 @@ impl Vim {
             let Some(full) = full else {
                 return err(self, &format!("E518: Unknown option: {name}"));
             };
+            if full == "filetype" {
+                match value {
+                    Some(v) if !query => {
+                        self.filetype = v.to_string();
+                        self.filetype_set = true;
+                    }
+                    _ => shown.push(format!("  filetype={}", self.filetype)),
+                }
+                continue;
+            }
             if bool_option(full) {
                 let cur = self.flag(full);
                 if query {
@@ -933,12 +943,13 @@ fn canonical(name: &str) -> Option<&'static str> {
         "hlsearch" | "hls" => "hlsearch",
         "tabstop" | "ts" => "tabstop",
         "shiftwidth" | "sw" => "shiftwidth",
+        "filetype" | "ft" => "filetype",
         _ => return None,
     })
 }
 
 fn bool_option(name: &str) -> bool {
-    canonical(name).is_some_and(|n| !matches!(n, "tabstop" | "shiftwidth"))
+    canonical(name).is_some_and(|n| !matches!(n, "tabstop" | "shiftwidth" | "filetype"))
 }
 
 /// A `:d`/`:y` argument: a register name, then a count.

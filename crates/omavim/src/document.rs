@@ -57,6 +57,11 @@ impl Document {
         self.set_language(lang);
     }
 
+    /// Its language's name, as 'filetype' has it ("" for plain text).
+    pub fn filetype(&self) -> &'static str {
+        self.syntax.as_ref().map_or("", |s| s.lang().name())
+    }
+
     /// Highlight as this language (`None`: plain text).
     pub fn set_language(&mut self, lang: Option<Lang>) {
         if self.syntax.as_ref().map(Syntax::lang) == lang {
@@ -166,6 +171,15 @@ impl omavim_vim::TextModel for Recorder<'_> {
             s.edit(&edit);
             self.stale.set(true);
         }
+    }
+
+    fn syntax_region(&self, pos: usize) -> Option<Range<usize>> {
+        self.parse();
+        let syntax = self.syntax.borrow();
+        let s = syntax.as_ref()?;
+        let r = s.region(self.text.char_to_byte(pos.min(self.text.len_chars())))?;
+        let len = self.text.len_bytes();
+        Some(self.text.byte_to_char(r.start.min(len))..self.text.byte_to_char(r.end.min(len)))
     }
 
     fn syntax_objects(&self, kind: SyntaxObject, inner: bool, near: usize) -> Vec<Range<usize>> {

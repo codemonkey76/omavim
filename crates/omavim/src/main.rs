@@ -53,7 +53,8 @@ type Highlights = Vec<(std::ops::Range<usize>, colors::Style)>;
 
 #[derive(Default)]
 struct HighlightCache {
-    key: Option<(u64, usize, usize)>,
+    /// The text's version, its language, and the lines.
+    key: Option<(u64, omavim_syntax::Lang, usize, usize)>,
     highlights: std::rc::Rc<Highlights>,
 }
 
@@ -97,6 +98,7 @@ impl App {
         // For writing: j and k go by screen line, as gj and gk.
         vim.display_lines = true;
         vim.set_file_name(doc.path.as_deref().and_then(|p| p.to_str()));
+        vim.set_filetype(doc.filetype());
         Self {
             doc,
             vim,
@@ -157,6 +159,7 @@ impl App {
                 self.vim = self.vim.for_other_text();
                 self.vim
                     .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
+                self.vim.set_filetype(self.doc.filetype());
                 self.status = None;
             }
             Message::Focused => return read_clipboards(),
@@ -175,6 +178,7 @@ impl App {
                 self.doc.path = Some(path);
                 // (A new name may be a new language.)
                 self.doc.detect_language();
+                self.vim.set_filetype(self.doc.filetype());
                 self.doc.dirty = false;
                 if self.quit_after_save {
                     return iced::exit();
@@ -210,6 +214,12 @@ impl App {
             }
         }
         drop(text);
+        // `:set filetype=`: highlight as that language (plain text for one
+        // Omavim doesn't know, as Vim keeps the name).
+        if let Some(filetype) = self.vim.take_filetype() {
+            self.doc
+                .set_language(omavim_syntax::Lang::from_name(&filetype));
+        }
         if self.vim.changes() != before {
             self.doc.dirty = true;
             self.status = None;
@@ -249,7 +259,7 @@ impl App {
         let first = self.vim.top().0.min(last);
         // (A line takes a row at least.)
         let count = self.vim.screen_height().max(1);
-        let key = (self.vim.changes(), first, count);
+        let key = (self.vim.changes(), syntax.lang(), first, count);
         if let Ok(cache) = self.highlight_cache.try_borrow()
             && cache.key == Some(key)
         {
@@ -361,6 +371,7 @@ impl App {
         self.vim = self.vim.for_other_text();
         self.vim
             .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
+        self.vim.set_filetype(self.doc.filetype());
     }
 
     /// A file name typed after `:w`: `~/` is home, a relative name sits
@@ -633,6 +644,55 @@ mod tests {
         let a = app(Document::open("/home/me/notes/a.md".into(), ""));
         assert_eq!(a.resolve("b.md"), PathBuf::from("/home/me/notes/b.md"));
         assert_eq!(a.resolve("/tmp/c.md"), PathBuf::from("/tmp/c.md"));
+    }
+
+    /// Type keys as text (Escape as `<Esc>`, Enter as `<CR>`).
+    fn typed(a: &mut App, keys: &str) {
+        let mut rest = keys;
+        while let Some(c) = rest.chars().next() {
+            let (key, text, len) = if let Some(r) = rest.strip_prefix("<Esc>") {
+                (IcedKey::Named(Named::Escape), None, rest.len() - r.len())
+            } else if let Some(r) = rest.strip_prefix("<CR>") {
+                (IcedKey::Named(Named::Enter), None, rest.len() - r.len())
+            } else {
+                let s = c.to_string();
+                (IcedKey::Character(s.as_str().into()), Some(s), c.len_utf8())
+            };
+            let _ = a.key(press(key, Modifiers::empty(), text.as_deref()));
+            rest = &rest[len..];
+        }
+    }
+
+    #[test]
+    fn syntax_text_objects_follow_the_edits() {
+        let mut a = app(Document::open(
+            "/tmp/a.rs".into(),
+            "fn a() {\n    one();\n}\n\nfn b(x: u8) {\n    two();\n}\n",
+        ));
+        // An edit, then a text object that needs the tree to know of it.
+        typed(&mut a, "Ofn z() {}<Esc>");
+        typed(&mut a, "G]f[fdaf");
+        assert_eq!(
+            a.doc.text.to_string(),
+            "fn z() {}\nfn a() {\n    one();\n}\n"
+        );
+        // `fn z` has nothing inside: the next function's.
+        typed(&mut a, "ggcifzero<Esc>");
+        assert_eq!(a.doc.text.to_string(), "fn z() {}\nfn a() {\n    zero\n}\n");
+    }
+
+    #[test]
+    fn set_filetype_changes_the_language() {
+        let mut a = app(Document::open("/tmp/notes.txt".into(), "fn a() {}\n"));
+        assert!(a.doc.syntax.is_none());
+        typed(&mut a, ":set ft=rust<CR>");
+        assert_eq!(a.doc.filetype(), "rust");
+        typed(&mut a, "dif");
+        assert_eq!(a.doc.text.to_string(), "fn a() {}");
+        typed(&mut a, ":set ft?<CR>");
+        assert_eq!(a.status.as_deref(), Some("  filetype=rust"));
+        typed(&mut a, ":set ft=nonesuch<CR>");
+        assert!(a.doc.syntax.is_none());
     }
 
     #[test]

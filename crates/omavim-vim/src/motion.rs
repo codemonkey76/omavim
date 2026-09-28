@@ -283,6 +283,9 @@ pub fn match_pair(t: &dyn TextModel, c: Cur) -> Option<Cur> {
     };
     let mut depth = 0usize;
     let mut p = Cur::new(c.line, col);
+    // Brackets in strings and comments count only among themselves.
+    let region = |p: Cur| t.syntax_region(crate::text::pos(t, p.line, p.col));
+    let home = region(p);
     loop {
         let r = if forward {
             inc(t, &mut p)
@@ -293,6 +296,7 @@ pub fn match_pair(t: &dyn TextModel, c: Cur) -> Option<Cur> {
             return None;
         }
         match char_at(t, p.line, p.col) {
+            Some(ch) if (ch == open || ch == want) && region(p) != home => {}
             Some(ch) if ch == open => depth += 1,
             Some(ch) if ch == want => {
                 if depth == 0 {

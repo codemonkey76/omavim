@@ -85,3 +85,16 @@ fn code_in_markdown_where_the_cursor_is() {
     );
     assert!(objects(Lang::Markdown, MD, "parameter", true, "Text").is_empty());
 }
+
+#[test]
+fn strings_and_comments() {
+    let text = "fn f() { let s = \"(\"; } // (x\n";
+    let rope = Rope::from_str(text);
+    let mut s = Syntax::new(Lang::Rust);
+    s.parse(&rope);
+    let at = |what: &str| s.region(text.find(what).unwrap()).map(|r| &text[r]);
+    assert_eq!(at("(\";"), Some("\"(\""));
+    assert_eq!(at("\"(\""), Some("\"(\""));
+    assert_eq!(at("(x"), Some("// (x"));
+    assert_eq!(at("let"), None);
+}

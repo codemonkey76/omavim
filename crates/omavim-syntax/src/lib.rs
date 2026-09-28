@@ -82,6 +82,36 @@ impl Syntax {
         out
     }
 
+    /// The string or comment (or code, in Markdown) around a byte: the
+    /// outermost, so a string's quotes and what's between them are in the
+    /// same one.
+    pub fn region(&self, byte: usize) -> Option<Range<usize>> {
+        let tree = self.tree.as_ref()?;
+        let mut node = tree.root_node().descendant_for_byte_range(byte, byte + 1)?;
+        let mut found = None;
+        loop {
+            let kind = node.kind();
+            if [
+                "string",
+                "comment",
+                "char_literal",
+                "rune_literal",
+                "heredoc",
+                "code_span",
+                "code_block",
+            ]
+            .iter()
+            .any(|k| kind.contains(k))
+            {
+                found = Some(node.byte_range());
+            }
+            match node.parent() {
+                Some(p) => node = p,
+                None => return found,
+            }
+        }
+    }
+
     /// Parse the text (again, after edits).
     pub fn parse(&mut self, text: &Rope) {
         self.tree = parse_rope(&mut self.parser, text, self.tree.as_ref());
