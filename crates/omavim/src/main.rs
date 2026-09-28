@@ -3,6 +3,7 @@
 mod colors;
 mod config;
 mod document;
+mod drafts;
 mod editor;
 mod help;
 mod portal;
@@ -52,6 +53,12 @@ struct App {
     prompt: Option<Prompt>,
     /// A save is being written.
     writing: bool,
+    /// Where drafts go (None: nowhere, as in tests).
+    drafts_dir: Option<PathBuf>,
+    /// The text changed since the draft was written: when.
+    draft_due: Option<std::time::Instant>,
+    /// The file this Omavim last wrote a draft of, to remove it.
+    drafted: Option<Option<PathBuf>>,
     /// A parse is running on another thread.
     parsing: bool,
     config: Config,
@@ -96,6 +103,10 @@ enum Message {
     Parsed(Handoff<omavim_syntax::Parsed>),
     /// The window's close button (or the desktop's close key).
     CloseRequested,
+    /// The window went to the back.
+    Unfocused,
+    /// Time to see if typing's stopped, to write a draft.
+    DraftTick,
 }
 
 /// A question for a key's answer.
@@ -107,6 +118,9 @@ enum Prompt {
     Changed(String),
     /// The file changed on disk since it was read: write over it anyway?
     Overwrite(PathBuf),
+    /// A draft left by an Omavim that closed without saving it: take it
+    /// back? (And the draft files, to remove after.)
+    Recover(drafts::Draft, Vec<PathBuf>),
 }
 
 /// What to do after dealing with unsaved changes.
@@ -168,7 +182,7 @@ impl App {
         vim.display_lines = true;
         vim.set_file_name(doc.path.as_deref().and_then(|p| p.to_str()));
         vim.set_filetype(doc.filetype());
-        Self {
+        let mut app = Self {
             doc,
             vim,
             scheme: Scheme::default(),
@@ -177,12 +191,18 @@ impl App {
             after_save: None,
             prompt: None,
             writing: false,
+            drafts_dir: None,
+            draft_due: None,
+            drafted: None,
             parsing: false,
             config,
             leader_pending: false,
             help: false,
             highlight_cache: Default::default(),
-        }
+        };
+        app.drafts_dir = drafts::dir();
+        app.offer_draft();
+        app
     }
 
     fn set_colors(&mut self, colors: Colors) {
@@ -205,12 +225,20 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
+        let drafting = match self.draft_due {
+            Some(_) => {
+                iced::time::every(std::time::Duration::from_millis(500)).map(|_| Message::DraftTick)
+            }
+            None => Subscription::none(),
+        };
         Subscription::batch([
+            drafting,
             Subscription::run(portal::color_scheme).map(Message::Scheme),
             // (A new Omarchy theme swaps its colours file in: cheap to check.)
             iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::Tick),
             iced::event::listen_with(|event, _, _| match event {
                 iced::Event::Window(iced::window::Event::Focused) => Some(Message::Focused),
+                iced::Event::Window(iced::window::Event::Unfocused) => Some(Message::Unfocused),
                 iced::Event::Window(iced::window::Event::CloseRequested) => {
                     Some(Message::CloseRequested)
                 }
@@ -241,13 +269,7 @@ impl App {
                 return self.check_disk();
             }
             Message::Opened(Ok(Some((path, contents)))) => {
-                self.doc = Document::open(path, &contents);
-                *self.highlight_cache.borrow_mut() = HighlightCache::default();
-                self.vim = self.vim.for_other_text();
-                self.vim
-                    .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
-                self.vim.set_filetype(self.doc.filetype());
-                self.status = None;
+                self.switch_to(Document::open(path, &contents), None);
             }
             Message::Focused => return Task::batch([read_clipboards(), self.check_disk()]),
             Message::Clipboard(register, text) => {
@@ -261,6 +283,8 @@ impl App {
             Message::SaveTo(Ok(Some(path))) => return self.write(path),
             Message::Saved(Ok(path)) => {
                 self.writing = false;
+                self.remove_draft();
+                self.draft_due = None;
                 self.doc.disk = document::disk_stamp(&path);
                 self.status = Some(format!("Saved {}", path.display()));
                 self.vim.set_file_name(path.to_str());
@@ -279,6 +303,19 @@ impl App {
                 self.status = Some(e)
             }
             Message::CloseRequested => return self.leave(Then::Quit),
+            Message::Unfocused => {
+                if self.draft_due.is_some() {
+                    self.write_draft();
+                }
+            }
+            Message::DraftTick => {
+                if self
+                    .draft_due
+                    .is_some_and(|t| t.elapsed() >= std::time::Duration::from_millis(1500))
+                {
+                    self.write_draft();
+                }
+            }
         }
         Task::none()
     }
@@ -410,6 +447,7 @@ impl App {
         if self.vim.changes() != before {
             self.doc.dirty = true;
             self.status = None;
+            self.draft_due = Some(std::time::Instant::now());
         }
         // "search hit BOTTOM, continuing at TOP", "E486: Pattern not found".
         if let Some(message) = self.vim.take_message() {
@@ -572,8 +610,8 @@ impl App {
                 self.status = Some("E37: No write since last change (add ! to override)".into());
                 Task::none()
             }
-            "q" | "quit" | "q!" | "quit!" | "qa" | "qa!" | "clo" | "close" => iced::exit(),
-            "x" | "xit" | "exi" | "exit" if !self.doc.dirty => iced::exit(),
+            "q" | "quit" | "q!" | "quit!" | "qa" | "qa!" | "clo" | "close" => self.quit(),
+            "x" | "xit" | "exi" | "exit" if !self.doc.dirty => self.quit(),
             "wq" | "x" | "xit" | "exi" | "exit" => {
                 self.after_save = Some(Then::Quit);
                 match arg {
@@ -613,6 +651,14 @@ impl App {
                 return;
             }
         };
+        self.switch_to(doc, status);
+    }
+
+    /// Another document in place of this one (whose changes have been saved,
+    /// or let go, by now).
+    fn switch_to(&mut self, doc: Document, status: Option<String>) {
+        self.remove_draft();
+        self.draft_due = None;
         self.doc = doc;
         *self.highlight_cache.borrow_mut() = HighlightCache::default();
         self.status = status;
@@ -620,6 +666,69 @@ impl App {
         self.vim
             .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
         self.vim.set_filetype(self.doc.filetype());
+        self.offer_draft();
+    }
+
+    /// Close cleanly: this Omavim's draft goes (the changes were saved, or
+    /// let go).
+    fn quit(&mut self) -> Task<Message> {
+        self.remove_draft();
+        iced::exit()
+    }
+
+    /// Write the unsaved text to a draft (or remove it, with nothing unsaved).
+    fn write_draft(&mut self) {
+        self.draft_due = None;
+        let Some(dir) = self.drafts_dir.clone() else {
+            return;
+        };
+        if !self.doc.dirty {
+            self.remove_draft();
+            return;
+        }
+        let draft = drafts::Draft {
+            path: self.doc.path.clone(),
+            pid: std::process::id(),
+            written: drafts::now(),
+            final_newline: self.doc.final_newline,
+            text: self.doc.text.to_string(),
+        };
+        // A new name since the last draft: that one goes.
+        if self.drafted.as_ref().is_some_and(|p| *p != draft.path) {
+            self.remove_draft();
+        }
+        match drafts::write(&dir, &draft) {
+            Ok(()) => self.drafted = Some(draft.path),
+            Err(e) => self.status = Some(format!("Couldn't write a draft: {e}")),
+        }
+    }
+
+    fn remove_draft(&mut self) {
+        if let (Some(dir), Some(path)) = (&self.drafts_dir, self.drafted.take()) {
+            drafts::remove(dir, path.as_deref(), std::process::id());
+        }
+    }
+
+    /// A draft of this file that an Omavim left behind: offer it back (or
+    /// just remove it, if it's what the file has anyway).
+    fn offer_draft(&mut self) {
+        let Some(dir) = &self.drafts_dir else {
+            return;
+        };
+        let found = drafts::orphans(dir, self.doc.path.as_deref());
+        let files: Vec<PathBuf> = found.iter().map(|(f, _)| f.clone()).collect();
+        let Some((_, draft)) = found.into_iter().next() else {
+            return;
+        };
+        let same = draft.text == self.doc.text.to_string()
+            && draft.final_newline == self.doc.final_newline;
+        if same {
+            for f in files {
+                let _ = std::fs::remove_file(f);
+            }
+            return;
+        }
+        self.prompt = Some(Prompt::Recover(draft, files));
     }
 
     /// A file name typed after `:w`: `~/` is home, a relative name sits
@@ -728,6 +837,8 @@ impl App {
         self.vim.reload(&mut text, body);
         self.doc.final_newline = final_newline;
         self.doc.dirty = false;
+        // (Nothing unsaved now: the draft goes.)
+        self.draft_due = Some(std::time::Instant::now());
         self.parse_later()
     }
 
@@ -747,7 +858,7 @@ impl App {
 
     fn go(&mut self, then: Then) -> Task<Message> {
         match then {
-            Then::Quit => iced::exit(),
+            Then::Quit => self.quit(),
             Then::Open => Task::perform(portal::open(), Message::Opened),
             Then::Edit(file) => {
                 self.edit(file.as_deref(), true);
@@ -786,6 +897,25 @@ impl App {
                     }
                     _ => Task::none(),
                 };
+            }
+            Some(Prompt::Recover(draft, files)) => {
+                let task = match keys {
+                    [Key::Char('r' | 'R') | Key::Enter] => {
+                        let mut text = Recorder::new(&mut self.doc);
+                        self.vim.reload(&mut text, &draft.text);
+                        self.doc.final_newline = draft.final_newline;
+                        self.doc.dirty = true;
+                        self.draft_due = Some(std::time::Instant::now());
+                        self.parse_later()
+                    }
+                    [Key::Char('d' | 'D')] => Task::none(),
+                    _ => return Task::none(),
+                };
+                self.prompt = None;
+                for f in files {
+                    let _ = std::fs::remove_file(f);
+                }
+                return task;
             }
             None => return Task::none(),
         };
@@ -853,6 +983,12 @@ impl App {
                     "W12: Warning: File \"{}\" has changed and the buffer was changed \
                      in Omavim as well  [O]K, (L)oad File",
                     self.doc.name()
+                ),
+                Some(Prompt::Recover(draft, _)) => format!(
+                    "Found unsaved changes to \"{}\" from {}, left when Omavim closed \
+                     without saving them:  [R]ecover, (D)elete",
+                    self.doc.name(),
+                    ago(draft.written)
                 ),
                 Some(Prompt::Overwrite(_)) => "WARNING: The file has been changed since \
                                                reading it!!! Do you really want to write \
@@ -975,6 +1111,18 @@ impl App {
     }
 }
 
+/// How long ago a time was, roughly.
+fn ago(then: u64) -> String {
+    let s = drafts::now().saturating_sub(then);
+    let (n, unit) = match s {
+        0..60 => return "just now".into(),
+        60..3600 => (s / 60, "minute"),
+        3600..86400 => (s / 3600, "hour"),
+        _ => (s / 86400, "day"),
+    };
+    format!("{n} {unit}{} ago", if n == 1 { "" } else { "s" })
+}
+
 /// Fullscreen, or back to a window.
 fn toggle_fullscreen() -> Task<Message> {
     use iced::window;
@@ -1093,6 +1241,9 @@ mod tests {
             after_save: None,
             prompt: None,
             writing: false,
+            drafts_dir: None,
+            draft_due: None,
+            drafted: None,
             parsing: false,
             config: Config::default(),
             leader_pending: false,
@@ -1311,6 +1462,62 @@ mod tests {
         let _ = a.check_disk();
         assert!(a.status.as_deref().is_some_and(|s| s.starts_with("E211")));
         assert_eq!(a.doc.text.to_string(), "one");
+    }
+
+    #[test]
+    fn a_draft_is_written_and_goes_on_save() {
+        let path = scratch("draft", "one\n");
+        let dir = path.parent().unwrap().join("drafts");
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        a.drafts_dir = Some(dir.clone());
+        typed(&mut a, "Atwo<Esc>");
+        assert!(a.draft_due.is_some());
+        let _ = a.update(Message::Unfocused);
+        let mine: Vec<_> = std::fs::read_dir(&dir).unwrap().flatten().collect();
+        assert_eq!(mine.len(), 1);
+        let draft: drafts::Draft =
+            toml::from_str(&std::fs::read_to_string(mine[0].path()).unwrap()).unwrap();
+        assert_eq!(draft.text, "onetwo");
+        assert_eq!(draft.pid, std::process::id());
+        let _ = a.update(Message::Saved(Ok(path.clone())));
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn a_draft_left_behind_is_offered_back() {
+        let path = scratch("recover", "one\n");
+        let dir = path.parent().unwrap().join("drafts");
+        let left = |text: &str| drafts::Draft {
+            path: Some(path.clone()),
+            // (Past the kernel's limit: never a running process.)
+            pid: 4_000_001,
+            written: drafts::now() - 300,
+            final_newline: true,
+            text: text.into(),
+        };
+        drafts::write(&dir, &left("one\nmore")).unwrap();
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        a.drafts_dir = Some(dir.clone());
+        a.offer_draft();
+        assert!(matches!(a.prompt, Some(Prompt::Recover(..))));
+        typed(&mut a, "x");
+        assert!(a.prompt.is_some(), "only an answer ends it");
+        typed(&mut a, "r");
+        assert_eq!(a.doc.text.to_string(), "one\nmore");
+        assert!(a.doc.dirty);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "taken back");
+        // `u` is the file as it was.
+        typed(&mut a, "u");
+        assert_eq!(a.doc.text.to_string(), "one");
+        // One that's the same as the file just goes.
+        drafts::write(&dir, &left("one")).unwrap();
+        let mut a = app(Document::open(path.clone(), "one\n"));
+        a.drafts_dir = Some(dir.clone());
+        a.offer_draft();
+        assert_eq!(a.prompt, None);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
     }
 
     #[test]
