@@ -35,6 +35,16 @@ pub enum SyntaxObject {
     Code,
 }
 
+/// How a language indents new lines: one `unit` in after an open bracket
+/// (and after a `:` ending the line, in Python and YAML), and back out for a
+/// closing bracket typed first on a line.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Indenting {
+    /// A level of indent: a tab, or so many spaces.
+    pub unit: String,
+    pub colon: bool,
+}
+
 /// What the engine needs from a text buffer.
 pub trait TextModel {
     /// Chars in the whole text.
@@ -72,6 +82,11 @@ pub trait TextModel {
     fn syntax_objects(&self, kind: SyntaxObject, inner: bool, near: Pos) -> Vec<Range<Pos>> {
         let _ = (kind, inner, near);
         Vec::new()
+    }
+
+    /// How to indent new lines, for code (else autoindent, as Vim's).
+    fn smart_indent(&self) -> Option<Indenting> {
+        None
     }
 
     /// The string or comment (or code, in prose) a position is in, from the

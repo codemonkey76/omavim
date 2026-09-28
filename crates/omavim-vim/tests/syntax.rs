@@ -2,7 +2,7 @@
 //! objects are (the app's comes from tree-sitter).
 
 use omavim_vim::key::parse;
-use omavim_vim::{Pos, SyntaxObject, TextModel, Vim};
+use omavim_vim::{Indenting, Pos, SyntaxObject, TextModel, Vim};
 use ropey::Rope;
 use std::ops::Range;
 
@@ -12,6 +12,7 @@ struct Doc {
     objects: Vec<(SyntaxObject, bool, Range<Pos>)>,
     /// Strings and comments.
     regions: Vec<Range<Pos>>,
+    indenting: Option<Indenting>,
 }
 
 impl TextModel for Doc {
@@ -43,6 +44,9 @@ impl TextModel for Doc {
             .filter(|o| o.0 == kind && o.1 == inner)
             .map(|o| o.2.clone())
             .collect()
+    }
+    fn smart_indent(&self) -> Option<Indenting> {
+        self.indenting.clone()
     }
     fn syntax_region(&self, pos: Pos) -> Option<Range<Pos>> {
         self.regions.iter().find(|r| r.contains(&pos)).cloned()
@@ -79,6 +83,7 @@ fn code() -> Doc {
             (Parameter, false, find(CODE, ", b: u32")),
         ],
         regions: Vec::new(),
+        indenting: None,
     }
 }
 
@@ -149,6 +154,7 @@ fn visual_grows_to_the_next_one_out() {
             (SyntaxObject::Emphasis, false, inner.clone()),
         ],
         regions: Vec::new(),
+        indenting: None,
     };
     run(&mut doc, find(text, "c").start, "va*a*d");
     assert_eq!(doc.rope.to_string(), "a  e\n");
@@ -171,6 +177,7 @@ fn percent_skips_brackets_in_strings_and_comments() {
             find(text, "\"(\""),
             last.clone(),
         ],
+        indenting: None,
     };
     let vim = run(&mut doc(), 1, "%");
     assert_eq!(vim.cursor(), find(text, ", x)").end - 1);
@@ -181,4 +188,66 @@ fn percent_skips_brackets_in_strings_and_comments() {
     let g = find(text, "g(").start + 1;
     let vim = run(&mut doc(), g, "%");
     assert_eq!(vim.cursor(), text.chars().count() - 2);
+}
+
+fn indenting(text: &str, colon: bool) -> Doc {
+    Doc {
+        rope: Rope::from_str(text),
+        objects: Vec::new(),
+        regions: Vec::new(),
+        indenting: Some(Indenting {
+            unit: "    ".into(),
+            colon,
+        }),
+    }
+}
+
+#[test]
+fn a_new_line_in_a_block_goes_in() {
+    let mut doc = indenting("fn a() {", false);
+    run(&mut doc, 0, "A<CR>x<Esc>");
+    assert_eq!(doc.rope.to_string(), "fn a() {\n    x");
+    let mut doc = indenting("  f(", false);
+    run(&mut doc, 0, "ox<Esc>");
+    assert_eq!(doc.rope.to_string(), "  f(\n      x");
+    let mut doc = indenting("if a:", true);
+    run(&mut doc, 0, "ox<Esc>");
+    assert_eq!(doc.rope.to_string(), "if a:\n    x");
+    // Not a `:` where it doesn't open a block.
+    let mut doc = indenting("a:", false);
+    run(&mut doc, 0, "ox<Esc>");
+    assert_eq!(doc.rope.to_string(), "a:\nx");
+}
+
+#[test]
+fn enter_between_brackets_puts_the_close_on_its_own_line() {
+    let mut doc = indenting("  x = {}", false);
+    run(&mut doc, 0, "f}i<CR>y<Esc>");
+    assert_eq!(doc.rope.to_string(), "  x = {\n      y\n  }");
+}
+
+#[test]
+fn above_a_close_goes_in() {
+    let mut doc = indenting("f {\n}", false);
+    run(&mut doc, 4, "Ox<Esc>");
+    assert_eq!(doc.rope.to_string(), "f {\n    x\n}");
+}
+
+#[test]
+fn a_close_typed_first_goes_back_out() {
+    let mut doc = indenting("  f {\n      x", false);
+    run(&mut doc, 8, "o}<Esc>");
+    assert_eq!(doc.rope.to_string(), "  f {\n      x\n  }");
+}
+
+#[test]
+fn a_bracket_in_a_string_opens_nothing() {
+    let mut doc = indenting("s = \"{\"", false);
+    doc.regions.push(4..7);
+    run(&mut doc, 0, "A<CR>x<Esc>");
+    assert_eq!(doc.rope.to_string(), "s = \"{\"\nx");
+    let mut doc = indenting("s = \"{", false);
+    doc.regions.push(4..6);
+    run(&mut doc, 0, "ox<Esc>");
+    assert_eq!(doc.rope.to_string(), "s = \"{\nx");
 }

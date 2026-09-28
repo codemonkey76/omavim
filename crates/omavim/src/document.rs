@@ -2,7 +2,7 @@
 //! changes. The cursor and all editing belong to the Vim engine.
 
 use omavim_syntax::{InputEdit, Lang, Point, Syntax};
-use omavim_vim::SyntaxObject;
+use omavim_vim::{Indenting, SyntaxObject};
 use ropey::Rope;
 use std::cell::{Cell, RefCell};
 use std::ops::Range;
@@ -127,6 +127,50 @@ impl Drop for Recorder<'_> {
     }
 }
 
+/// How far code in the text is indented a level: a tab, or the step
+/// between lines' indents seen most, else the language's usual.
+fn indent_unit(text: &Rope, lang: Lang) -> String {
+    let mut steps = [0usize; 9];
+    let mut tabs = 0;
+    let mut last = 0;
+    for line in text.lines().take(2000) {
+        let spaces = line.chars().take_while(|&c| c == ' ').count();
+        if line.chars().next() == Some('\t') {
+            tabs += 1;
+            continue;
+        }
+        if line.chars().all(char::is_whitespace) {
+            continue;
+        }
+        if (2..=8).contains(&spaces.saturating_sub(last)) {
+            steps[spaces - last] += 1;
+        }
+        last = spaces;
+    }
+    let (step, seen) = (2..=8)
+        .map(|n| (n, steps[n]))
+        .max_by_key(|&(n, c)| (c, n == 4))
+        .unwrap();
+    if tabs > seen {
+        return "\t".into();
+    }
+    if seen > 0 {
+        return " ".repeat(step);
+    }
+    match lang {
+        Lang::Go => "\t".into(),
+        Lang::Yaml
+        | Lang::Json
+        | Lang::Lua
+        | Lang::Html
+        | Lang::Css
+        | Lang::JavaScript
+        | Lang::TypeScript
+        | Lang::Tsx => "  ".into(),
+        _ => "    ".into(),
+    }
+}
+
 /// Where a byte is, as tree-sitter counts: its line, and bytes into it.
 fn point(text: &Rope, byte: usize) -> Point {
     let line = text.byte_to_line(byte);
@@ -171,6 +215,17 @@ impl omavim_vim::TextModel for Recorder<'_> {
             s.edit(&edit);
             self.stale.set(true);
         }
+    }
+
+    fn smart_indent(&self) -> Option<Indenting> {
+        let lang = self.syntax.borrow().as_ref()?.lang();
+        if matches!(lang, Lang::Markdown | Lang::MarkdownInline) {
+            return None;
+        }
+        Some(Indenting {
+            unit: indent_unit(self.text, lang),
+            colon: matches!(lang, Lang::Python | Lang::Yaml),
+        })
     }
 
     fn syntax_region(&self, pos: usize) -> Option<Range<usize>> {
@@ -220,6 +275,15 @@ mod tests {
         assert_eq!(d.contents(), "one\ntwo\n");
         let d = Document::open("x.md".into(), "no break");
         assert_eq!(d.contents(), "no break");
+    }
+
+    #[test]
+    fn finds_how_far_a_file_indents() {
+        let unit = |text: &str, lang| indent_unit(&Rope::from_str(text), lang);
+        assert_eq!(unit("a {\n  b {\n    c\n  }\n}\n", Lang::Rust), "  ");
+        assert_eq!(unit("a {\n\tb\n}\n", Lang::Rust), "\t");
+        assert_eq!(unit("a\n", Lang::Rust), "    ");
+        assert_eq!(unit("a\n", Lang::Yaml), "  ");
     }
 
     #[test]

@@ -24,11 +24,11 @@ mod format;
 mod marks;
 #[path = "scroll.rs"]
 mod scroll;
-use crate::SyntaxObject;
 use crate::text::{
     self, char_at, first_non_blank, indent, is_blank, last_line, line_len, line_text,
 };
 use crate::textobj::{self, Found, Vis};
+use crate::{Indenting, SyntaxObject};
 use crate::{Mode, Pos, TextModel};
 use ex::{LastSub, LineEdit};
 use marks::{EditHint, Marks};
@@ -2734,7 +2734,19 @@ impl Vim {
             Insert::LineStart => self.cursor = text::pos(t, line, first_non_blank(t, line)),
             Insert::LineEnd => self.cursor = text::pos(t, line, len),
             Insert::Below | Insert::Above => {
-                let ind = indent(t, line);
+                let mut ind = indent(t, line);
+                if let Some(smart) = t.smart_indent() {
+                    // Below a line that opens a block, or above one that
+                    // closes it: inside it.
+                    let deeper = if kind == Insert::Below {
+                        opens_block(t, line, len, &smart)
+                    } else {
+                        closes_block(t, line)
+                    };
+                    if deeper {
+                        ind.push_str(&smart.unit);
+                    }
+                }
                 if kind == Insert::Below {
                     let at = text::pos(t, line, len);
                     self.edit(t, at..at, &format!("\n{ind}"));
@@ -2798,6 +2810,9 @@ impl Vim {
             }
             Key::Char(c) => {
                 self.type_char(t, c, replace);
+                if !replace && matches!(c, '}' | ']' | ')') {
+                    self.outdent_closer(t);
+                }
                 Ok(())
             }
             Key::Tab => {
@@ -2806,7 +2821,20 @@ impl Vim {
             }
             Key::Enter => {
                 let (line, col) = self.lc(t);
-                let ind: String = indent(t, line).chars().take(col).collect();
+                let mut ind: String = indent(t, line).chars().take(col).collect();
+                // Between brackets just opened and their close: the close
+                // goes on a line of its own, back out.
+                let mut close = None;
+                if let Some(smart) = t.smart_indent().filter(|_| !replace)
+                    && opens_block(t, line, col, &smart)
+                {
+                    if let Some(ch) = char_at(t, line, col)
+                        && matches!(ch, '}' | ']' | ')')
+                    {
+                        close = Some(ind.clone());
+                    }
+                    ind.push_str(&smart.unit);
+                }
                 self.remove_lone_autoindent(t);
                 let at = self.cursor;
                 // With autoindent, blanks that would start the new line go.
@@ -2816,7 +2844,8 @@ impl Vim {
                     .skip(c)
                     .take_while(|&ch| is_blank(ch))
                     .count();
-                self.edit(t, at..at + rest, &format!("\n{ind}"));
+                let tail = close.map(|c| format!("\n{c}")).unwrap_or_default();
+                self.edit(t, at..at + rest, &format!("\n{ind}{tail}"));
                 self.cursor = at + 1 + ind.chars().count();
                 if let Some(s) = self.session.as_mut() {
                     s.did_ai = !ind.is_empty();
@@ -2853,6 +2882,28 @@ impl Vim {
                 Ok(())
             }
             _ => Ok(()),
+        }
+    }
+
+    /// A closing bracket typed first on its line: indent it as the line
+    /// its open bracket is on.
+    fn outdent_closer(&mut self, t: &mut dyn TextModel) {
+        if t.smart_indent().is_none() {
+            return;
+        }
+        let (line, col) = self.lc(t);
+        let Some(at) = col.checked_sub(1) else { return };
+        if first_non_blank(t, line) != at {
+            return;
+        }
+        let Some(open) = motion::match_pair(t, Cur::new(line, at)) else {
+            return;
+        };
+        let want = indent(t, open.line);
+        let start = t.line_to_char(line);
+        if indent(t, line) != want {
+            self.edit(t, start..start + at, &want);
+            self.cursor = start + want.chars().count() + 1;
         }
     }
 
@@ -4416,6 +4467,24 @@ fn parse(keys: &[Key], visual: bool) -> Parse {
         Ok(Some((m, _))) => done(Action::Move(m)),
         Err(()) => Parse::Invalid,
     }
+}
+
+/// The line (up to `col`) ends in an open bracket, or a `:` where that
+/// opens a block, outside strings and comments.
+fn opens_block(t: &dyn TextModel, line: usize, col: usize, smart: &Indenting) -> bool {
+    let text: Vec<char> = line_text(t, line).chars().take(col).collect();
+    let Some(last) = text.iter().rposition(|&c| !is_blank(c)) else {
+        return false;
+    };
+    let opener = matches!(text[last], '{' | '[' | '(') || (smart.colon && text[last] == ':');
+    opener && t.syntax_region(text::pos(t, line, last)).is_none()
+}
+
+/// The line starts with a closing bracket.
+fn closes_block(t: &dyn TextModel, line: usize) -> bool {
+    let first = first_non_blank(t, line);
+    matches!(char_at(t, line, first), Some('}' | ']' | ')'))
+        && t.syntax_region(text::pos(t, line, first)).is_none()
 }
 
 #[cfg(test)]
