@@ -34,7 +34,10 @@ match), `:&`, `:&&`, `&`,
 wrap at word breaks and the view scrolls exactly as Neovim's does with
 'linebreak' and 'smoothscroll'. `gq` and `gw` format paragraphs to the window's width
 (at most 79), keeping comment leaders (`//`, `#`, `>`, ` * `) on each line.
-Syntax highlighting with tree-sitter (milestone 4) is next.
+Syntax highlighting with tree-sitter (milestone 4) is under way: Markdown, Rust,
+Python, JavaScript, TypeScript, JSON, TOML, YAML, Bash, HTML, CSS, PHP, Go, C, Lua
+and SQL by the file's name, code blocks in Markdown in their own language, in the
+current Omarchy theme's colours (Omavim's own otherwise).
 
 Every Vim behaviour is checked against Neovim itself: `tools/fixtures/update`
 types thousands of generated cases, key by key, into headless Neovim in a

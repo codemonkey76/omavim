@@ -1,10 +1,12 @@
 //! Omavim: a dead-simple writing app with Vim motions. See PLAN.md.
 
+mod colors;
 mod document;
 mod editor;
 mod portal;
 
-use document::Document;
+use colors::Colors;
+use document::{Document, Recorder};
 use editor::{Editor, KeyPress, View};
 use iced::keyboard::{Key as IcedKey, key::Named};
 use iced::widget::{column, container, row, space, text};
@@ -35,10 +37,24 @@ struct App {
     doc: Document,
     vim: Vim,
     scheme: Scheme,
+    /// The colours: the Omarchy theme's, or Omavim's for `scheme`.
+    colors: Colors,
     /// A short message in the footer: an error, or what just happened.
     status: Option<String>,
     /// `:wq` / `:x` waiting for its save to finish before quitting.
     quit_after_save: bool,
+    /// The last highlights worked out, and what for (the text's changes
+    /// count, the first line, how many), so a redraw that changed none of
+    /// that doesn't work them out again.
+    highlight_cache: std::cell::RefCell<HighlightCache>,
+}
+
+type Highlights = Vec<(std::ops::Range<usize>, colors::Style)>;
+
+#[derive(Default)]
+struct HighlightCache {
+    key: Option<(u64, usize, usize)>,
+    highlights: std::rc::Rc<Highlights>,
 }
 
 #[derive(Debug, Clone)]
@@ -57,6 +73,8 @@ enum Message {
     Resized(usize, usize),
     /// The mouse wheel: rows to scroll, down if positive.
     Scroll(isize),
+    /// Time to see if the Omarchy theme changed.
+    CheckTheme,
 }
 
 impl App {
@@ -83,8 +101,17 @@ impl App {
             doc,
             vim,
             scheme: Scheme::default(),
+            colors: Colors::current(Scheme::default()),
             status,
             quit_after_save: false,
+            highlight_cache: Default::default(),
+        }
+    }
+
+    fn set_colors(&mut self, colors: Colors) {
+        if colors != self.colors {
+            self.colors = colors;
+            *self.highlight_cache.borrow_mut() = HighlightCache::default();
         }
     }
 
@@ -97,12 +124,14 @@ impl App {
     }
 
     fn theme(&self) -> Option<Theme> {
-        Some(theme(self.scheme))
+        Some(Theme::custom("Omavim", self.colors.palette()))
     }
 
     fn subscription(&self) -> Subscription<Message> {
         Subscription::batch([
             Subscription::run(portal::color_scheme).map(Message::Scheme),
+            // (A new Omarchy theme swaps its colours file in: cheap to check.)
+            iced::time::every(std::time::Duration::from_secs(2)).map(|_| Message::CheckTheme),
             iced::event::listen_with(|event, _, _| match event {
                 iced::Event::Window(iced::window::Event::Focused) => Some(Message::Focused),
                 _ => None,
@@ -113,9 +142,18 @@ impl App {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Key(press) => return self.key(press),
-            Message::Scheme(scheme) => self.scheme = scheme,
+            Message::Scheme(scheme) => {
+                self.scheme = scheme;
+                self.set_colors(Colors::current(scheme));
+            }
+            Message::CheckTheme => {
+                if Colors::omarchy_stamp() != self.colors.source {
+                    self.set_colors(Colors::current(self.scheme));
+                }
+            }
             Message::Opened(Ok(Some((path, contents)))) => {
                 self.doc = Document::open(path, &contents);
+                *self.highlight_cache.borrow_mut() = HighlightCache::default();
                 self.vim = self.vim.for_other_text();
                 self.vim
                     .set_file_name(self.doc.path.as_deref().and_then(|p| p.to_str()));
@@ -135,6 +173,8 @@ impl App {
                 self.status = Some(format!("Saved {}", path.display()));
                 self.vim.set_file_name(path.to_str());
                 self.doc.path = Some(path);
+                // (A new name may be a new language.)
+                self.doc.detect_language();
                 self.doc.dirty = false;
                 if self.quit_after_save {
                     return iced::exit();
@@ -163,11 +203,14 @@ impl App {
             }
         }
         let before = self.vim.changes();
+        let mut text = Recorder::new(&mut self.doc.text);
         for key in vim_keys(&press) {
-            if self.vim.key(&mut self.doc.text, key).is_err() {
+            if self.vim.key(&mut text, key).is_err() {
                 // Vim beeps; the keys after it still count, as typed keys do.
             }
         }
+        let edits = text.edits;
+        self.doc.edited(&edits);
         if self.vim.changes() != before {
             self.doc.dirty = true;
             self.status = None;
@@ -194,6 +237,47 @@ impl App {
             tasks.push(self.command(&cmd));
         }
         Task::batch(tasks)
+    }
+
+    /// The syntax highlights for the lines on screen, as char ranges and
+    /// how to draw them.
+    fn highlights(&self) -> std::rc::Rc<Highlights> {
+        let Some(syntax) = &self.doc.syntax else {
+            return Default::default();
+        };
+        let t = &self.doc.text;
+        let last = t.len_lines().saturating_sub(1);
+        let first = self.vim.top().0.min(last);
+        // (A line takes a row at least.)
+        let count = self.vim.screen_height().max(1);
+        let key = (self.vim.changes(), first, count);
+        if let Ok(cache) = self.highlight_cache.try_borrow()
+            && cache.key == Some(key)
+        {
+            return cache.highlights.clone();
+        }
+        let end_line = (first + count).min(last);
+        let from = t.line_to_byte(first);
+        let to = if end_line == last {
+            t.len_bytes()
+        } else {
+            t.line_to_byte(end_line + 1)
+        };
+        let highlights: Highlights = syntax
+            .highlights(t, from..to)
+            .into_iter()
+            .map(|s| (s.range, self.colors.style(s.name)))
+            .filter(|(_, style)| *style != colors::Style::default())
+            .map(|(r, style)| (t.byte_to_char(r.start)..t.byte_to_char(r.end), style))
+            .collect();
+        let highlights = std::rc::Rc::new(highlights);
+        if let Ok(mut cache) = self.highlight_cache.try_borrow_mut() {
+            *cache = HighlightCache {
+                key: Some(key),
+                highlights: highlights.clone(),
+            };
+        }
+        highlights
     }
 
     /// Commands the engine handed over, separated by `|` (`:w|q`).
@@ -273,6 +357,7 @@ impl App {
             }
         };
         self.doc = doc;
+        *self.highlight_cache.borrow_mut() = HighlightCache::default();
         self.status = status;
         self.vim = self.vim.for_other_text();
         self.vim
@@ -333,7 +418,7 @@ impl App {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let palette = theme(self.scheme).palette();
+        let palette = self.colors.palette();
         let dim = Color {
             a: 0.45,
             ..palette.text
@@ -415,6 +500,7 @@ impl App {
             current_match: self.vim.search_preview(&self.doc.text),
             tabstop: self.vim.tabstop,
             top: self.vim.top(),
+            highlights: self.highlights(),
         };
         column![
             container(Editor::new(
@@ -508,35 +594,6 @@ fn key_label(k: &Key) -> String {
     }
 }
 
-/// Omavim's two looks, chosen by the desktop's dark/light setting.
-fn theme(scheme: Scheme) -> Theme {
-    let rgb = |r, g, b| Color::from_rgb8(r, g, b);
-    match scheme {
-        Scheme::Light => Theme::custom(
-            "Omavim Light",
-            iced::theme::Palette {
-                background: rgb(0xfb, 0xfa, 0xf7),
-                text: rgb(0x22, 0x22, 0x22),
-                primary: rgb(0x1e, 0x6f, 0xd9),
-                success: rgb(0x2e, 0x7d, 0x32),
-                warning: rgb(0xb2, 0x6b, 0x00),
-                danger: rgb(0xc6, 0x28, 0x28),
-            },
-        ),
-        Scheme::Dark => Theme::custom(
-            "Omavim Dark",
-            iced::theme::Palette {
-                background: rgb(0x1b, 0x1b, 0x1b),
-                text: rgb(0xdd, 0xdd, 0xdd),
-                primary: rgb(0x6e, 0xa8, 0xfe),
-                success: rgb(0x81, 0xc7, 0x84),
-                warning: rgb(0xff, 0xb7, 0x4d),
-                danger: rgb(0xef, 0x9a, 0x9a),
-            },
-        ),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -555,8 +612,10 @@ mod tests {
             doc,
             vim: Vim::new(),
             scheme: Scheme::default(),
+            colors: Colors::builtin(Scheme::default()),
             status: None,
             quit_after_save: false,
+            highlight_cache: Default::default(),
         }
     }
 

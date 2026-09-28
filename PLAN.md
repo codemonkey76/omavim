@@ -161,9 +161,11 @@ grouping. The app implements `TextModel` over its buffer; the tests implement it
 over `ropey`. `unicode-segmentation` handles graphemes and words.
 
 **Tree-sitter** for highlighting and structure, in its own crate, `omavim-syntax`:
-- The `tree-sitter` crate, one grammar crate per language, and the highlight,
-  text-object and indent query files, taken from Helix and nvim-treesitter
-  (both MIT/Apache: keep their notices).
+- The `tree-sitter` crate, one grammar crate per language, and the highlight and
+  injection queries each grammar crate ships (MIT, and matched to its grammar's
+  version). Text-object and indent queries to come from nvim-treesitter
+  (Apache-2.0: keep its notice); Helix's are MPL-2.0, so they'd stay separate
+  files under that licence if used.
 - **Incremental:** every edit is passed to the parser as an edit, so re-parsing
   after a keystroke touches only what changed. Highlighting covers only what's on
   screen.
@@ -173,9 +175,11 @@ over `ropey`. `unicode-segmentation` handles graphemes and words.
   italic and bold, links and code set apart, markup characters dimmed. The same tree
   keeps `gq` from breaking a link or reflowing a code block.
 - **Colours:** tree-sitter's highlight names (`keyword`, `string`, `function`,
-  `comment`, `markup.heading`, …) map to a colour scheme with a dark and a light
-  version. Ideally the scheme comes from the current Omarchy theme; to find out
-  early what Omarchy themes provide.
+  `comment`, `markup.heading`, …) map to colours as Omarchy's Helix theme maps
+  them, from the current Omarchy theme's
+  `~/.local/state/omarchy/current/theme/colors.toml` (checked every couple of
+  seconds, so a theme switch shows at once), or Omavim's own dark and light
+  schemes when there's no Omarchy theme.
 - **Bundled languages** to start: Markdown, Rust, Python, JavaScript, TypeScript,
   JSON, TOML, YAML, Bash, HTML, CSS, PHP, Go, C, Lua, SQL. Each grammar adds a few
   hundred KB to a few MB to the binary; loading grammars at runtime (as Helix does,
@@ -249,7 +253,6 @@ editor to lean on, so the editor and Vim are built together from the start.)
 - Normal or insert mode when a document opens? (Setting either way; which default?)
 - `Space` as leader: fine, or another key?
 - What does `omarchy display text size` change, and can the Settings portal see it?
-- Can the colour scheme come from the current Omarchy theme, and switch with it?
 - Which languages to bundle, beyond the list above?
 - Public from the start (GitHub, MIT like Omawrite), or private until it's usable?
 - Name: *omavim* is taken from the brief; check nothing in the Omarchy world already

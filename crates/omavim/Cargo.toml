@@ -9,6 +9,7 @@ description = "A dead-simple writing app with Vim motions"
 ashpd = { version = "0.13", default-features = false, features = ["tokio", "file_chooser", "settings"] }
 futures = "0.3"
 iced = { version = "0.14", features = ["advanced", "tokio"] }
+omavim-syntax = { path = "../omavim-syntax" }
 omavim-vim = { path = "../omavim-vim" }
 ropey = "1"
 tokio = { version = "1", features = ["fs", "rt"] }

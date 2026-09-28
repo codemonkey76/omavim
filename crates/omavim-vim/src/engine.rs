@@ -593,6 +593,11 @@ impl Vim {
         self.top
     }
 
+    /// Rows on screen (as set_screen was told).
+    pub fn screen_height(&self) -> usize {
+        self.height
+    }
+
     /// Show from this row down (the cursor moves into view if need be).
     pub fn set_top(&mut self, t: &dyn TextModel, line: usize, row: usize) {
         let line = line.min(last_line(t));

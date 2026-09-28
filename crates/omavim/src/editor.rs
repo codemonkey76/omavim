@@ -8,6 +8,7 @@
 //! it the size of the text area, draws from the row it says is at the top,
 //! and hands every key press and wheel turn to the app.
 
+use crate::colors::Style;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer::{self, Quad, Renderer as _};
 use iced::advanced::text::{self, Paragraph as _, Renderer as _};
@@ -54,6 +55,8 @@ pub struct View<'a> {
     pub tabstop: usize,
     /// The first screen row shown: a line, and a row of it.
     pub top: (usize, usize),
+    /// Syntax highlighting: char ranges (in order) and how to draw them.
+    pub highlights: std::rc::Rc<Vec<(std::ops::Range<Pos>, Style)>>,
 }
 
 pub struct Editor<'a, Message> {
@@ -68,6 +71,16 @@ pub struct Editor<'a, Message> {
 }
 
 impl<'a, Message> Editor<'a, Message> {
+    /// How to draw the char at `pos` (the highlight it's in).
+    fn style_at(&self, pos: Pos) -> Style {
+        let h = &self.view.highlights;
+        let i = h.partition_point(|(r, _)| r.end <= pos);
+        match h.get(i) {
+            Some((r, s)) if r.start <= pos => *s,
+            _ => Style::default(),
+        }
+    }
+
     pub fn new(
         view: View<'a>,
         font: Font,
@@ -337,12 +350,18 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                 }
             }
 
-            // The text: tabs, and the gaps wrapping leaves (a word moved to
-            // the next row, a wide char that didn't fit), drawn as spaces.
-            let mut content = String::new();
+            // The text, in runs of one style: tabs, and the gaps wrapping
+            // leaves (a word moved to the next row, a wide char that didn't
+            // fit), drawn as spaces.
+            let mut runs: Vec<(usize, String, Style)> = Vec::new();
             let mut x = vc[start].saturating_sub(base);
             for i in start..end {
                 let at = vc[i].saturating_sub(base);
+                let style = self.style_at(line_start + i);
+                if runs.last().is_none_or(|r| r.2 != style) {
+                    runs.push((x, String::new(), style));
+                }
+                let content = &mut runs.last_mut().unwrap().1;
                 while x < at {
                     content.push(' ');
                     x += 1;
@@ -360,13 +379,35 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
                     x += 1;
                 }
             }
-            if !content.trim_end().is_empty() {
-                renderer.fill_text(
-                    self.text(content, row_h),
-                    Point::new(left, y),
-                    palette.text,
-                    bounds,
-                );
+            for (at, content, style) in runs {
+                if content.trim_end().is_empty() {
+                    continue;
+                }
+                let x0 = left + at as f32 * cell;
+                let color = style.color.unwrap_or(palette.text);
+                if style.underline {
+                    let width = content.trim_end().chars().count() as f32 * cell;
+                    fill(
+                        renderer,
+                        Rectangle::new(Point::new(x0, y + row_h * 0.86), Size::new(width, 1.0)),
+                        color,
+                    );
+                }
+                let mut text = self.text(content, row_h);
+                text.font = Font {
+                    weight: if style.bold {
+                        iced::font::Weight::Bold
+                    } else {
+                        iced::font::Weight::Normal
+                    },
+                    style: if style.italic {
+                        iced::font::Style::Italic
+                    } else {
+                        iced::font::Style::Normal
+                    },
+                    ..self.font
+                };
+                renderer.fill_text(text, Point::new(x0, y), color, bounds);
             }
 
             // The cursor.
