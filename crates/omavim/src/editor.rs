@@ -264,6 +264,26 @@ impl<Message> Widget<Message, Theme, iced::Renderer> for Editor<'_, Message> {
             breakat: self.view.breakat,
         };
 
+        // The text column a shade off the margins, so column 0 shows: the
+        // background a few percent of the way to the text colour.
+        let (bg, fg) = (palette.background, palette.text);
+        let shade = |a: f32, b: f32| a + (b - a) * 0.04;
+        fill(
+            renderer,
+            Rectangle {
+                x: left,
+                y: bounds.y,
+                width: cells as f32 * cell,
+                height: bounds.height,
+            },
+            Color {
+                r: shade(bg.r, fg.r),
+                g: shade(bg.g, fg.g),
+                b: shade(bg.b, fg.b),
+                a: 1.0,
+            },
+        );
+
         let cursor = self.view.cursor.min(t.len_chars());
         let cline = t.char_to_line(cursor);
         let ccol = cursor - t.line_to_char(cline);
