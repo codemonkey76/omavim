@@ -143,6 +143,10 @@ const KNOWN: &[(&str, &str)] = &[
         "inserting a tall line: view mid-insert",
     ),
     (
+        "markup@6,3: :g/e/j<CR>",
+        "Neovim scrolls up a row after :g lengthens the part-skipped top line",
+    ),
+    (
         "long@16,200^(16, 5): <C-b><C-b>",
         "CTRL-B twice from a tall line: cursor column",
     ),

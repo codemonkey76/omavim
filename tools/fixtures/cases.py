@@ -172,6 +172,19 @@ VIEW_STARTS = [  # (cursor, top) in "long"
 
 SENTENCES = [")", "(", "2)", "3(", "d)", "d(", "y2)", "c)X<Esc>"]
 
+# :g, :v and :normal.
+GLOBAL = [
+    ":g/the/d<CR>", ":v/e/d<CR>", ":g!/e/d<CR>", ":g/o/s/o/0/g<CR>", ":g/^$/d<CR>", ":g/^/m0<CR>",
+    ":g/e/t$<CR>", ":g/e/normal Ax<CR>", ":g/e/norm! 0x<CR>", ":%norm Ax<CR>", ":normal dw<CR>",
+    ":2,3norm x<CR>", ":g/e/j<CR>", ":g/a/<CR>", ":g/zzz/d<CR>", ":v/zzz/d<CR>",
+    ":g/e/s/e/E/|s/a/A/<CR>", ":g/e/><CR>", ":2,$g/e/d<CR>", ":g//d<CR>", "/o<CR>:g//d<CR>",
+    ":g/e/normal A<C-v><Esc>x<CR>", ":g/e/normal ix<CR>u", ":g/e/d<CR>u", ":g/e/d<CR><C-o>",
+    ":g/e/normal dd<CR>", ":g/e/v/a/d<CR>", ":g/e/normal jdd<CR>", ":g/e/p<CR>", ":g/e/d<CR>n",
+    ":g/e/normal cwX<CR>", ":g/e/normal vd<CR>", ":g/e/normal d<CR>", ":g/e/norm :s/e/Q/<C-v><CR>x<CR>",
+    "x:g/e/d<CR>.", ":normal Ax<CR>.", ":g/./normal ma<CR>'a", ":g/e/normal @q<CR>", "qqAx<Esc>q:g/e/normal @q<CR>",
+    ":g/e/norm $<C-a><CR>",
+]
+
 # CTRL-A and CTRL-X, on a text of numbers, from several places.
 NUMBERS_TEXT = (
     "x 007 -5 0x1f 0XAB 0b101 -0x10 42abc end\n"
@@ -214,7 +227,7 @@ def cases():
         + [f"c{m}X<Esc>" for m in OPERATOR_MOTIONS]
         + [f"{op}{m}" for op, m in itertools.product([">", "gU", "g~"], ["w", "j", "}", "$"])]
         + ["2d3w", "3d2w", "2y2j", "c2wX<Esc>"]
-        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS
+        + SIMPLE + INSERT + VISUAL + SENTENCES + REGISTERS + SEARCH + EX + MARKS + MACROS + GLOBAL
         + [f"{op}{o}" for op, o in itertools.product(["d", "y", "gU"], OBJECTS)]
         + [f"c{o}X<Esc>" for o in OBJECTS]
         + [f"v{o}" for o in OBJECTS]

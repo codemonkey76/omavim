@@ -48,7 +48,11 @@ local function utf8(s)
   local out, i = {}, 1
   while i <= #s do
     if s:byte(i) == 0x80 and vim.str_utf_start(s, i) == 0 then
-      table.insert(out, "\194\128")
+      -- (With its two bytes after it, each as the char of that number.)
+      for j = i, math.min(i + 2, #s) do
+        table.insert(out, vim.fn.nr2char(s:byte(j)))
+      end
+      i = i + 2
     else
       table.insert(out, s:sub(i, i))
     end
@@ -135,6 +139,8 @@ vim.api.nvim_create_autocmd("SafeState", { callback = function() idle = taken en
 local results = {}
 
 local function start(case, done)
+  -- (A case that ended while recording a macro doesn't record the next.)
+  if vim.fn.reg_recording() ~= "" then vim.cmd("normal! q") end
   vim.cmd("enew!")
   vim.bo.bufhidden = "wipe"
   vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(case.text, "\n", { plain = true }))
@@ -192,7 +198,7 @@ local function start(case, done)
     local line = vim.api.nvim_buf_get_lines(0, cur[1] - 1, cur[1], false)[1] or ""
     result = {
       name = case.name,
-      text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"),
+      text = utf8(table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")),
       cursor = { cur[1] - 1, char_col(line, cur[2]) },
       mode = mode,
       register = utf8(vim.fn.getreg('"')),
@@ -250,9 +256,13 @@ local function start(case, done)
   -- handled is typeahead, and insert mode takes typeahead chars together.
   -- Neovim is waiting when it's idle, or when it's "blocking" for the rest
   -- of a command (after d, f, ", q); failing both for 50ms, type anyway.
+  -- (Not "blocking" in insert mode: it's that too while it looks for more
+  -- typed chars to insert with the last.)
   timer:start(0, 1, function()
+    local m = vim.api.nvim_get_mode()
+    local waiting = m.blocking and m.mode:sub(1, 1) ~= "i" and m.mode:sub(1, 1) ~= "R"
     local ready = taken - base >= fed
-      and (idle == taken or vim.api.nvim_get_mode().blocking or vim.uv.now() - taken_at >= 50)
+      and (idle == taken or waiting or vim.uv.now() - taken_at >= 50)
     if result and fed == #keys and taken - base >= fed then
       finish(result)
     elseif vim.uv.now() - began > 10000 then

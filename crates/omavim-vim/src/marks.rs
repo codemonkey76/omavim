@@ -39,6 +39,9 @@ pub(super) struct Marks {
     /// The jump list, oldest first, and where CTRL-O/CTRL-I are in it.
     pub jumps: Vec<Mark>,
     pub jump_idx: usize,
+    /// The lines `:g` has still to run its command on (Vim marks them in
+    /// its memline: they go with their lines, and go when they do).
+    pub global: Vec<usize>,
 }
 
 /// What kind of edit is coming, when the text alone can't tell (Vim's
@@ -46,15 +49,18 @@ pub(super) struct Marks {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EditHint {
     /// Whole lines deleted (`dd`, `dj`, `V..d`, `:d`).
-    Lines,
+    Lines(usize, usize),
     /// A linewise change (`cc`, `S`): the first line stays, the rest go.
     Change,
     /// A line opened above (`O`).
     Above,
     /// `:s`: lines it joins are deleted (their marks too), not moved.
     Substitute,
-    /// `J` or a delete of chars: undo replaces the lines it spans.
+    /// A delete of chars (or CTRL-A's change): undo replaces the lines it
+    /// spans.
     Spanned,
+    /// `J`: as Spanned (and it moves marks as a join).
+    Join,
 }
 
 /// How an edit changed the lines: what Neovim's mark_adjust and
@@ -131,6 +137,9 @@ impl Marks {
         for j in &mut self.jumps {
             j.0 = f(j.0);
         }
+        for l in &mut self.global {
+            *l = f(*l);
+        }
     }
 
     /// Every mark that moves with the text, for adjusting: named, the
@@ -166,6 +175,14 @@ impl Marks {
         for j in &mut self.jumps {
             *j = adjust_one(*j, change, true).unwrap_or(*j);
         }
+        // A joined line's mark goes with it (not onto the line it joins).
+        self.global = std::mem::take(&mut self.global)
+            .into_iter()
+            .filter_map(|l| match *change {
+                LineChange::Joined { from, to, .. } if (from..=to).contains(&l) => None,
+                _ => adjust_one((l, 0), change, false).map(|m| m.0),
+            })
+            .collect();
     }
 }
 
@@ -261,29 +278,12 @@ impl Vim {
         old_len2: usize,
         removed: &str,
         with: &str,
-        lines_after: usize,
     ) {
         let d = l2 - l1;
         let k = with.matches('\n').count();
         let hint = self.edit_hint.take();
         let change = match hint {
-            Some(EditHint::Lines) if d > 0 => {
-                Some(if c1 == 0 && lines_after == 1 && l1 == 0 && c2 > 0 {
-                    // The whole text.
-                    LineChange::Deleted { first: 0, last: l2 }
-                } else if c1 == 0 && c2 == 0 {
-                    LineChange::Deleted {
-                        first: l1,
-                        last: l2 - 1,
-                    }
-                } else {
-                    // The last lines, with the line break before them.
-                    LineChange::Deleted {
-                        first: l1 + 1,
-                        last: l2,
-                    }
-                })
-            }
+            Some(EditHint::Lines(first, last)) => Some(LineChange::Deleted { first, last }),
             Some(EditHint::Change) if d > 0 => Some(LineChange::Deleted {
                 first: l1 + 1,
                 last: l2,
@@ -365,8 +365,12 @@ impl Vim {
         self.mk(t, text::line_col(t, self.cursor.min(t.len_chars())))
     }
 
-    /// Remember where a jump starts (setpcmark): for `''` and CTRL-O.
+    /// Remember where a jump starts (setpcmark): for `''` and CTRL-O. (Not
+    /// while `:g` runs its command: it set one for itself.)
     pub(super) fn setpcmark(&mut self, t: &dyn TextModel) {
+        if self.global_busy {
+            return;
+        }
         let here = self.here(t);
         self.marks.prev_pc = self.marks.pc;
         self.marks.pc = Some(here);

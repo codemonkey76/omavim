@@ -1,7 +1,7 @@
 //! The `:` command line: editing it (with history), line ranges, and the
 //! commands the engine runs itself: `:s` and its repeats, `:d :y :j :> :<
-//! :m :t`, `:N`, `:set`, `:noh`. Anything else (`:w`, `:q`, `:e`...) goes to
-//! the app.
+//! :m :t :p`, `:g` and `:v`, `:normal`, `:N`, `:set`, `:noh`. Anything else
+//! (`:w`, `:q`, `:e`...) goes to the app.
 
 use super::{Beep, Mode, Op, R, Register, Vim};
 use crate::search::{self, Haystack};
@@ -18,6 +18,8 @@ pub(super) struct LineEdit {
     browse: Option<(String, usize)>,
     /// CTRL-R is waiting for a register's name.
     ctrl_r: bool,
+    /// CTRL-V: the next key goes in as it is (Esc, Enter, a Ctrl key).
+    literal: bool,
 }
 
 /// What a key did to a line being typed.
@@ -50,6 +52,12 @@ impl LineEdit {
         history: &[String],
         register: &dyn Fn(char) -> String,
     ) -> Edited {
+        if std::mem::take(&mut self.literal) {
+            for c in crate::key::to_register(&[key]).chars() {
+                self.insert(c);
+            }
+            return Edited::Typing;
+        }
         if std::mem::take(&mut self.ctrl_r) {
             if let Key::Char(r) = key {
                 for c in register(r).chars() {
@@ -109,6 +117,7 @@ impl LineEdit {
                 self.pos = i;
             }
             Key::Ctrl('r') => self.ctrl_r = true,
+            Key::Ctrl('v' | 'q') => self.literal = true,
             Key::Left => self.pos = self.pos.saturating_sub(1),
             Key::Right => self.pos = (self.pos + 1).min(self.text.len()),
             Key::Home | Key::Ctrl('b') => self.pos = 0,
@@ -236,6 +245,10 @@ impl Vim {
         let mut start = 0;
         let mut i = 0;
         while i <= chars.len() {
+            // `:g` and `:normal` take the rest of the line, `|`s and all.
+            if i == start && takes_rest(&chars[start..]) {
+                i = chars.len();
+            }
             let bar = chars.get(i) == Some(&'|') && (i == 0 || chars[i - 1] != '\\');
             if i == chars.len() || bar {
                 let cmd: String = chars[start..i].iter().collect();
@@ -271,6 +284,8 @@ impl Vim {
         } = parsed;
         let cl = text::line_col(t, self.cursor).0;
         let (first, last) = range.unwrap_or((cl, cl));
+        // (`:normal` keeps blanks at the end.)
+        let raw_arg = arg.trim_start();
         let arg = arg.trim();
         match name {
             "" => {
@@ -378,6 +393,18 @@ impl Vim {
                 Ok(())
             }
             "se" | "set" => self.set(arg),
+            "p" | "pr" | "pri" | "prin" | "print" => {
+                // The last line (shown), in the column aimed for.
+                self.setpcmark(t);
+                self.go_line_keep(t, last);
+                self.message = Some(line_text(t, last.min(last_line(t))));
+                Ok(())
+            }
+            "g" | "gl" | "glo" | "glob" | "globa" | "global" | "v" | "vg" | "vgl" | "vglo"
+            | "vglob" | "vgloba" | "vglobal" => {
+                self.global(t, range, bang || name.starts_with('v'), raw_arg)
+            }
+            "norm" | "norma" | "normal" => self.normal(t, range, raw_arg),
             _ => {
                 // The app's (`w`, `q`, `e`...).
                 self.command = Some(cmd.trim().to_string());
@@ -777,7 +804,7 @@ impl Vim {
     }
 
     fn delete_lines(&mut self, t: &mut dyn TextModel, first: usize, last: usize) {
-        self.edit_hint = Some(super::EditHint::Lines);
+        self.edit_hint = Some(super::EditHint::Lines(first, last));
         let end = text::pos(t, last, line_len(t, last));
         if last < last_line(t) {
             let (s, e) = (t.line_to_char(first), t.line_to_char(last + 1));
@@ -911,6 +938,223 @@ fn bool_option(name: &str) -> bool {
 }
 
 /// A `:d`/`:y` argument: a register name, then a count.
+/// Whether a command (after its range) is one that takes the rest of the
+/// line as its argument, `|`s included: `:g`, `:v`, `:normal`.
+fn takes_rest(chars: &[char]) -> bool {
+    let mut i = 0;
+    // Skip the range, as written.
+    while let Some(&c) = chars.get(i) {
+        match c {
+            ' ' | '\t' | '.' | '$' | '%' | ',' | ';' | '+' | '-' => i += 1,
+            c if c.is_ascii_digit() => i += 1,
+            '\'' | '\\' => i += 2,
+            '/' | '?' => {
+                i += 1;
+                while let Some(&p) = chars.get(i) {
+                    i += 1;
+                    if p == '\\' {
+                        i += 1;
+                    } else if p == c {
+                        break;
+                    }
+                }
+            }
+            _ => break,
+        }
+    }
+    let name: String = chars
+        .get(i..)
+        .unwrap_or_default()
+        .iter()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect();
+    matches!(
+        name.as_str(),
+        "g" | "gl"
+            | "glo"
+            | "glob"
+            | "globa"
+            | "global"
+            | "v"
+            | "vg"
+            | "vgl"
+            | "vglo"
+            | "vglob"
+            | "vgloba"
+            | "vglobal"
+            | "norm"
+            | "norma"
+            | "normal"
+    )
+}
+
+impl Vim {
+    /// `:g/pat/cmd` (`:v` and `:g!`: the lines without a match): the lines
+    /// in the range (all, by default) with a match are marked, then `cmd`
+    /// (`:p` if none) runs on each one still marked, from its start, as
+    /// Neovim's ex_global and global_exe.
+    fn global(
+        &mut self,
+        t: &mut dyn TextModel,
+        range: Option<(usize, usize)>,
+        invert: bool,
+        arg: &str,
+    ) -> R {
+        let whole = (0, last_line(t));
+        if self.global_busy && range.is_some_and(|r| r != whole) {
+            return err(self, "E147: Cannot do :global recursive with a range");
+        }
+        let mut chars = arg.chars();
+        let Some(delim) = chars.next() else {
+            return err(self, "E148: Regular expression missing from global");
+        };
+        if delim.is_alphanumeric() || "\\\"|".contains(delim) {
+            return err(
+                self,
+                "E146: Regular expressions can't be delimited by letters",
+            );
+        }
+        let mut pattern = String::new();
+        while let Some(c) = chars.next() {
+            if c == delim {
+                break;
+            }
+            pattern.push(c);
+            if c == '\\'
+                && let Some(n) = chars.next()
+            {
+                pattern.push(n);
+            }
+        }
+        let cmd: String = chars.collect();
+        let pattern = if pattern.is_empty() {
+            match &self.last_search {
+                Some(s) => s.pattern.clone(),
+                None => return err(self, "E35: No previous regular expression"),
+            }
+        } else {
+            pattern
+        };
+        let pat = match search::compile(&pattern, self.ignorecase, self.smartcase) {
+            Ok(p) => p,
+            Err(e) => return err(self, &e),
+        };
+        // It's the last search pattern now, and in the search history.
+        let forward = self.last_search.as_ref().is_none_or(|s| s.forward);
+        self.set_search(pattern.clone(), forward, Default::default(), false);
+        remember(&mut self.search_history, &pattern);
+        let h = Haystack::with_final_newline(t);
+        let matches = |line: usize| {
+            let start = t.line_to_char(line);
+            let end = text::pos(t, line, line_len(t, line));
+            pat.find_at(&h, start).is_some_and(|(s, _)| s <= end)
+        };
+        let cmd = if cmd.trim().is_empty() {
+            "p".to_string()
+        } else {
+            cmd
+        };
+        if self.global_busy {
+            // Nested: on the line the outer one is on.
+            let line = text::line_col(t, self.cursor).0;
+            if matches(line) != invert {
+                self.global_one(t, &cmd, line)?;
+            }
+            return Ok(());
+        }
+        let (first, last) = range.unwrap_or(whole);
+        let marked: Vec<usize> = (first..=last.min(whole.1))
+            .filter(|&l| matches(l) != invert)
+            .collect();
+        if marked.is_empty() {
+            self.message = Some(if invert {
+                format!("Pattern found in every line: {pattern}")
+            } else {
+                format!("Pattern not found: {pattern}")
+            });
+            return Ok(());
+        }
+        self.marks.global = marked;
+        self.setpcmark(t);
+        self.global_busy = true;
+        self.global_beginline = false;
+        let mut result = Ok(());
+        while let Some(i) = (0..self.marks.global.len()).min_by_key(|&i| self.marks.global[i]) {
+            let line = self.marks.global.remove(i);
+            if line > last_line(t) {
+                continue;
+            }
+            result = self.global_one(t, &cmd, line);
+            // An error stops it.
+            if result.is_err() {
+                break;
+            }
+        }
+        self.marks.global.clear();
+        self.global_busy = false;
+        if std::mem::take(&mut self.global_beginline) {
+            let line = text::line_col(t, self.cursor).0;
+            self.go_line(t, line);
+        } else {
+            self.clamp(t);
+        }
+        self.want = None;
+        result
+    }
+
+    /// (The column aimed for stays as it was, as in Vim.)
+    fn global_one(&mut self, t: &mut dyn TextModel, cmd: &str, line: usize) -> R {
+        self.cursor = t.line_to_char(line);
+        self.ex(t, cmd)
+    }
+
+    /// `:normal {keys}`: the keys typed in normal mode (on each line of a
+    /// range, from its start). A command they leave unfinished is ended as
+    /// if by Esc (or CTRL-C on the command line); a key that fails drops the
+    /// rest. Their changes are part of the command's undo step.
+    fn normal(&mut self, t: &mut dyn TextModel, range: Option<(usize, usize)>, arg: &str) -> R {
+        if arg.is_empty() {
+            return err(self, "E471: Argument required");
+        }
+        let keys = crate::key::from_register(arg);
+        let lines: Vec<Option<usize>> = match range {
+            Some((first, last)) => (first..=last).map(Some).collect(),
+            None => vec![None],
+        };
+        self.macro_depth += 1;
+        self.normal_depth += 1;
+        for line in lines {
+            if let Some(l) = line {
+                if l > last_line(t) {
+                    break;
+                }
+                self.cursor = t.line_to_char(l);
+            }
+            // The keys start from the cursor's own column, and the view
+            // comes to the cursor before each command (Neovim's exec_normal).
+            self.want = None;
+            self.scroll_to_cursor(t);
+            for &k in &keys {
+                if self.key(t, k).is_err() {
+                    break;
+                }
+            }
+            for _ in 0..4 {
+                let key = match self.mode {
+                    Mode::Insert | Mode::Replace | Mode::Visual | Mode::VisualLine => Key::Esc,
+                    Mode::CommandLine => Key::Ctrl('c'),
+                    _ if !self.pending.is_empty() => Key::Esc,
+                    _ => break,
+                };
+                let _ = self.key(t, key);
+            }
+        }
+        self.macro_depth -= 1;
+        self.normal_depth -= 1;
+        Ok(())
+    }
+}
+
 fn reg_count(arg: &str) -> (Option<char>, Option<usize>) {
     let arg = arg.trim();
     let mut chars = arg.chars();
@@ -1259,7 +1503,8 @@ impl Vim {
             }
         }
         if subs == 0 {
-            return if quiet {
+            // (Under `:g`, a line without a match isn't an error.)
+            return if quiet || self.global_busy {
                 Ok(())
             } else {
                 err(self, &format!("E486: Pattern not found: {pattern}"))
@@ -1288,7 +1533,13 @@ impl Vim {
         let hit = last_line_hit.unwrap_or(first).min(last_line(t));
         self.marks.op_start = Some((first, 0));
         self.marks.op_end = Some((hit, 0));
-        self.go_line(t, hit);
+        if self.global_busy {
+            // `:g` puts it on the first non-blank at the end.
+            self.cursor = t.line_to_char(hit);
+            self.global_beginline = true;
+        } else {
+            self.go_line(t, hit);
+        }
         if lines > 2 {
             self.message = Some(format!(
                 "{subs} substitution{} on {lines} lines",

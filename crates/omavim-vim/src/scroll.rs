@@ -140,22 +140,23 @@ impl Vim {
         &mut self,
         t: &dyn TextModel,
         first: usize,
-        last: usize,
-        breaks: usize,
+        end: usize,
+        last_after: isize,
     ) {
         if !self.scrolling() {
             return;
         }
         // The top line stays put, even if the lines it was showing went
         // (Neovim moves only other windows' top lines): the next
-        // scroll_to_cursor brings the view back to the cursor.
+        // scroll_to_cursor brings the view back to the cursor. What it
+        // skipped goes (Neovim's changed_common) when the change ends above
+        // it, or it's changed and too short to show anything past that.
         let (top, skip) = self.top;
-        // The top line got too short to show anything past what's skipped.
         let top_line = top.min(last_line(t));
         if skip > 0
-            && (first + breaks < top
+            && (last_after < top as isize
                 || (top >= first
-                    && top <= last
+                    && top < end
                     && self.line_size(t, top_line) <= skip * self.width + MARKER))
         {
             self.top.1 = 0;

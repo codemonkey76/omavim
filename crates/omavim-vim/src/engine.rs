@@ -302,6 +302,9 @@ struct Edit {
     /// A join or a delete of chars: undo replaces the lines it spans (as
     /// Vim saved them), whatever it looks like.
     spanned: bool,
+    /// It emptied the buffer, or was made on an empty one (Vim's
+    /// UH_EMPTYBUF): undo replaces the whole buffer.
+    empty_buf: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -365,6 +368,15 @@ pub struct Vim {
     last_recorded: Option<char>,
     /// The case of the last hex number CTRL-A changed (Vim keeps it).
     hexupper: bool,
+    /// `:g` is running its command, and a command it ran wants the cursor
+    /// on its line's first non-blank at the end (`:s`).
+    global_busy: bool,
+    global_beginline: bool,
+    /// Every line has been deleted (Vim's ML_EMPTY): not the same as one
+    /// empty line, for undo.
+    buffer_empty: bool,
+    /// `:normal` is typing its keys.
+    normal_depth: usize,
     /// The register `""` is: the one last written (Vim's y_previous).
     unnamed: Option<char>,
     /// The register given with `"` for the command being run.
@@ -454,6 +466,10 @@ impl Vim {
             last_macro: None,
             last_recorded: None,
             hexupper: false,
+            global_busy: false,
+            global_beginline: false,
+            buffer_empty: false,
+            normal_depth: 0,
             unnamed: None,
             reg_name: None,
             reg_one: false,
@@ -1052,7 +1068,13 @@ impl Vim {
                 self.close_group();
             }
         }
-        if self.pending.is_empty() && !self.replaying {
+        // (Not while `:g` runs, unless for `:normal`: Neovim brings the view
+        // to the cursor before each command `:normal` runs, and not for the
+        // others.)
+        if self.pending.is_empty()
+            && !self.replaying
+            && (!self.global_busy || self.normal_depth > 0)
+        {
             self.scroll_to_cursor(t);
         }
         result
@@ -2201,19 +2223,19 @@ impl Vim {
                 if last == last_line(t) && first > 0 {
                     // The last lines go with the line break before them.
                     let from = text::pos(t, first - 1, line_len(t, first - 1));
-                    self.edit_hint = Some(EditHint::Lines);
+                    self.edit_hint = Some(EditHint::Lines(first, last));
                     self.edit(t, from..end, "");
                     if let Some(e) = self.group.as_mut().and_then(|g| g.edits.last_mut()) {
                         e.line = first;
                     }
                     place(self, t, first - 1);
                 } else if last == last_line(t) {
-                    self.edit_hint = Some(EditHint::Lines);
+                    self.edit_hint = Some(EditHint::Lines(first, last));
                     self.edit(t, 0..end, "");
                     self.cursor = 0;
                 } else {
                     let to = t.line_to_char(last + 1);
-                    self.edit_hint = Some(EditHint::Lines);
+                    self.edit_hint = Some(EditHint::Lines(first, last));
                     self.edit(t, start..to, "");
                     place(self, t, first);
                 }
@@ -2312,6 +2334,7 @@ impl Vim {
                             inserted: String::new(),
                             line,
                             spanned: true,
+                            empty_buf: false,
                         });
                     }
                     return Ok(());
@@ -2443,7 +2466,7 @@ impl Vim {
                 && last != Some(' ');
             let from = text::pos(t, line, cur_len);
             let to = t.line_to_char(line + 1) + lead;
-            self.edit_hint = Some(EditHint::Spanned);
+            self.edit_hint = Some(EditHint::Join);
             self.edit(t, from..to, if space { " " } else { "" });
             join_col = cur_len;
         }
@@ -3244,17 +3267,28 @@ impl Vim {
             return;
         }
         let line = t.char_to_line(range.start.min(t.len_chars()));
-        let spanned = self.edit_hint == Some(EditHint::Spanned);
+        let spanned = matches!(self.edit_hint, Some(EditHint::Spanned | EditHint::Join));
+        let cursor = self.cursor;
+        // Deleting every line leaves Vim's buffer empty (ML_EMPTY), not
+        // one empty line.
+        let emptied = matches!(self.edit_hint, Some(EditHint::Lines(0, l)) if l == last_line(t));
+        let empty_buf = emptied || self.buffer_empty;
+        self.buffer_empty = emptied;
         self.changes += 1;
         self.replace_text(t, range.clone(), with);
         self.begin_group();
         if let Some(g) = self.group.as_mut() {
+            // Under `:g`, undo comes back to where its first change was made.
+            if self.global_busy && g.edits.is_empty() {
+                g.cursor_before = cursor;
+            }
             g.edits.push(Edit {
                 at: range.start,
                 removed,
                 inserted: with.to_string(),
                 line,
                 spanned,
+                empty_buf,
             });
         }
     }
@@ -3285,6 +3319,7 @@ impl Vim {
         range: std::ops::Range<Pos>,
         with: &str,
         spanned: bool,
+        empty_buf: bool,
     ) {
         let (l1, c1) = text::line_col(t, range.start.min(t.len_chars()));
         let (l2, _) = text::line_col(t, range.end.min(t.len_chars()));
@@ -3317,12 +3352,13 @@ impl Vim {
         } else {
             (l1, l2 - l1 + 1, with.matches('\n').count() + 1)
         };
-        let (was_empty, lines_before) = (t.len_chars() == 0, t.len_lines());
+        let lines_before = t.len_lines();
         t.replace(range, with);
-        self.changed_lines(t, l1, l2, with.matches('\n').count());
-        // To or from an empty buffer (Vim's UH_EMPTYBUF), the whole buffer
-        // is replaced.
-        let (at, old, new, after) = if was_empty || t.len_chars() == 0 {
+        // (As Vim's u_undoredo tells it: the lines replaced, and the new.)
+        self.changed_lines(t, at, at + old, at as isize + new as isize - 1);
+        // To or from an empty buffer, the whole buffer is replaced.
+        self.buffer_empty = empty_buf && t.len_chars() == 0;
+        let (at, old, new, after) = if empty_buf {
             (0, lines_before, t.len_lines(), false)
         } else {
             (at, old, new, after)
@@ -3354,9 +3390,16 @@ impl Vim {
         let (c1, c2) = (bytes(l1, c1), bytes(l2, c2));
         let (len1, len2) = (bytes(l1, usize::MAX), bytes(l2, usize::MAX));
         let removed = t.slice(range.clone());
+        // The lines changed (from, and up to but not including), and the
+        // last line after the change, as Vim's operations tell the view.
+        let breaks = with.matches('\n').count();
+        let (lnum, lnume, last_after) = match self.edit_hint {
+            Some(EditHint::Lines(first, last)) => (first, last + 1, first as isize - 1),
+            _ => (l1, l2 + 1, (l1 + breaks) as isize),
+        };
         t.replace(range, with);
-        self.changed_lines(t, l1, l2, with.matches('\n').count());
-        self.marks_after_edit(l1, c1, l2, c2, len1, len2, &removed, with, t.len_lines());
+        self.changed_lines(t, lnum, lnume, last_after);
+        self.marks_after_edit(l1, c1, l2, c2, len1, len2, &removed, with);
     }
 
     fn undo(&mut self, t: &mut dyn TextModel, count: usize) -> R {
@@ -3370,7 +3413,7 @@ impl Vim {
             self.marks.op_end = None;
             for e in g.edits.iter().rev() {
                 let end = e.at + e.inserted.chars().count();
-                self.undo_text(t, e.at..end, &e.removed, e.spanned);
+                self.undo_text(t, e.at..end, &e.removed, e.spanned, e.empty_buf);
             }
             self.changes += 1;
             let line = g
@@ -3419,7 +3462,7 @@ impl Vim {
             self.marks.op_end = None;
             for e in &g.edits {
                 let end = e.at + e.removed.chars().count();
-                self.undo_text(t, e.at..end, &e.inserted, e.spanned);
+                self.undo_text(t, e.at..end, &e.inserted, e.spanned, e.empty_buf);
             }
             self.changes += 1;
             let line = g
