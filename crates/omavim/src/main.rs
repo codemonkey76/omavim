@@ -27,7 +27,60 @@ const TEXT_SIZE: f32 = 17.0;
 /// The footer's.
 const SMALL_SIZE: f32 = 13.0;
 
+const USAGE: &str = "\
+Usage: omavim [FILE]...
+
+A dead-simple writing app with Vim motions. Each FILE opens in a window of
+its own (one that doesn't exist yet is started), and no FILE is a new document.
+
+  -h, --help     show this
+  -V, --version  show the version
+  --             what follows are files, whatever they start with
+";
+
+/// What the command line asks for.
+#[derive(Debug, PartialEq)]
+enum Cli {
+    /// Open these (none: a new document).
+    Files(Vec<PathBuf>),
+    Version,
+    Help,
+    /// An option Omavim doesn't have.
+    Unknown(String),
+}
+
+fn cli(args: impl IntoIterator<Item = std::ffi::OsString>) -> Cli {
+    let mut files = Vec::new();
+    let mut options = true;
+    for arg in args {
+        match arg.to_str() {
+            Some("--") if options => options = false,
+            Some("-V" | "--version") if options => return Cli::Version,
+            Some("-h" | "--help") if options => return Cli::Help,
+            Some(s) if options && s.starts_with('-') => return Cli::Unknown(s.into()),
+            _ => files.push(PathBuf::from(arg)),
+        }
+    }
+    Cli::Files(files)
+}
+
 fn main() -> iced::Result {
+    // `omavim --version` and the like are answered here, with no window.
+    match cli(std::env::args_os().skip(1)) {
+        Cli::Files(_) => {}
+        Cli::Version => {
+            println!("omavim {}", env!("CARGO_PKG_VERSION"));
+            return Ok(());
+        }
+        Cli::Help => {
+            print!("{USAGE}");
+            return Ok(());
+        }
+        Cli::Unknown(option) => {
+            eprintln!("omavim: no option {option}\n\n{USAGE}");
+            std::process::exit(2);
+        }
+    }
     iced::application(App::boot, App::update, App::view)
         .title(App::title)
         .theme(App::theme)
@@ -175,7 +228,11 @@ impl App {
     fn boot() -> Self {
         // `omavim notes.md`: open it, or start it if it doesn't exist yet;
         // `omavim a.md b.md`: each in a window of its own.
-        let mut files = std::env::args_os().skip(1).map(PathBuf::from);
+        let mut files = match cli(std::env::args_os().skip(1)) {
+            Cli::Files(files) => files.into_iter(),
+            // (main has answered the rest.)
+            _ => Vec::new().into_iter(),
+        };
         let first = files.next();
         let others: Vec<String> = files
             .filter_map(|f| {
@@ -1225,7 +1282,8 @@ fn breakat(doc: &Document) -> &'static str {
 /// Another Omavim, in a window of its own (with a file, or a new one).
 fn open_window(file: Option<&std::path::Path>) -> std::io::Result<()> {
     let mut command = std::process::Command::new(std::env::current_exe()?);
-    command.args(file);
+    // (`--`: a file's name may start with a `-`.)
+    command.arg("--").args(file);
     let mut child = command.spawn()?;
     // (Reaped when it closes.)
     std::thread::spawn(move || child.wait());
@@ -1372,6 +1430,26 @@ mod tests {
             help: false,
             highlight_cache: Default::default(),
         }
+    }
+
+    #[test]
+    fn the_command_line_is_files_or_an_option() {
+        let cli = |args: &[&str]| super::cli(args.iter().map(Into::into));
+        assert_eq!(cli(&[]), Cli::Files(vec![]));
+        assert_eq!(
+            cli(&["a.md", "b.md"]),
+            Cli::Files(vec!["a.md".into(), "b.md".into()])
+        );
+        assert_eq!(cli(&["--version"]), Cli::Version);
+        assert_eq!(cli(&["-V"]), Cli::Version);
+        assert_eq!(cli(&["a.md", "--help"]), Cli::Help);
+        assert_eq!(cli(&["-h"]), Cli::Help);
+        assert_eq!(cli(&["--verison"]), Cli::Unknown("--verison".into()));
+        // After `--` everything is a file.
+        assert_eq!(
+            cli(&["--", "--version"]),
+            Cli::Files(vec!["--version".into()])
+        );
     }
 
     #[test]
