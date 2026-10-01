@@ -90,6 +90,15 @@ fn main() -> iced::Result {
         .font(include_bytes!("../../../fonts/iAWriterMonoS-Italic.ttf").as_slice())
         .font(include_bytes!("../../../fonts/iAWriterMonoS-BoldItalic.ttf").as_slice())
         .default_font(FONT)
+        // The desktop file's name, so the compositor ties the window to it
+        // (its icon, and a class for window rules).
+        .window(iced::window::Settings {
+            platform_specific: iced::window::settings::PlatformSpecific {
+                application_id: "omavim".into(),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
         .window_size((900.0, 1000.0))
         // (Closing asks first, if there are unsaved changes.)
         .exit_on_close_request(false)
